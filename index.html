@@ -13,6 +13,31 @@
 #kfstory .story-actions{display:flex;justify-content:flex-end;gap:8px}
 #kfstory button{padding:8px 12px;border:1px solid #96794c;border-radius:6px;background:#33453d;color:#fff0d1;cursor:pointer}
 #kfstory button[hidden]{display:none}
+#kfmenu{width:min(570px,calc(100% - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:18px;border:1px solid #ae9564;border-radius:13px;color:#f3e7ce;background:#202d2b;box-shadow:0 16px 55px #000b}
+#kfmenu::backdrop{background:#0b1717bd}
+#kfmenu .menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+#kfmenu h2,#kfmenu h3{margin:0;color:#ffe2a1}
+#kfmenu h3 small{margin-left:5px;font-weight:500;color:#dcc6a1}
+#kfmenu button{min-height:42px;padding:6px 10px;border-radius:7px;background:#2a3b35;color:#f5ebd6;border-color:#a78a5d80;font-size:12px}
+#kfmenu button[aria-pressed=true]{border-color:#dbb977;background:#4c4934;color:#ffdfa0}
+#kfmenu button:disabled{opacity:.67;cursor:default}
+#kfmenu .menu-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#kfmenu .menu-panel{margin-top:16px;padding:13px;border:1px solid #b3945a55;border-radius:9px;background:#111e1d}
+#kfmenu .menu-panel[hidden]{display:none}
+#kfmenu p,#kfmenu li,#kfmenu label{font-size:13px;line-height:1.5}
+#kfmenu ol{padding-left:22px}
+#kfmenu li[data-state=done]{color:#a8c9a4}
+#kfmenu li[aria-current=step]{color:#ffda7e;font-weight:700}
+#kfmenu .menu-panel canvas{width:100%;height:auto;border-radius:6px;aspect-ratio:13/7}
+#kfmenu .map-legend{display:flex;gap:16px;margin-bottom:0}
+#kfmenu .map-legend span::before{display:inline-block;content:"";width:7px;height:7px;margin-right:5px;background:#fff9e9}
+#kfmenu .map-legend span:nth-child(2)::before{background:#ffda7e;transform:rotate(45deg)}
+#kfmenu .map-legend span:nth-child(3)::before{background:#ed8653}
+#kfmenu .discipline-list{display:grid;gap:6px;margin:10px 0 12px}
+#kfmenu .discipline-list button{display:grid;text-align:left;gap:2px}
+#kfmenu .discipline-list small{font-weight:400}
+#kfmenu label{display:flex;align-items:center;gap:9px;min-height:36px}
+#kfmenu input{accent-color:#e5bc74}
 </style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
 <style>
 #kfg *{box-sizing:border-box}
@@ -85,7 +110,6 @@
 #kfg .modal h2{font:900 clamp(28px,5vw,54px) system-ui;color:#ffe07b;text-shadow:3px 3px #734623;margin:0}
 #kfg .modal p{font-size:14px;line-height:1.5;max-width:360px;margin:0}
 #kfg .modal button{font-size:16px;padding:10px 20px;background:#ffd06b;color:#2c2212;border:2px solid #fff8af}
-#kfg .modal #kfresume{background:#253958;color:#fff;border-color:#a4b9e3}
 </style>
 <canvas id="kfc"></canvas>
 <div class="ui">
@@ -112,11 +136,11 @@
       </div>
     </div>
     <button id="kfcharacter-open" type="button" aria-haspopup="dialog">Character<span id="kfpoint-badge" hidden></span></button>
-    <button id="kfpause">Pause</button>
+    <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
   </div>
   <div class="controls">
     <div class="stick" role="img" aria-label="Movement joystick"><span class="stick-knob"></span></div>
-    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · E interact · C character · Esc pause</p>
+    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · E interact · M map · C character · Esc menu</p>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
@@ -125,7 +149,7 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><button id="kfresume" hidden>Resume</button><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
+<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
   <header class="character-head">
     <h2 id="kfcharacter-title">Character</h2>
     <button id="kfcharacter-close" type="button" autofocus>Back</button>
@@ -148,6 +172,42 @@
   <h2 id="kfstory-title"></h2>
   <p id="kfstory-text"></p>
   <div class="story-actions"><button id="kfstory-close" type="button">Close</button><button id="kfstory-continue" type="button">Continue</button></div>
+</dialog>
+<dialog id="kfmenu" aria-labelledby="kfmenu-title">
+  <header class="menu-head">
+    <h2 id="kfmenu-title">Journey</h2>
+    <button id="kfmenu-close" type="button" autofocus>Resume</button>
+  </header>
+  <nav aria-label="Journey menu" class="menu-tabs">
+    <button type="button" data-menu="journal" aria-pressed="true" aria-controls="kfmenu-journal">Journal</button>
+    <button type="button" data-menu="map" aria-pressed="false" aria-controls="kfmenu-map">World map</button>
+    <button type="button" data-menu="training" aria-pressed="false" aria-controls="kfmenu-training">Training</button>
+    <button type="button" data-menu="settings" aria-pressed="false" aria-controls="kfmenu-settings">Settings</button>
+  </nav>
+  <section id="kfmenu-journal" class="menu-panel">
+    <h3>The Cedar Seal</h3>
+    <p id="kfmenu-objective"></p>
+    <ol id="kfmenu-steps"></ol>
+    <h3>Northern Watch <small>Optional</small></h3>
+    <p id="kfmenu-watch"></p>
+  </section>
+  <section id="kfmenu-map" class="menu-panel" hidden>
+    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map with Cedar Village in the west and Stone Shrine in the east. White is your position, gold marks objectives, and orange marks enemy camps."></canvas>
+    <p class="map-legend"><span>You</span><span>Objective</span><span>Camp</span></p>
+  </section>
+  <section id="kfmenu-training" class="menu-panel" hidden>
+    <p id="kfmenu-training-location"></p>
+    <div class="discipline-list">
+      <button type="button" data-discipline="balanced" aria-pressed="true"><strong>Balanced</strong><small>Standard melee and Ki damage</small></button>
+      <button type="button" data-discipline="striker" aria-pressed="false"><strong>Striker</strong><small>+20% melee damage · −10% Ki damage</small></button>
+      <button type="button" data-discipline="channeler" aria-pressed="false"><strong>Channeler</strong><small>+20% Ki damage · −10% melee damage</small></button>
+    </div>
+    <button id="kfmenu-character" type="button">Character upgrades</button>
+  </section>
+  <section id="kfmenu-settings" class="menu-panel" hidden>
+    <label><input id="kfsetting-shake" type="checkbox"> Screen shake</label>
+    <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
+  </section>
 </dialog>
 <script src="animation.js?v=172a878"></script>
 <script>
@@ -305,8 +365,10 @@ ambientShade.addColorStop(1,'#101e314a');
 bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
-function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';root.querySelector('#kfplay').textContent='↻ CONTINUE JOURNEY';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
+function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
+function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';root.querySelector('#kfplay').textContent='↻ CONTINUE JOURNEY';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
+const disciplines={balanced:[1,1],striker:[1.2,.9],channeler:[.9,1.2]};
+let discipline='balanced';
 const journeyKey='ki-fighter-cedar-journey-v1';
 const journeySteps=['meet','recover','return','shrine','guardian','done'];
 const shardIds=['crossing','ridge','cedars'];
@@ -315,17 +377,19 @@ let journeyStep='meet',clearedCamps=new Set(),mentorGestureUntil=0,storyAction=n
 function saveJourney(){
   try{
     localStorage.setItem(journeyKey,JSON.stringify({
-      step:journeyStep,cleared:[...clearedCamps],
+      step:journeyStep,cleared:[...clearedCamps],discipline,
       stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]]))
     }));
   }catch{}
 }
 function loadJourney(){
   journeyStep='meet';
+  discipline='balanced';
   clearedCamps=new Set();
   try{
     const data=JSON.parse(localStorage.getItem(journeyKey));
     if(!data)return;
+    if(Object.hasOwn(disciplines,data.discipline))discipline=data.discipline;
     if(journeySteps.includes(data.step))journeyStep=data.step;
     if(Array.isArray(data.cleared)){
       clearedCamps=new Set(data.cleared.filter(id=>encounters.some(e=>e.id===id)));
@@ -349,6 +413,10 @@ function shardCount(){return shardIds.filter(id=>clearedCamps.has(id)).length}
 function updateJourneyDefeat(enemy){
   if(!enemy.id)return;
   clearedCamps.add(enemy.id);
+  if(enemy.id==='watch'){
+    player.xp+=20;
+    notice('NORTHERN WATCH CLEARED · +20 XP');
+  }
   if(journeyStep==='recover'&&shardCount()===shardIds.length){
     journeyStep='return';
     notice('SEAL PIECES RECOVERED');
@@ -484,7 +552,7 @@ function punch(){
 }
 function meleeHit(p){
   const strike=strikes[p.strike],edge=Math.cos(strike.arc);
-  const damage=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1);
+  const damage=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1)*disciplines[discipline][0];
   for(const e of enemies){
     if(e.hp<=0)continue;
     const dx=e.x-p.x,dy=e.y-p.y,d=hyp(dx,dy);
@@ -510,7 +578,7 @@ function fire(){
     ? {x:p.x+(direction?(direction<0?9:-5):13.5*poseSide(p)),y:p.y-(direction?18:16)}
     : energyOrigin(p,'blast');
   const {x,y}=origin;
-  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24),time:kiBlast.range/kiBlast.speed});
+  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24)*disciplines[discipline][1],time:kiBlast.range/kiBlast.speed});
   kiPulse(x,y,5,false,true);
 }
 const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
@@ -716,7 +784,7 @@ function beamHit(dt){
   const p=player,{fx:dx,fy:dy}=p;
   const origin=beamCastOrigin(p);
   const shape=beamShape(p.beamAge);
-  const damage=dt*beam.damage*(1+(p.kistat-1)*.24);
+  const damage=dt*beam.damage*(1+(p.kistat-1)*.24)*disciplines[discipline][1];
   for(const e of enemies){
     if(e.hp<=0||!insideBeam(e.x-origin.x,e.y+poseHeight(-15)-origin.y,dx,dy,shape,e.boss?11:8))continue;
     e.hp-=damage;
@@ -1028,19 +1096,24 @@ const kmap={
 const pressed=new Set();
 window.addEventListener('keydown',e=>{
   if(mode==='talk')return;
+  if(e.code==='KeyM'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+    if(mode==='play')openJourneyMenu('map');
+    else if(mode==='paused')selectJourneyTab('map');
+    return;
+  }
   if(e.code==='KeyE'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
     interact();
     return;
   }
   if(e.code==='KeyC'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
     if(mode==='character')closeCharacter();
-    else if(player&&mode!=='title')openCharacter(mode==='play'?characterButton:summaryCharacter);
+    else if(player&&mode!=='title')openCharacter(mode==='play'?characterButton:mode==='paused'?menuCharacterButton:summaryCharacter);
     return;
   }
   if(e.code==='Escape'){
     if(e.repeat)return;
     if(mode==='character'){e.preventDefault();closeCharacter();return}
-    if(mode==='paused')resumeButton.click();
+    if(mode==='paused'){e.preventDefault();closeJourneyMenu()}
     else if(!powersMenu.hidden)setPowers(false);
     else pauseButton.click();
     return;
@@ -1167,7 +1240,7 @@ for(const btn of btns){
   btn.addEventListener('click',e=>{if(e.detail===0)act(action,true)});
 }
 const powersButton=root.querySelector('#kfpowers'),powersMenu=root.querySelector('#kfpower-menu');
-const resumeButton=root.querySelector('#kfresume'),pauseButton=root.querySelector('#kfpause');
+const pauseButton=root.querySelector('#kfpause');
 function setPowers(open){
   powersMenu.hidden=!open;
   powersButton.setAttribute('aria-expanded',String(open));
@@ -1177,21 +1250,112 @@ function setPowers(open){
 }
 powersButton.onclick=()=>setPowers(powersMenu.hidden);
 root.addEventListener('pointerdown',e=>{if(!e.target.closest('.powers'))setPowers(false)});
-resumeButton.onclick=()=>{mode='play';modal.style.display='none';resumeButton.hidden=true;summaryCharacter.hidden=true};
-pauseButton.onclick=()=>{
+const journeyMenu=root.querySelector('#kfmenu');
+const journeyMenuClose=root.querySelector('#kfmenu-close');
+const menuSections=Array.from(journeyMenu.querySelectorAll('[data-menu]'));
+const disciplineButtons=Array.from(journeyMenu.querySelectorAll('[data-discipline]'));
+const menuMap=root.querySelector('#kfmenu-map-view').getContext('2d');
+const settingsKey='ki-fighter-settings-v1';
+const settings={screenShake:true,minimap:true};
+try{
+  const saved=JSON.parse(localStorage.getItem(settingsKey));
+  for(const key of Object.keys(settings)){
+    if(typeof saved?.[key]==='boolean')settings[key]=saved[key];
+  }
+}catch{}
+let trainingLocked=false;
+const journalSteps=[
+  'Speak to Master Ren',
+  'Recover all three seal pieces',
+  'Return to Cedar Village',
+  'Place the seal at the Stone Shrine',
+  'Defeat the Forest Guardian',
+];
+function trainingAvailable(){
+  return !trainingLocked&&nearbyLandmark()===mentor&&
+    !enemies.some(e=>e.hp>0&&e.engaged);
+}
+function renderTraining(){
+  const nearMentor=nearbyLandmark()===mentor;
+  const text=trainingAvailable()?'Choose a discipline while resting near Master Ren.':
+    nearMentor?'Finish your current action or leave combat before changing disciplines.':
+      'Return to Master Ren in Cedar Village to change disciplines.';
+  root.querySelector('#kfmenu-training-location').textContent=text;
+  for(const button of disciplineButtons){
+    button.setAttribute('aria-pressed',String(button.dataset.discipline===discipline));
+    button.disabled=!trainingAvailable();
+  }
+}
+function renderJournal(){
+  root.querySelector('#kfmenu-objective').textContent=journeyObjective();
+  const current=journeySteps.indexOf(journeyStep);
+  const entries=journalSteps.map((label,index)=>{
+    const item=document.createElement('li');
+    const checked=index<current;
+    item.dataset.state=checked?'done':index===current?'current':'pending';
+    if(index===current)item.setAttribute('aria-current','step');
+    item.textContent=(checked?'✓ ':'')+label;
+    return item;
+  });
+  root.querySelector('#kfmenu-steps').replaceChildren(...entries);
+  root.querySelector('#kfmenu-watch').textContent=clearedCamps.has('watch')
+    ?'Completed. The northern outpost is clear.'
+    :'Defeat the soldier at the outpost north of the eastern trail for 20 bonus XP.';
+}
+function selectJourneyTab(tab){
+  for(const button of menuSections){
+    const selected=button.dataset.menu===tab;
+    const section=root.querySelector('#'+button.getAttribute('aria-controls'));
+    button.setAttribute('aria-pressed',String(selected));
+    section.hidden=!selected;
+  }
+  if(tab==='journal')renderJournal();
+  if(tab==='training')renderTraining();
+  if(tab==='map')drawNavigationMap(menuMap,true,lim(player.x-W/2,0,MW-W),lim(player.y-H/2,0,MH-H));
+}
+function openJourneyMenu(tab='journal'){
   if(mode!=='play')return;
+  trainingLocked=Boolean(player.attack||player.beam||player.beamCharge!==null||player.hurt||player.dash||player.blastPose);
   resetStick();
   stopKi();
-  setPowers(false);
   resetBeam(player);
+  setPowers(false);
+  held.clear();
+  pressed.clear();
+  for(const button of btns)button.classList.remove('down');
   mode='paused';
-  summaryCharacter.hidden=false;
-  title.textContent='PAUSED';
-  desc.textContent='Resume your fight or start over.';
-  resumeButton.hidden=false;
-  root.querySelector('#kfplay').textContent='↻ RESTART';
-  modal.style.display='flex';
-};
+  selectJourneyTab(tab);
+  journeyMenu.showModal();
+  journeyMenuClose.focus({preventScroll:true});
+}
+function closeJourneyMenu(){
+  if(mode!=='paused')return;
+  mode='play';
+  journeyMenu.close();
+  pauseButton.focus({preventScroll:true});
+}
+pauseButton.onclick=()=>openJourneyMenu();
+journeyMenuClose.onclick=closeJourneyMenu;
+journeyMenu.addEventListener('cancel',e=>{e.preventDefault();closeJourneyMenu()});
+for(const button of menuSections)button.onclick=()=>selectJourneyTab(button.dataset.menu);
+for(const button of disciplineButtons){
+  button.onclick=()=>{
+    if(mode!=='paused'||!trainingAvailable())return;
+    discipline=button.dataset.discipline;
+    saveJourney();
+    renderTraining();
+  };
+}
+const menuCharacterButton=root.querySelector('#kfmenu-character');
+menuCharacterButton.onclick=()=>openCharacter(menuCharacterButton);
+for(const [key,id] of [['screenShake','kfsetting-shake'],['minimap','kfsetting-minimap']]){
+  const input=root.querySelector('#'+id);
+  input.checked=settings[key];
+  input.onchange=()=>{
+    settings[key]=input.checked;
+    try{localStorage.setItem(settingsKey,JSON.stringify(settings))}catch{}
+  };
+}
 
 const healingDelay=3,healingRate=8;
 function spendKi(p,amount){
@@ -2603,15 +2767,19 @@ function minimapObjectives(){
   }
 }
 function drawMinimap(viewX,viewY){
-  minimapPanel.hidden=!player||mode==='title';
-  if(minimapPanel.hidden)return;
-  const ink=minimapInk;
+  minimapPanel.hidden=!player||mode==='title'||!settings.minimap;
+  if(!minimapPanel.hidden)drawNavigationMap(minimapInk,false,viewX,viewY);
+}
+function drawNavigationMap(ink,expanded,viewX,viewY){
+  ink.save();
+  const scale=expanded?2:1;
+  ink.setTransform(scale,0,0,scale,0,0);
   ink.drawImage(minimapTerrain,0,0);
   ink.strokeStyle='#e0d5ae65';
   ink.lineWidth=1.5;
   ink.strokeRect(viewX*mapRatio,viewY*mapRatio,W*mapRatio,H*mapRatio);
   for(const enemy of enemies){
-    if(enemy.hp<=0||hyp(enemy.homeX-player.x,enemy.homeY-player.y)>190)continue;
+    if(enemy.hp<=0||(!expanded&&hyp(enemy.homeX-player.x,enemy.homeY-player.y)>190))continue;
     ink.fillStyle='#4d2824';
     ink.fillRect(enemy.homeX*mapRatio-4,enemy.homeY*mapRatio-4,8,8);
     ink.fillStyle='#ed8653';
@@ -2643,8 +2811,20 @@ function drawMinimap(viewX,viewY){
   ink.stroke();
   ink.fill();
   ink.restore();
+  if(expanded){
+    ink.font='bold 8px system-ui';
+    ink.textAlign='center';
+    ink.strokeStyle='#1a2824';
+    ink.fillStyle='#fff0cf';
+    ink.lineWidth=2.5;
+    for(const [label,x,y] of [['Cedar Village',155,147],['Cedar Forest',533,145],['Stone Shrine',925,147]]){
+      ink.strokeText(label,x*mapRatio,y*mapRatio);
+      ink.fillText(label,x*mapRatio,y*mapRatio);
+    }
+  }
+  ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);drawWorldWater(x);const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);drawWorldWater(x);const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
