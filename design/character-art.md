@@ -14,3 +14,8 @@ Draw full-body poses where the silhouette matters, especially kicks and strong p
 Use an existing clip for a new fighter, or add a clip with the same channels and a new timing curve. An enemy can set `animationRig` to choose an attack clip and its reach multiplier. `actionPhase` maps the move's existing windup and recovery timings onto the visual clip, keeping contact and animation in sync.
 
 Use `framesAt` with a sequence of `[normalizedTime, frame]` pairs when new artwork provides intermediate poses. The game uses this for the current walk, dash, and strike art. The pose track and sprite sequence share the same progress, so frame selection stays synchronized with impact timing and hand anchors.
+
+## Art references
+
+- [Current fighter sprites](character-sprite-reference.webp) show body proportions, camera angles, and the existing pose palette.
+- [Ki storyboard](ki-storyboard-reference.webp) shows the blast, recharge, gather, release, and two Surge states. Keep these effects in separate layers so new outfits and bodies can reuse them.
