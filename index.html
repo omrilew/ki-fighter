@@ -800,7 +800,7 @@ function advanceEnemy(e,p,dt){
         const damage=e.boss?9:4;
         sceneryStrike(e.x,e.y,attack.x,attack.y,reach,edge,e.boss?30:11);
         if(!p.fly&&!p.inv&&insideStrike(dx,dy,attack.x,attack.y,reach,edge)){
-          damagePlayer(damage,-dx,-dy);
+          damagePlayer(damage,dx,dy);
           shake=.14;
           burst(p.x,p.y-17,'#ff9191',12);
           if(p.hp<=0)end(false);
