@@ -1,4 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}#kfg .world-objective{position:absolute;top:91px;left:12px;z-index:2;margin:0;padding:6px 10px;max-width:min(55%,360px);border:1px solid #c5a27377;border-left:2px solid #e2b875;border-radius:5px;background:#182524e8;color:#f2dfb5;font-size:11px;line-height:1.35;pointer-events:none}
+#kfg .minimap{position:absolute;top:125px;right:12px;width:clamp(112px,23vw,182px);padding:4px;border:1px solid #bba27599;border-radius:8px;background:#172524ec;box-shadow:0 3px 12px #0b14189c;pointer-events:none}
+#kfg .minimap[hidden]{display:none}
+#kfg .minimap canvas{width:100%;height:auto;border-radius:4px;aspect-ratio:13/7}
+@media(max-height:420px){#kfg .minimap{width:106px}}
+@media(max-width:640px){#kfg .world-objective{top:125px;max-width:calc(100% - 150px)}}
 #kfg .world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
 #kfg .world-interact[hidden],#kfg .world-objective[hidden]{display:none}
 #kfstory{max-width:min(410px,calc(100% - 32px));box-sizing:border-box;padding:22px;border:1px solid #a38a58;border-radius:12px;color:#f7e6ca;background:#202d2b;box-shadow:0 14px 50px #000b}
@@ -93,6 +98,9 @@
     <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
   </div>
   <div class="notice" id="kfnotice" hidden></div>
+  <div id="kfminimap" class="minimap" hidden>
+    <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
+  </div>
   <p id="kfobjective" class="world-objective" hidden></p>
   <button id="kfinteract" class="world-interact" type="button" hidden>Interact</button>
   <div class="top">
@@ -2563,7 +2571,80 @@ function drawWorldWater(view){
   }
   c.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);drawWorldWater(x);const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD()}
+const minimapPanel=root.querySelector('#kfminimap');
+const minimapCanvas=root.querySelector('#kfminimap-view');
+const minimapInk=minimapCanvas.getContext('2d');
+const minimapTerrain=document.createElement('canvas');
+minimapTerrain.width=minimapCanvas.width;
+minimapTerrain.height=minimapCanvas.height;
+const minimapGround=minimapTerrain.getContext('2d');
+const mapRatio=minimapCanvas.width/MW;
+minimapGround.drawImage(map,0,0,minimapTerrain.width,minimapTerrain.height);
+minimapGround.scale(mapRatio,mapRatio);
+for(const tree of trees){
+  minimapGround.fillStyle='#21362b';
+  minimapGround.beginPath();
+  minimapGround.arc(tree.x,tree.y-7,9*tree.scale,0,Math.PI*2);
+  minimapGround.fill();
+}
+for(const {x,y,solidW,solidH,world} of worldObjects){
+  if(!solidW)continue;
+  minimapGround.fillStyle=world==='hall'?'#a46849':world==='cottage'?'#81934e':'#786052';
+  minimapGround.fillRect(x-solidW/2,y-solidH,solidW,solidH);
+}
+function minimapObjectives(){
+  switch(journeyStep){
+    case 'meet':
+    case 'return':return [mentor];
+    case 'recover':return encounters.filter(o=>shardIds.includes(o.id)&&!clearedCamps.has(o.id));
+    case 'shrine':return [shrine];
+    case 'guardian':return enemies.filter(o=>o.id==='guardian'&&o.hp>0);
+    default:return [];
+  }
+}
+function drawMinimap(viewX,viewY){
+  minimapPanel.hidden=!player||mode==='title';
+  if(minimapPanel.hidden)return;
+  const ink=minimapInk;
+  ink.drawImage(minimapTerrain,0,0);
+  ink.strokeStyle='#e0d5ae65';
+  ink.lineWidth=1.5;
+  ink.strokeRect(viewX*mapRatio,viewY*mapRatio,W*mapRatio,H*mapRatio);
+  for(const enemy of enemies){
+    if(enemy.hp<=0||hyp(enemy.homeX-player.x,enemy.homeY-player.y)>190)continue;
+    ink.fillStyle='#4d2824';
+    ink.fillRect(enemy.homeX*mapRatio-4,enemy.homeY*mapRatio-4,8,8);
+    ink.fillStyle='#ed8653';
+    ink.fillRect(enemy.homeX*mapRatio-2.5,enemy.homeY*mapRatio-2.5,5,5);
+  }
+  for(const {x,y} of minimapObjectives()){
+    ink.save();
+    ink.translate(x*mapRatio,y*mapRatio);
+    ink.rotate(Math.PI/4);
+    ink.fillStyle='#2a211b';
+    ink.fillRect(-5,-5,10,10);
+    ink.fillStyle='#ffda7e';
+    ink.fillRect(-3.5,-3.5,7,7);
+    ink.restore();
+  }
+  ink.save();
+  ink.translate(player.x*mapRatio,player.y*mapRatio);
+  ink.rotate(player.faceAngle);
+  ink.fillStyle='#fff9e9';
+  ink.strokeStyle='#23333a';
+  ink.lineWidth=2.5;
+  ink.lineJoin='round';
+  ink.beginPath();
+  ink.moveTo(7,0);
+  ink.lineTo(-5,-4.5);
+  ink.lineTo(-3,0);
+  ink.lineTo(-5,4.5);
+  ink.closePath();
+  ink.stroke();
+  ink.fill();
+  ink.restore();
+}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);drawWorldWater(x);const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
