@@ -205,7 +205,7 @@ ambientShade.addColorStop(1,'#101e314a');
 bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,kiDelay:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
+function start(){resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
 function end(win){resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96};
 function xpRequired(level){return 55+(level-1)*35}
@@ -277,14 +277,16 @@ function fire(){
   kiPulse(x,y,5,false,true);
 }
 const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
-const beamStages=[
-  {length:.25,width:.35},
-  {length:.60,width:.70},
-  {length:1,width:1},
-];
+function smoothStep(value){
+  const t=lim(value,0,1);
+  return t*t*(3-2*t);
+}
 function beamShape(age){
-  const stage=beamStages[age<.09?0:age<.22?1:2];
-  return {body:beam.body*stage.length,tip:beam.tip*stage.length,wide:beam.wide*stage.width};
+  const expand=smoothStep((age-.035)/.09);
+  const settle=smoothStep((age-.135)/.105);
+  const length=.25+.35*expand+.40*settle;
+  const width=.35+.35*expand+.30*settle;
+  return {body:beam.body*length,tip:beam.tip*length,wide:beam.wide*width};
 }
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
 function turnToward(current,target,dt){
@@ -352,8 +354,16 @@ function fireChargedBeam(p){
   kiPulse(x,y,10);
   notice('KAMEHAMEHA!');
 }
+const beamTraceTime=.17;
+function finishBeam(p){
+  if(p.beam){
+    const {x,y}=beamOrigin(p);
+    fx.push({beamTrace:true,x,y,angle:Math.atan2(p.fy,p.fx),age:p.beamAge,time:beamTraceTime});
+  }
+  resetBeam(p);
+}
 function releaseBeam(p,source){
-  if(p.beamChargeSource===source)resetBeam(p);
+  if(p.beamChargeSource===source)finishBeam(p);
 }
 function resetBeam(p){
   if(!p)return;
@@ -474,16 +484,36 @@ function storyPose(o,recharging){
   if(o.surge&&!o.walking&&o.stride<.12)return 'sustain';
   return null;
 }
-function renderBeam(p){
+function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   if(!storyReady())return;
-  const {x,y}=beamOrigin(p);
-  const {body,tip,wide}=beamShape(p.beamAge);
+  const {body,tip,wide}=beamShape(shapeAge);
+  const length=body+tip;
+  const flicker=1+.06*Math.sin(age*35);
   c.save();
   c.translate(x,y);
-  c.rotate(Math.atan2(p.fy,p.fx));
-  const flicker=1+.06*Math.sin(p.beamAge*35);
-  drawStoryMotion('beam',p.beamAge,(body+tip)/136,.32*wide/beam.wide*flicker);
+  c.rotate(angle);
+  const radius=length*.56;
+  const wash=c.createRadialGradient(length*.54,0,1,length*.54,0,radius);
+  wash.addColorStop(0,'#48acff46');
+  wash.addColorStop(.58,'#2788ff27');
+  wash.addColorStop(1,'#268eff00');
+  c.globalAlpha=opacity;
+  c.save();
+  c.scale(1,.43*thin+.21);
+  c.fillStyle=wash;
+  c.fillRect(0,-radius,length,radius*2);
   c.restore();
+  drawStoryMotion('beam',age,length/136,.32*wide/beam.wide*flicker*thin);
+  c.restore();
+}
+function renderBeam(p){
+  const {x,y}=beamOrigin(p);
+  drawBeamEffect(x,y,Math.atan2(p.fy,p.fx),p.beamAge);
+}
+function renderBeamTrace(f){
+  const remaining=lim(f.time/beamTraceTime,0,1);
+  const opacity=smoothStep(remaining)*.83;
+  drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
 }
 function renderBeamCharge(p){
   if(!storyReady()||!storyMotionReady()&&storyPose(p,false)==='gather')return;
@@ -492,7 +522,7 @@ function renderBeamCharge(p){
   c.save();
   c.translate(x,y);
   c.rotate(Math.atan2(p.fy,p.fx));
-  drawStoryMotion('gatherLight',p.beamCharge,storyScale*(.50+load*.50));
+  drawStoryMotion('gatherLight',p.beamCharge,storyScale*(.40+smoothStep(load)*.60));
   c.restore();
 }
 function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=.32;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
@@ -846,14 +876,17 @@ function damagePlayer(amount,dx=0,dy=0){
   player.attack=0;
   hurtReaction(player,dx,dy);
 }
-function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){
   if(prop.impact>0)prop.impact=Math.max(0,prop.impact-dt);
   if(prop.fall>0)prop.fall=Math.max(0,prop.fall-dt);
 }
-let p=player;recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)resetBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
+let p=player;
+const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
+p.rechargeVisual+=(rechargeTarget-p.rechargeVisual)*(1-Math.exp(-dt*(rechargeTarget?18:12)));
+recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
 move(p,p.vx*dt,p.vy*dt);
 const travel=hyp(p.x-fromX,p.y-fromY);
@@ -1277,6 +1310,15 @@ function character(o,type,referencePose){
     const body=referencePose+'Body';
     if(storyMotionReady()&&storyMotion[body]){
       const breath=1+.018*Math.sin(storyClock*10);
+      if(referencePose==='ignite'){
+        const ignition=surgeIgnitionWeight(o.surgeFlare);
+        const alpha=c.globalAlpha;
+        if(ignition<1){
+          c.globalAlpha=alpha;
+          drawStoryMotion('sustainBody',0,storyScale,storyScale*breath);
+        }
+        c.globalAlpha=alpha*ignition;
+      }
       drawStoryMotion(body,0,storyScale,storyScale*breath);
     }else drawStorySprite(referencePose);
     c.restore();
@@ -1391,16 +1433,23 @@ function renderKiPulse(f){
   }
   c.restore();
 }
+function surgeIgnitionWeight(remaining){return smoothStep(remaining/.16)}
 function energyAura(p){
   if(!storyReady())return;
   c.save();
   c.translate(p.x,p.y);
   c.scale(poseSide(p),1);
-  c.globalAlpha=.91+.09*Math.sin(storyClock*14);
-  const name=p.surge?(p.surgeFlare>0?'igniteAura':'sustainAura'):'rechargeAura';
-  const time=p.surgeFlare>0?.32-p.surgeFlare:storyClock;
-  const flare=p.surgeFlare>0?1+.18*Math.sin(time/.32*Math.PI):1;
-  drawStoryMotion(name,time,storyScale*flare,storyScale*(1+.045*Math.sin(storyClock*17)));
+  const flicker=(.93+.07*Math.sin(storyClock*14))*(p.surge?1:p.rechargeVisual);
+  const rippleHeight=storyScale*(1+.045*Math.sin(storyClock*17));
+  const ignition=p.surge?surgeIgnitionWeight(p.surgeFlare):0;
+  c.globalAlpha=flicker*(1-ignition);
+  if(ignition<1)drawStoryMotion(p.surge?'sustainAura':'rechargeAura',storyClock,storyScale,rippleHeight);
+  if(ignition>0){
+    const age=.32-p.surgeFlare;
+    const expansion=1+.20*smoothStep(age/.16);
+    c.globalAlpha=flicker*ignition;
+    drawStoryMotion('igniteAura',age,storyScale*expansion,rippleHeight);
+  }
   c.restore();
 }
 function renderSceneryDebris(f){
@@ -1412,7 +1461,7 @@ function renderSceneryDebris(f){
   c.fillRect(-f.size*.5,-f.size*.3,f.size,f.size*.63);
   c.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((recharging||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','wave','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
