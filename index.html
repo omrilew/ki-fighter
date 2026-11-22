@@ -85,6 +85,7 @@
   </div>
 </div>
 <div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or keep holding to charge and fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfplay">▶ PLAY</button></div><div id="kflevel" style="display:none;position:absolute;inset:0;z-index:6;background:#0b1539e8;align-items:center;justify-content:center;flex-direction:column;gap:10px"><h2 style="color:#ffe38a;margin:0">LEVEL UP!</h2><div id="kfpoints"></div><button data-stat="str">⚔ STR — Melee power</button><button data-stat="ki">✦ KI — Energy damage</button><button data-stat="dex">➤ DEX — Speed</button><div id="kfstats"></div></div>
+<script src="animation.js"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=720,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -277,17 +278,14 @@ function fire(){
   kiPulse(x,y,5,false,true);
 }
 const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
-function smoothStep(value){
-  const t=lim(value,0,1);
-  return t*t*(3-2*t);
-}
 function beamShape(age){
-  const expand=smoothStep((age-.035)/.09);
-  const settle=smoothStep((age-.135)/.105);
+  const expand=animationEase((age-.035)/.09);
+  const settle=animationEase((age-.135)/.105);
   const length=.25+.35*expand+.40*settle;
   const width=.35+.35*expand+.30*settle;
   return {body:beam.body*length,tip:beam.tip*length,wide:beam.wide*width};
 }
+const {ease:animationEase,damp:animationDamp,sample:samplePose,actionPhase,clips:animationClips}=KiAnimation;
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
 function turnToward(current,target,dt){
   if(!Number.isFinite(current))return target;
@@ -512,7 +510,7 @@ function renderBeam(p){
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
-  const opacity=smoothStep(remaining)*.83;
+  const opacity=animationEase(remaining)*.83;
   drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
 }
 function renderBeamCharge(p){
@@ -522,7 +520,7 @@ function renderBeamCharge(p){
   c.save();
   c.translate(x,y);
   c.rotate(Math.atan2(p.fy,p.fx));
-  drawStoryMotion('gatherLight',p.beamCharge,storyScale*(.40+smoothStep(load)*.60));
+  drawStoryMotion('gatherLight',p.beamCharge,storyScale*(.40+animationEase(load)*.60));
   c.restore();
 }
 function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=.32;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
@@ -817,7 +815,7 @@ function drawEnemyWarning(e){
 function advanceEnemy(e,p,dt){
   e.flash=Math.max(0,e.flash-dt);
   e.cd-=dt;
-  if(e.hurt>0){e.hurt=Math.max(0,e.hurt-dt);return}
+  if(e.hurt>0){e.hurt=Math.max(0,e.hurt-dt);e.stride=animationDamp(e.stride||0,0,dt,16);return}
   const dx=p.x-e.x,dy=p.y-e.y,distance=hyp(dx,dy);
   const ranged=e.kind==='ninja',reach=e.boss?32:23;
   if(e.attack){
@@ -840,6 +838,7 @@ function advanceEnemy(e,p,dt){
     }
     if(attack.time>=attack.windup+.22)e.attack=null;
     e.walking=false;
+    e.stride=animationDamp(e.stride||0,0,dt,14);
     return;
   }
   e.fx=dx/(distance||1);
@@ -850,13 +849,14 @@ function advanceEnemy(e,p,dt){
     e.attack={time:0,windup,x:e.fx,y:e.fy};
     e.cd=ranged?1.7:e.boss?1.1:1.4;
     e.walking=false;
+    e.stride=animationDamp(e.stride||0,0,dt,14);
     return;
   }
   const oldX=e.x,oldY=e.y;
   if(distance>(ranged?95:23)&&distance<250)approachEnemy(e,distance,dt,ranged);
   const travel=hyp(e.x-oldX,e.y-oldY);
   e.walking=travel>.001;
-  e.stride=(e.stride||0)+((e.walking?1:0)-(e.stride||0))*(1-Math.exp(-dt*12));
+  e.stride=animationDamp(e.stride||0,e.walking?1:0,dt,12);
   e.gait=((e.gait||0)+travel*(e.boss?.20:.27))%(Math.PI*2);
 }
 const hitStagger=.1;
@@ -885,12 +885,12 @@ for(const prop of breakableProps){
 }
 let p=player;
 const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
-p.rechargeVisual+=(rechargeTarget-p.rechargeVisual)*(1-Math.exp(-dt*(rechargeTarget?18:12)));
+p.rechargeVisual=animationDamp(p.rechargeVisual,rechargeTarget,dt,rechargeTarget?18:12);
 recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
 move(p,p.vx*dt,p.vy*dt);
 const travel=hyp(p.x-fromX,p.y-fromY);
-p.stride+=(lim(travel/Math.max(dt*67,.001),0,1)-p.stride)*(1-Math.exp(-dt*11));
+p.stride=animationDamp(p.stride,lim(travel/Math.max(dt*67,.001),0,1),dt,11);
 p.gait=(p.gait+travel*.24)%(Math.PI*2);
 if(attackBefore>0&&!p.attackHit&&p.attack<=p.attackDuration*(1-strikes[p.strike].impact)){p.attackHit=true;meleeHit(p)}
 p.faceAngle=turnToward(p.faceAngle,Math.atan2(p.fy,p.fx),dt);
@@ -985,24 +985,30 @@ function drawEnemyWalk(image,frame,o){
   c.drawImage(image,sourceX,0,combatCell*artScale,(split+2)*artScale,
     -26,-48+bob,combatCell,split+2);
 }
+const enemyAnimationRigs={
+  bandit:{attack:'lunge',reach:3.8},
+  thug:{attack:'lunge',reach:4.1},
+  ninja:{attack:'throw',reach:3.2},
+  soldier:{attack:'lunge',reach:3.5},
+  brute:{attack:'lunge',reach:5.4},
+};
 function drawEnemyPose(image,frame,o){
   if(!o.attack||o.hurt){
     drawEnemyWalk(image,frame,o);
     return;
   }
   const {time,windup}=o.attack;
-  const movement=time<windup
-    ?-Math.sin(time/windup*Math.PI*.5)*.42
-    :Math.exp(-(time-windup)*15);
+  const rig=o.animationRig||enemyAnimationRigs[o.kind];
+  const pose=samplePose(animationClips[rig.attack],actionPhase(time,windup,.22));
   const split=o.boss?34:36;
   const sourceX=frame*combatCell*artScale;
   const band=combatCell-split;
-  const drive=(o.boss?4.9:3.6)*movement;
+  const drive=rig.reach*pose.reach;
   c.drawImage(image,sourceX,split*artScale,combatCell*artScale,band*artScale,
     -26,split-48,combatCell,band);
   c.save();
-  c.translate(drive*Math.abs(o.attack.x),drive*o.attack.y*.72-Math.abs(drive)*.36);
-  c.transform(1,0,-movement*.10,1,0,0);
+  c.translate(drive*Math.abs(o.attack.x),drive*o.attack.y*.72-pose.lift*1.6);
+  c.transform(1,0,-pose.shear,pose.bend,0,0);
   c.drawImage(image,sourceX,0,combatCell*artScale,(split+3)*artScale,
     -26,-48,combatCell,split+3);
   c.restore();
@@ -1020,14 +1026,17 @@ function enemyArt(o){
   c.ellipse(0,2,o.boss?18:11,2.6,0,0,Math.PI*2);
   c.fill();
   if(o.koTime){
-    const progress=1-o.koTime/.29;
-    c.globalAlpha=1-progress*.94;
-    c.translate((o.hurtX||side)*progress*5,progress*2);
-    c.rotate(-side*progress*.66);
-    c.scale(1,1-progress*.32);
-  }else if(o.hurt)c.translate(o.hurtX*o.hurt*32,o.hurtY*o.hurt*32);
+    const pose=samplePose(animationClips.fall,1-o.koTime/.29);
+    c.globalAlpha=pose.opacity;
+    c.translate((o.hurtX||side)*pose.offset*5,pose.offset*2);
+    c.rotate(-side*pose.tilt*.66);
+    c.scale(1,pose.height);
+  }else if(o.hurt){
+    const pose=samplePose(animationClips.recoil,1-o.hurt/hitStagger);
+    c.translate(o.hurtX*pose.offset*3.2,o.hurtY*pose.offset*3.2);
+  }
   c.scale(side*(.77+.23*blend),1);
-  drawEnemyPose(combatAtlas,frame,o);
+  if(!rear||blend<1)drawEnemyPose(combatAtlas,frame,o);
   if(rear&&blend>0){
     c.save();
     c.globalAlpha*=blend;
@@ -1233,13 +1242,14 @@ function drawHeroProfile(o,type,angle){
   const bob=o.stride*Math.abs(Math.sin(o.gait));
   const canBlend=blend>0&&blend<1&&spr.complete&&spr.naturalWidth;
   const ink=canBlend?profileInk:c;
+  const inheritedAlpha=canBlend?1:ink.globalAlpha;
   ink.save();
   if(canBlend){
     ink.clearRect(0,0,profileLayer.width,profileLayer.height);
     ink.setTransform(3,0,0,3,72,132);
   }
   if(blend<1){
-    ink.globalAlpha=canBlend?1-blend:1;
+    ink.globalAlpha=inheritedAlpha*(canBlend?1-blend:1);
     ink.save();
     ink.translate(0,heroPose.feet);
     ink.scale(side*heroPose.guardWidth,heroPose.height);
@@ -1249,7 +1259,7 @@ function drawHeroProfile(o,type,angle){
   }
   if(blend>0&&spr.complete&&spr.naturalWidth){
     if(canBlend)ink.globalCompositeOperation='lighter';
-    ink.globalAlpha=canBlend?blend:1;
+    ink.globalAlpha=inheritedAlpha*(canBlend?blend:1);
     ink.translate(Math.cos(angle)*1.15,-bob*.75);
     const frame=o.stride>.35?Math.floor(o.gait*2/Math.PI)%4:0;
     drawMotionFrame(o,type,rear?1:0,frame,ink);
@@ -1263,7 +1273,9 @@ verticalStrikes.addEventListener('load',()=>{surgeStrikeArt=makeFormArt(vertical
 function drawStrike(o,type,progress){
   const strike=strikes[o.strike];
   const aim=Math.atan2(o.attackY,o.attackX);
-  const weight=lim(Math.min((progress-.09)/.18,(.92-progress)/.21),0,1);
+  const kicking=strike.frame===fighterFrames.kick;
+  const pose=samplePose(animationClips[kicking?'kick':'strike'],progress);
+  const {weight}=pose;
   if(weight===0){
     drawHeroProfile(o,type,aim);
     return;
@@ -1275,6 +1287,7 @@ function drawStrike(o,type,progress){
     const flip=Math.abs(o.attackX)>.16?Math.sign(o.attackX):o.strikeSide;
     c.save();
     c.globalAlpha*=weight;
+    c.translate(o.attackX*pose.reach,pose.reach*o.attackY*.80-pose.lift);
     c.scale(flip,1);
     drawCombatFrame(o.surge&&surgeStrikeArt?surgeStrikeArt:verticalStrikes,frame);
     c.restore();
@@ -1287,7 +1300,7 @@ function drawStrike(o,type,progress){
   const side=o.attackX<0?-1:1;
   c.save();
   c.globalAlpha*=weight;
-  c.translate((strike.frame===3?2:1)*o.attackX*weight,heroPose.feet);
+  c.translate((kicking?2.2:1.45)*o.attackX*pose.reach,heroPose.feet-pose.lift);
   c.scale(side*heroPose.width,heroPose.height);
   c.translate(0,-2);
   drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,strike.frame);
@@ -1301,9 +1314,10 @@ function character(o,type,referencePose){
   c.ellipse(0,3,8,3,0,0,Math.PI*2);
   c.fill();
   if(o.hurt){
-    c.translate(o.hurtX*o.hurt*38,o.hurtY*o.hurt*38);
-    c.rotate((o.hurtX||1)*o.hurt*1.1);
-    c.filter=o.hurt>.045?'brightness(1.65) saturate(.55)':'none';
+    const pose=samplePose(animationClips.recoil,1-o.hurt/hitStagger);
+    c.translate(o.hurtX*pose.offset*3.8,o.hurtY*pose.offset*3.8);
+    c.rotate((o.hurtX||1)*pose.tilt*.11);
+    c.filter=pose.flash>.04?`brightness(${1+.65*pose.flash}) saturate(${1-.45*pose.flash})`:'none';
   }
   if(referencePose){
     c.scale(poseSide(o),1);
@@ -1433,7 +1447,7 @@ function renderKiPulse(f){
   }
   c.restore();
 }
-function surgeIgnitionWeight(remaining){return smoothStep(remaining/.16)}
+function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 function energyAura(p){
   if(!storyReady())return;
   c.save();
@@ -1446,7 +1460,7 @@ function energyAura(p){
   if(ignition<1)drawStoryMotion(p.surge?'sustainAura':'rechargeAura',storyClock,storyScale,rippleHeight);
   if(ignition>0){
     const age=.32-p.surgeFlare;
-    const expansion=1+.20*smoothStep(age/.16);
+    const expansion=1+.20*animationEase(age/.16);
     c.globalAlpha=flicker*ignition;
     drawStoryMotion('igniteAura',age,storyScale*expansion,rippleHeight);
   }
