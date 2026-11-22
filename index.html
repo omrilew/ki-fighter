@@ -373,6 +373,46 @@ function energyOrigin(fighter,gesture){
   return {x:fighter.x+(first[0]+second[0])/2,y:fighter.y+(first[1]+second[1])/2};
 }
 function beamOrigin(p){return energyOrigin(p,'release')}
+// These tracks share their wound-up pose at the charge/release boundary.
+const beamCastTracks={
+  horizontal:{
+    ready:[5,-12], gathered:[-8,-12], elbows:[[-8,-13],[-2,-10]],
+    from:[[-3,-17],[4,-17]], drive:[[3,-16],[7,-16]], spread:[1.1,2.3],
+  },
+  north:{
+    ready:[3,-19], gathered:[5,-14], elbows:[[-4,-16],[9,-17]],
+    from:[[-5,-19],[5,-19]], drive:[[-5,-24],[5,-24]], spread:[2.7,0],
+  },
+  south:{
+    ready:[2,-13], gathered:[-6,-16], elbows:[[-9,-16],[2,-13]],
+    from:[[-5,-18],[5,-18]], drive:[[-5,-12],[5,-12]], spread:[2.7,0],
+  },
+};
+function beamCastPose(p){
+  const profile=gestureProfile(p);
+  const track=beamCastTracks[profile];
+  const charging=p.beamCharge!==null;
+  const coil=charging?animationEase(p.beamCharge/.25):1;
+  const thrust=charging?0:animationEase(p.beamAge/.095);
+  const side=profile==='horizontal'?poseSide(p):1;
+  const mix=(a,b,t)=>a+(b-a)*t;
+  const end=gestureHands(p,'release');
+  const center=track.ready.map((value,i)=>mix(value,track.gathered[i],coil));
+  const arms=end.map((hand,i)=>{
+    const offset=i===0?-1:1;
+    const palm=center.map((value,j)=>mix((value+track.spread[j]*offset)*(j===0?side:1),hand[j],thrust));
+    const elbow=track.elbows[i].map((value,j)=>{
+      const ready=track.from[i][j]+(j===1?5:0);
+      return mix(mix(ready,value,coil),track.drive[i][j],thrust)*(j===0?side:1);
+    });
+    return {shoulder:[track.from[i][0]*side,track.from[i][1]],elbow,palm};
+  });
+  return {arms,profile,side,lean:(thrust*.10-coil*(1-thrust)*.10)*side};
+}
+function beamCastOrigin(p){
+  const [a,b]=beamCastPose(p).arms;
+  return {x:p.x+(a.palm[0]+b.palm[0])/2,y:p.y+(a.palm[1]+b.palm[1])/2};
+}
 function beginBeam(p,source){
   if(p.beam||p.beamCharge!==null||p.ki<2)return;
   p.beamCharge=0;
@@ -386,14 +426,15 @@ function fireChargedBeam(p){
   spendKi(p,2);
   p.beam=1;
   p.beamAge=0;
-  const {x,y}=beamOrigin(p);
-  kiPulse(x,y,10);
+  const {x,y}=beamCastOrigin(p);
+  kiPulse(x,y,5);
   notice('KAMEHAMEHA!');
 }
 const beamTraceTime=.17;
+const beamEmergenceTime=.065;
 function finishBeam(p){
   if(p.beam){
-    const {x,y}=beamOrigin(p);
+    const {x,y}=beamCastOrigin(p);
     fx.push({beamTrace:true,x,y,angle:Math.atan2(p.fy,p.fx),age:p.beamAge,time:beamTraceTime});
   }
   resetBeam(p);
@@ -536,7 +577,6 @@ const kiActionClips={
   ignite:[[0,0],[.16,1],[.32,2],[.48,3],[.65,4],[1,5]],
   impact:[[0,2],[.25,3],[.5,4],[.66,5],[.83,6],[1,7]],
   beam:[[0,0],[.25,1],[.5,2],[.75,3],[1,0]],
-  gather:[[0,0],[.45,1],[1,2]],
 };
 function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   if(!storyReady())return;
@@ -561,28 +601,58 @@ function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
     const height=wide*3.5*flicker*thin;
     drawKiAction(2,kiActionClips.beam,(age*7)%1,-length/30,-height/2,length*128/120,height);
   }else drawStoryMotion('beam',age,length/136,.32*wide/beam.wide*flicker*thin);
+  // The textured shell moves around a stable luminous center.
+  const core=c.createLinearGradient(0,0,length,0);
+  core.addColorStop(0,'#dcffff');
+  core.addColorStop(.68,'#f3ffff');
+  core.addColorStop(.92,'#a3eeff');
+  core.addColorStop(1,'#70d8ff00');
+  c.fillStyle=core;
+  c.beginPath();
+  c.moveTo(0,-wide*.15*thin);
+  c.quadraticCurveTo(length*.54,-wide*.28*thin,length*.83,-wide*.26*thin);
+  c.lineTo(length,0);
+  c.quadraticCurveTo(length*.70,wide*.41*thin,0,wide*.15*thin);
+  c.closePath();
+  c.fill();
   c.restore();
 }
 function renderBeam(p){
-  const {x,y}=beamOrigin(p);
-  drawBeamEffect(x,y,Math.atan2(p.fy,p.fx),p.beamAge);
+  const {x,y}=beamCastOrigin(p);
+  const emergence=animationEase(p.beamAge/beamEmergenceTime);
+  if(emergence<1){
+    c.save();
+    c.globalAlpha=1-emergence;
+    renderKiOrb(x,y,4.3);
+    c.restore();
+  }
+  drawBeamEffect(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence);
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
-  const opacity=animationEase(remaining)*.83;
+  const opacity=animationEase(remaining)*animationEase(f.age/beamEmergenceTime)*.83;
   drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
 }
 function renderBeamCharge(p){
-  if(!storyReady()||!storyMotionReady()&&storyPose(p,false)==='gather')return;
-  const {x,y}=energyOrigin(p,'gather');
+  const {x,y}=beamCastOrigin(p);
   const load=lim(p.beamCharge/beam.chargeTime,0,1);
   c.save();
   c.translate(x,y);
   c.rotate(Math.atan2(p.fy,p.fx));
-  if(atlasReady(kiActions)){
-    const size=13+7*animationEase(load);
-    drawKiAction(3,kiActionClips.gather,load,-size/2,-size/2,size,size);
-  }else drawStoryMotion('gatherLight',p.beamCharge,storyScale*(.40+animationEase(load)*.60));
+  const strength=animationEase(load);
+  renderKiOrb(0,0,1.7+2.6*strength);
+  c.strokeStyle='#adf2ff';
+  c.lineCap='round';
+  for(let i=0;i<5;i++){
+    const phase=(p.beamCharge*5+i/5)%1;
+    const angle=i*2.399+p.beamCharge*2;
+    const distance=4+(1-phase)*11;
+    c.globalAlpha=Math.sin(phase*Math.PI)*(.25+strength*.65);
+    c.beginPath();
+    c.moveTo(Math.cos(angle)*distance,Math.sin(angle)*distance);
+    c.lineTo(Math.cos(angle)*(distance-3),Math.sin(angle)*(distance-3));
+    c.stroke();
+  }
   c.restore();
 }
 function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=.32;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
@@ -1415,10 +1485,50 @@ function drawGuard(o,ink=c){
 function drawMotionFrame(o,type,row,frame=0,ink=c){
   ink.drawImage(spr,(type*104+frame*26)*artScale,row*36*artScale,26*artScale,36*artScale,-13,-30,26,36);
 }
+const sideCastBody=new Path2D('M -18 -42 H 16 V -21 H 4 V -12 H 15 V 6 H -16 V -12 H -5 V -21 H -18 Z');
+const verticalCastBody=new Path2D('M -13 -30 H 13 V -20 H 4.5 V -8 H 13 V 6 H -13 V -8 H -4.5 V -20 H -13 Z');
+function drawBeamCast(o,type){
+  const {arms,profile,side,lean}=beamCastPose(o);
+  const horizontal=profile==='horizontal';
+  c.save();
+  if(horizontal){
+    c.scale(side,1);
+    c.transform(1,0,-lean*side,1,0,0);
+    c.clip(sideCastBody);
+    c.translate(0,heroPose.feet);
+    c.scale(heroPose.width,heroPose.height);
+    c.translate(0,-2);
+    drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,fighterFrames.guard);
+  }else{
+    c.clip(verticalCastBody);
+    drawMotionFrame(o,type,profile==='north'?1:0);
+  }
+  c.restore();
+  for(const {shoulder,elbow,palm} of arms){
+    c.lineCap='round';
+    c.lineJoin='round';
+    c.beginPath();
+    c.moveTo(...shoulder);
+    c.lineTo(...elbow);
+    c.lineTo(...palm);
+    c.lineWidth=4.7;
+    c.strokeStyle='#271c2b';
+    c.stroke();
+    c.lineWidth=2.8;
+    c.strokeStyle='#d28b55';
+    c.stroke();
+    const [x,y]=palm;
+    c.fillStyle='#293956';
+    c.fillRect(x-2,y-1.9,4,3.8);
+    c.fillStyle='#ffd5a0';
+    c.beginPath();
+    c.ellipse(x,y,1.55,1.85,0,0,Math.PI*2);
+    c.fill();
+  }
+}
 function drawVerticalCast(o,type,direction){
   c.save();
-  const body=new Path2D('M -13 -30 H 13 V -20 H 4.5 V -8 H 13 V 6 H -13 V -8 H -4.5 V -20 H -13 Z');
-  c.clip(body);
+  c.clip(verticalCastBody);
   drawMotionFrame(o,type,direction<0?1:0);
   c.restore();
   const gesture=o.beamCharge!==null?'gather':o.beam?'release':'blast';
@@ -1544,9 +1654,13 @@ function character(o,type,referencePose){
     c.restore();
     return;
   }
-  // The storyboard gather contains a baked-in orb. Use the clean fighter pose
-  // with the separately rendered charge effect whenever the fighter atlas is ready.
-  if(referencePose&&(!atlasReady(combatAtlas)||(!o.surge&&referencePose!=='gather'))){
+  const beamCasting=o.beam||o.beamCharge!==null;
+  if(beamCasting&&atlasReady(castDirection(o)?spr:combatAtlas)){
+    drawBeamCast(o,type);
+    c.restore();
+    return;
+  }
+  if(referencePose&&(!atlasReady(combatAtlas)||!o.surge)){
     c.scale(poseSide(o),1);
     const body=referencePose+'Body';
     if(storyMotionReady()&&storyMotion[body]){
