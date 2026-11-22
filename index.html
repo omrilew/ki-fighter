@@ -377,7 +377,7 @@ function beamOrigin(p){return energyOrigin(p,'release')}
 const beamCastTracks={
   horizontal:{
     ready:[5,-12], gathered:[-8,-12], elbows:[[-8,-13],[-2,-10]],
-    from:[[-3,-17],[4,-17]], drive:[[3,-16],[7,-16]], spread:[1.1,2.3],
+    from:[[-3,-20],[4,-20]], drive:[[3,-16],[7,-16]], spread:[1.1,2.3],
   },
   north:{
     ready:[3,-19], gathered:[5,-14], elbows:[[-4,-16],[9,-17]],
@@ -576,45 +576,61 @@ const kiActionClips={
   aura:[[0,4],[.25,5],[.5,6],[.75,7],[1,4]],
   ignite:[[0,0],[.16,1],[.32,2],[.48,3],[.65,4],[1,5]],
   impact:[[0,2],[.25,3],[.5,4],[.66,5],[.83,6],[1,7]],
-  beam:[[0,0],[.25,1],[.5,2],[.75,3],[1,0]],
 };
 function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
-  if(!storyReady())return;
   const {body,tip,wide}=beamShape(shapeAge);
   const length=body+tip;
-  const flicker=1+.06*Math.sin(age*35);
+  const width=wide*thin;
+  const time=age*40;
   c.save();
   c.translate(x,y);
   c.rotate(angle);
-  const radius=length*.56;
-  const wash=c.createRadialGradient(length*.54,0,1,length*.54,0,radius);
-  wash.addColorStop(0,'#48acff46');
-  wash.addColorStop(.58,'#2788ff27');
-  wash.addColorStop(1,'#268eff00');
   c.globalAlpha=opacity;
   c.save();
-  c.scale(1,.43*thin+.21);
-  c.fillStyle=wash;
-  c.fillRect(0,-radius,length,radius*2);
+  c.translate(length*.57,0);
+  c.scale(length*.59,width*1.85);
+  const glow=c.createRadialGradient(0,0,0,0,0,1);
+  glow.addColorStop(0,'#258fff83');
+  glow.addColorStop(.65,'#258fff38');
+  glow.addColorStop(1,'#259aff00');
+  c.fillStyle=glow;
+  c.fillRect(-1,-1,2,2);
   c.restore();
-  if(atlasReady(kiActions)){
-    const height=wide*3.5*flicker*thin;
-    drawKiAction(2,kiActionClips.beam,(age*7)%1,-length/30,-height/2,length*128/120,height);
-  }else drawStoryMotion('beam',age,length/136,.32*wide/beam.wide*flicker*thin);
-  // The textured shell moves around a stable luminous center.
-  const core=c.createLinearGradient(0,0,length,0);
-  core.addColorStop(0,'#dcffff');
-  core.addColorStop(.68,'#f3ffff');
-  core.addColorStop(.92,'#a3eeff');
-  core.addColorStop(1,'#70d8ff00');
-  c.fillStyle=core;
-  c.beginPath();
-  c.moveTo(0,-wide*.15*thin);
-  c.quadraticCurveTo(length*.54,-wide*.28*thin,length*.83,-wide*.26*thin);
-  c.lineTo(length,0);
-  c.quadraticCurveTo(length*.70,wide*.41*thin,0,wide*.15*thin);
-  c.closePath();
-  c.fill();
+
+  // Preserve a bright center while the plasma travels along the outside.
+  const shell=c.createLinearGradient(0,0,length,0);
+  shell.addColorStop(0,'#83ebff');
+  shell.addColorStop(.42,'#178cf5');
+  shell.addColorStop(1,'#52cffe');
+  const layers=[[shell,1],['#43caff',.72],['#eaffff',.46]];
+  for(const [color,scale] of layers){
+    c.beginPath();
+    c.moveTo(0,-width*.24*scale);
+    for(const side of [-1,1]){
+      for(let i=1;i<16;i++){
+        const u=(side<0?i:16-i)/16;
+        const envelope=.24+.75*Math.sin(Math.PI*Math.pow(u,1.8));
+        const ripple=Math.sin(u*31-time+side)*.14+Math.sin(u*63-time*.78)*.07;
+        c.lineTo(length*u,side*width*scale*(envelope+ripple));
+      }
+      if(side<0)c.lineTo(length,0);
+    }
+    c.closePath();
+    c.fillStyle=color;
+    c.fill();
+  }
+  c.strokeStyle='#90ecff';
+  c.lineWidth=Math.max(.3,width*.087);
+  for(let i=0;i<6;i++){
+    const u=(age*(3.7+i*.16)+i*.19)%1;
+    const side=i%2?1:-1;
+    const offset=side*width*(.55+.5*u);
+    c.globalAlpha=opacity*Math.sin(Math.PI*u)*.83;
+    c.beginPath();
+    c.moveTo(length*u,offset);
+    c.lineTo(length*Math.max(0,u-.08),offset+side*width*.22);
+    c.stroke();
+  }
   c.restore();
 }
 function renderBeam(p){
@@ -1487,13 +1503,17 @@ function drawMotionFrame(o,type,row,frame=0,ink=c){
 }
 const sideCastBody=new Path2D('M -18 -42 H 16 V -21 H 4 V -12 H 15 V 6 H -16 V -12 H -5 V -21 H -18 Z');
 const verticalCastBody=new Path2D('M -13 -30 H 13 V -20 H 4.5 V -8 H 13 V 6 H -13 V -8 H -4.5 V -20 H -13 Z');
-function drawBeamCast(o,type){
-  const {arms,profile,side,lean}=beamCastPose(o);
+const polishedSideTorso=new Path2D('M -18 -43 H 18 V -22 H 5 V -13 H 18 V 3 H -18 V -13 H -5 V -22 H -18 Z');
+const polishedFrontTorso=new Path2D('M -18 -43 H 18 V -22 H 6 V -11 H 18 V 3 H -18 V -11 H -6 V -22 H -18 Z');
+function drawCastBody(o,type,profile,side,lean=0){
   const horizontal=profile==='horizontal';
   c.save();
-  if(horizontal){
-    c.scale(side,1);
-    c.transform(1,0,-lean*side,1,0,0);
+  c.scale(side,1);
+  c.transform(1,0,-lean*side,1,0,0);
+  if(atlasReady(polishedHero)){
+    c.clip(horizontal?polishedSideTorso:polishedFrontTorso);
+    drawPolishedHero(o,horizontal?3:profile==='north'?2:1,0);
+  }else if(horizontal){
     c.clip(sideCastBody);
     c.translate(0,heroPose.feet);
     c.scale(heroPose.width,heroPose.height);
@@ -1504,18 +1524,28 @@ function drawBeamCast(o,type){
     drawMotionFrame(o,type,profile==='north'?1:0);
   }
   c.restore();
+}
+function drawBeamCast(o,type){
+  const {arms,profile,side,lean}=beamCastPose(o);
+  drawCastBody(o,type,profile,side,lean);
+  drawCastArms(arms);
+}
+function drawCastArms(arms){
   for(const {shoulder,elbow,palm} of arms){
     c.lineCap='round';
     c.lineJoin='round';
     c.beginPath();
     c.moveTo(...shoulder);
-    c.lineTo(...elbow);
+    c.quadraticCurveTo(shoulder[0],elbow[1],...elbow);
     c.lineTo(...palm);
     c.lineWidth=4.7;
     c.strokeStyle='#271c2b';
     c.stroke();
     c.lineWidth=2.8;
     c.strokeStyle='#d28b55';
+    c.stroke();
+    c.lineWidth=1;
+    c.strokeStyle='#f4b979';
     c.stroke();
     const [x,y]=palm;
     c.fillStyle='#293956';
@@ -1525,6 +1555,20 @@ function drawBeamCast(o,type){
     c.ellipse(x,y,1.55,1.85,0,0,Math.PI*2);
     c.fill();
   }
+}
+function drawPolishedBlast(o,type){
+  const profile=gestureProfile(o);
+  const horizontal=profile==='horizontal';
+  const side=horizontal?poseSide(o):1;
+  const [hand]=gestureHands(o,'blast');
+  const recoil=animationEase(1-o.blastPose/.15);
+  const elbowY=horizontal?-19:standardHands[profile].elbowY;
+  drawCastBody(o,type,profile,side,.06*(1-recoil)*side);
+  drawCastArms([
+    {shoulder:[-4*side,-21],elbow:[-7*side,-16],palm:[-3*side,-15]},
+    {shoulder:[4*side,-21],elbow:[hand[0]*.62,elbowY],
+      palm:[hand[0]*(1-.55*recoil),hand[1]+(-17-hand[1])*recoil]},
+  ]);
 }
 function drawVerticalCast(o,type,direction){
   c.save();
@@ -1681,10 +1725,30 @@ function character(o,type,referencePose){
     return;
   }
   const beamCasting=o.beam||o.beamCharge!==null;
-  if(beamCasting&&atlasReady(castDirection(o)?spr:combatAtlas)){
+  if(beamCasting&&(atlasReady(polishedHero)||atlasReady(castDirection(o)?spr:combatAtlas))){
     drawBeamCast(o,type);
     c.restore();
     return;
+  }
+  if(atlasReady(polishedHero)){
+    if(o.blastPose>0&&o.attack<=0&&!beamCasting){
+      drawPolishedBlast(o,type);
+      c.restore();
+      return;
+    }
+    if(referencePose==='recharge'){
+      drawHeroProfile({...o,stride:0},type,o.faceAngle);
+      c.restore();
+      return;
+    }
+    if(o.dash>0&&!beamCasting&&o.attack<=0){
+      const {side,rear,blend}=facingProfile(o.faceAngle);
+      const row=blend>=.5?(rear?2:1):0;
+      c.transform(1,0,row===0?-side*.24:0,1,0,0);
+      drawPolishedHero(o,row,o.dash>.095?2:5,row===0?side:1);
+      c.restore();
+      return;
+    }
   }
   if(referencePose&&(!atlasReady(combatAtlas)||!o.surge)){
     c.scale(poseSide(o),1);
