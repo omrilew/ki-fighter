@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');
+const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)].map(x=>x[1]).filter(x=>x.trim());
+assert(scripts.length>0,'Missing inline game script');
+for(const script of scripts)new vm.Script(script,{filename:'index.html'});
+for(const token of ['function canSwitchFighter()','function selectFighter(','function saveWorld()','function loadWorld()','function resetAdventure()','function openRpgMenu(','function renderRpgMenu()','function questSpawn()'])assert(html.includes(token),'Missing feature: '+token);
+assert(html.includes('SAVE_VERSION=3'),'Save schema must be versioned');
+assert(html.includes("'ki-fighter-forest-v2'"),'Prior save migration missing');
+assert(html.includes('if(selectFighter(i,true))'),'Menu must use shared switch checks');
+assert(!html.includes('if(kills>0)saveWorld()'),'Do not save every frame');
+assert(!html.includes("menuText('p','Progress saved on this device.')")||html.includes('function saveWorld()'),'Save UI missing persistence');
+console.log('Game inline JavaScript syntax and structural smoke checks passed.');
