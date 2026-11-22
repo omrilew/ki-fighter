@@ -265,6 +265,7 @@ function meleeHit(p){
   }
   sceneryStrike(p.x,p.y,p.attackX,p.attackY,strike.range,edge,damage);
 }
+const kiBlast={speed:140,range:304.5};
 function fire(){
   const p=player;
   if(p.ki<2){notice('NOT ENOUGH KI');return}
@@ -272,7 +273,7 @@ function fire(){
   spendKi(p,2);
   p.blastPose=.15;
   const {x,y}=energyOrigin(p,'blast');
-  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24),time:1.45});
+  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24),time:kiBlast.range/kiBlast.speed});
   kiPulse(x,y,5,false,true);
 }
 const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
@@ -867,7 +868,7 @@ if(p.beam){
   p.beamCharge+=dt;
   if(p.beamCharge>=beam.chargeTime)fireChargedBeam(p);
 }
-for(let b of balls){b.x+=b.dx*210*dt;b.y+=b.dy*210*dt;b.time-=dt;
+for(let b of balls){b.x+=b.dx*kiBlast.speed*dt;b.y+=b.dy*kiBlast.speed*dt;b.time-=dt;
 if(b.time>0&&sceneryProjectile(b,b.damage)){
   kiPulse(b.x,b.y,5,false,true);
   b.time=0;
@@ -1327,7 +1328,7 @@ function renderKiShot(b,enemy=false){
   c.translate(b.x,b.y);
   c.rotate(Math.atan2(b.dy,b.dx));
   if(!enemy&&storyReady()){
-    drawStoryMotion('blast',1.45-b.time,.245);
+    drawStoryMotion('blast',kiBlast.range/kiBlast.speed-b.time,.245);
     c.restore();
     return;
   }
