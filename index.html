@@ -125,9 +125,11 @@ function beamShape(age){
   const stage=beamStages[age<.09?0:age<.22?1:2];
   return {body:beam.body*stage.length,tip:beam.tip*stage.length,wide:beam.wide*stage.width};
 }
+const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
 function poseSide(p){return p.fx<0?-1:1}
+function poseHeight(y){return heroPose.feet+(y-2)*heroPose.height}
 function beamOrigin(p){
-  return {x:Math.round(p.x)+poseSide(p)*9,y:Math.round(p.y)-15};
+  return {x:Math.round(p.x)+poseSide(p)*9*heroPose.width,y:Math.round(p.y)+poseHeight(-15)};
 }
 function beginBeam(p){
   if(p.beam||p.beamCharge!==null||p.ki<2)return;
@@ -157,13 +159,11 @@ function beamHit(dt){
   const {body,tip,wide}=beamShape(p.beamAge);
   for(const e of enemies){
     if(e.hp<=0)continue;
-    const vx=e.x-origin.x,vy=e.y-15-origin.y;
+    const vx=e.x-origin.x,vy=e.y+poseHeight(-15)-origin.y;
     const distance=vx*dx+vy*dy;
     if(distance<0||distance>=body+tip)continue;
     const side=Math.abs(vx*dy-vy*dx);
-    const width=distance<=body
-      ?beam.start+(wide-beam.start)*distance/body
-      :wide*Math.sqrt(1-((distance-body)/tip)**2);
+    const width=beamWidth(distance,body,tip,wide);
     if(side<=width){
       e.hp-=dt*34*p.beamPower*(1+(p.kistat-1)*.24);
       e.flash=.05;
@@ -171,35 +171,54 @@ function beamHit(dt){
     }
   }
 }
+function beamWidth(distance,body,tip,wide){
+  if(distance<=body)return beam.start+(wide-beam.start)*(distance/body)**2;
+  return wide*Math.sqrt(Math.max(0,1-((distance-body)/tip)**2));
+}
+const beamPixels=document.createElement('canvas');
+beamPixels.width=beam.body+beam.tip;
+beamPixels.height=beam.wide*2+7;
+const beamInk=beamPixels.getContext('2d');
 function renderBeam(p){
-  c.save();
   const origin=beamOrigin(p);
   const {body,tip,wide}=beamShape(p.beamAge);
+  const length=body+tip;
+  c.save();
   c.translate(origin.x,origin.y);
   c.rotate(Math.atan2(p.fy,p.fx));
-  const rim=c.createLinearGradient(0,0,body+tip,0);
-  rim.addColorStop(0,'#c0fcff');
-  rim.addColorStop(.65,'#40cbff');
-  rim.addColorStop(1,'#258df3');
-  function layer(scale,color){
-    c.beginPath();
-    c.moveTo(0,-beam.start*scale);
-    c.lineTo(body,-wide*scale);
-    c.ellipse(body,0,tip*scale,wide*scale,0,-Math.PI/2,Math.PI/2);
-    c.lineTo(0,beam.start*scale);
-    c.closePath();
-    c.fillStyle=color;
-    c.fill();
+  const pulse=Math.floor(p.beamAge*36);
+
+  // Render at world-pixel resolution so the beam shares the sprites' stepped edges.
+  const center=(beamPixels.height-1)/2;
+  beamInk.clearRect(0,0,beamPixels.width,beamPixels.height);
+  for(let x=0;x<length;x++){
+    const r=beamWidth(x+.5,body,tip,wide);
+    const tail=Math.min(1,(length-x)/4);
+    const edge=Math.max(1,Math.round(r));
+    const blue=Math.max(0,Math.round(r*.81*tail));
+    const cyan=Math.max(0,Math.round(r*.65*tail));
+    const white=Math.max(0,Math.round(r*.49*tail));
+    fill(x,center-edge,1,edge*2+1,'#1151bd',beamInk);
+    if(blue)fill(x,center-blue,1,blue*2+1,'#078ff4',beamInk);
+    if(cyan)fill(x,center-cyan,1,cyan*2+1,'#36e8ff',beamInk);
+    fill(x,center-white,1,white*2+1,'#f1ffff',beamInk);
+    if(x<length-4&&(x+pulse*3)%8===0){
+      fill(x,center-edge-1,2,1,'#2faeff',beamInk);
+      fill(x,center+edge+1,2,1,'#1663e1',beamInk);
+    }
   }
-  c.globalAlpha=.15+.05*Math.sin(now*30);
-  layer(1.24,'#2599ff');
-  c.globalAlpha=1;
-  layer(1,rim);
-  layer(.62,'#e5ffff');
+  c.drawImage(beamPixels,0,-center);
+  const flash=c.createRadialGradient(0,0,.5,0,0,6);
+  flash.addColorStop(0,'#eaffffdf');
+  flash.addColorStop(.35,'#55dfff80');
+  flash.addColorStop(1,'#258fff00');
+  c.fillStyle=flash;
+  c.fillRect(-6,-6,12,12);
+  fill(-1,-1,3,3,'#efffff');
   c.restore();
 }
 function renderBeamCharge(p){
-  const x=Math.round(p.x)+poseSide(p)*2,y=Math.round(p.y)-15;
+  const x=Math.round(p.x)+poseSide(p)*2*heroPose.width,y=Math.round(p.y)+poseHeight(-15);
   const charge=lim(p.beamCharge/.55,0,1);
   const radius=2+charge*4;
   const light=c.createRadialGradient(x,y,1,x,y,radius*2.3);
@@ -417,7 +436,10 @@ function character(o,type){
   if(combatAtlas.complete&&combatAtlas.naturalWidth&&(o.attack>0||o.beam||o.beamCharge!==null||!o.walking)){
     const progress=o.attack>0?1-o.attack/o.attackDuration:0;
     const frame=o.beam?5:o.beamCharge!==null?4:o.attack>0&&progress>=.25&&progress<.76?o.combo:0;
-    c.scale(o.attack>0&&o.attackX!==0?Math.sign(o.attackX):poseSide(o),1);
+    const side=o.attack>0&&o.attackX!==0?Math.sign(o.attackX):poseSide(o);
+    c.translate(0,heroPose.feet);
+    c.scale(side*(frame===0?heroPose.guardWidth:heroPose.width),heroPose.height);
+    c.translate(0,-2);
     drawCombatFrame(combatAtlas,frame);
   }else if(spr.complete&&spr.naturalWidth){
     const row=Math.abs(o.fx)>.55?2:o.fy<-.4?1:0;
