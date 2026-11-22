@@ -33,7 +33,11 @@
 #kfg .acts [data-a=ki]{--action:#6dd6fb;min-height:56px;background:linear-gradient(#215071,#152b42);border-color:#70bedc85}
 #kfg .acts [data-a=ki].charging{box-shadow:inset 0 1px #fff2,inset 0 -3px var(--action),0 0 0 1px var(--action)}
 #kfg .keyboard{display:none;margin:0 0 4px;color:#fff;background:#111f34e8;border-radius:10px;padding:7px 11px;font-size:12px;text-align:center}
-@media (min-width:800px) and (pointer:fine){#kfg .keyboard{display:block}}
+@media (pointer:fine) and (hover:hover){
+  #kfg .keyboard{display:block;margin-inline:auto}
+  #kfg .stick,#kfg .acts{display:none}
+  #kfg canvas{cursor:crosshair}
+}
 @media(max-height:490px) and (min-width:500px){
   #kfg .stick{--size:94px}
   #kfg .acts{grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
@@ -69,7 +73,7 @@
   </div>
   <div class="controls">
     <div class="stick" role="img" aria-label="Movement joystick"><span class="stick-knob"></span></div>
-    <p class="keyboard">WASD / Arrows to move · J Strike · K Blast · B Hold, then release · R Charge · Space Dash · F Fly · L Surge</p>
+    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · Esc pause</p>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
@@ -78,7 +82,7 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast or hold it for Kamehameha. Release to fire. Hold Charge to refill Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfplay">▶ PLAY</button></div><div id="kflevel" style="display:none;position:absolute;inset:0;z-index:6;background:#0b1539e8;align-items:center;justify-content:center;flex-direction:column;gap:10px"><h2 style="color:#ffe38a;margin:0">LEVEL UP!</h2><div id="kfpoints"></div><button data-stat="str">⚔ STR — Melee power</button><button data-stat="ki">✦ KI — Energy damage</button><button data-stat="dex">➤ DEX — Speed</button><div id="kfstats"></div></div>
+<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or hold and release to fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfplay">▶ PLAY</button></div><div id="kflevel" style="display:none;position:absolute;inset:0;z-index:6;background:#0b1539e8;align-items:center;justify-content:center;flex-direction:column;gap:10px"><h2 style="color:#ffe38a;margin:0">LEVEL UP!</h2><div id="kfpoints"></div><button data-stat="str">⚔ STR — Melee power</button><button data-stat="ki">✦ KI — Energy damage</button><button data-stat="dex">➤ DEX — Speed</button><div id="kfstats"></div></div>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=720,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/hero-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -192,10 +196,10 @@ ambientShade.addColorStop(1,'#101e314a');
 bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,beamPower:1,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,charge:0};enemies=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
+function start(){resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,facing:1,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,beamPower:1,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,charge:0};enemies=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
 function end(win){resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
 const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
-function spawn(){wave++;let n=wave===3?4:wave+2;for(let i=0;i<n;i++){let x,y;for(let j=0;j<100;j++){let a=rnd(0,7),r=rnd(85,160);x=lim(player.x+Math.cos(a)*r,30,MW-30);y=lim(player.y+Math.sin(a)*r,40,MH-30);if(!solid(x,y))break}let kind=wave===3&&i===0?'brute':wave===2&&i===3?'soldier':['bandit','thug','ninja'][i%3],hp={bandit:38,thug:82,ninja:43,soldier:38,brute:220}[kind];enemies.push({x,y,hp,max:hp,kind,boss:kind==='brute',fx:0,fy:1,walking:true,flash:0,cd:rnd(.5,1.2),phase:rnd(0,7)})}notice(wave===3?'BOSS BRUTE!':'WAVE '+wave+' / 3')}
+function spawn(){wave++;let n=wave===3?4:wave+2;for(let i=0;i<n;i++){let x,y;for(let j=0;j<100;j++){let a=rnd(0,7),r=rnd(85,160);x=lim(player.x+Math.cos(a)*r,30,MW-30);y=lim(player.y+Math.sin(a)*r,40,MH-30);if(!solid(x,y))break}let kind=wave===3&&i===0?'brute':wave===2&&i===3?'soldier':['bandit','thug','ninja'][i%3],hp={bandit:27,thug:59,ninja:32,soldier:29,brute:158}[kind];enemies.push({x,y,hp,max:hp,kind,boss:kind==='brute',fx:0,fy:1,walking:true,flash:0,cd:rnd(.5,1.2),phase:rnd(0,7)})}notice(wave===3?'BOSS BRUTE!':'WAVE '+wave+' / 3')}
 function punch(){
   const p=player;
   if(p.cd>0||p.beam||p.beamCharge!==null)return;
@@ -234,19 +238,24 @@ function beamShape(age){
   return {body:beam.body*stage.length,tip:beam.tip*stage.length,wide:beam.wide*stage.width};
 }
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
-function poseSide(p){return p.fx<0?-1:1}
+function poseSide(p){return Math.abs(p.fx)>.16?Math.sign(p.fx):p.facing||1}
+function castDirection(p){return Math.abs(p.fy)>Math.abs(p.fx)*1.22?Math.sign(p.fy):0}
 function poseHeight(y){return heroPose.feet+(y-2)*heroPose.height}
 function beamOrigin(p){
-  return {x:Math.round(p.x)+poseSide(p)*9*heroPose.width,y:Math.round(p.y)+poseHeight(-15)};
+  const vertical=castDirection(p);
+  const x=vertical?0:poseSide(p)*9*heroPose.width;
+  const y=vertical<0?-27:vertical>0?-8:poseHeight(-15);
+  return {x:p.x+x,y:p.y+y};
 }
-function beginBeam(p){
+function beginBeam(p,source){
   if(p.beam||p.beamCharge!==null||p.ki<2)return;
   p.beamCharge=0;
+  p.beamChargeSource=source;
   p.attack=0;
   notice('FOCUSING KI');
 }
-function releaseBeam(p){
-  if(p.beamCharge===null)return;
+function releaseBeam(p,source){
+  if(p.beamCharge===null||p.beamChargeSource!==source)return;
   const charge=p.beamCharge;
   p.beamCharge=null;
   if(p.ki<2)return;
@@ -269,10 +278,11 @@ function beamHit(dt){
     if(e.hp<=0)continue;
     const vx=e.x-origin.x,vy=e.y+poseHeight(-15)-origin.y;
     const distance=vx*dx+vy*dy;
-    if(distance<0||distance>=body+tip)continue;
+    const radius=e.boss?11:8;
+    const along=lim(distance,0,body+tip);
     const side=Math.abs(vx*dy-vy*dx);
-    const width=beamWidth(distance,body,tip,wide);
-    if(side<=width){
+    const width=beamWidth(along,body,tip,wide);
+    if(hyp(distance-along,Math.max(0,side-width))<=radius){
       e.hp-=dt*34*p.beamPower*(1+(p.kistat-1)*.24);
       e.flash=.05;
       if(Math.random()<dt*20)burst(e.x,e.y-15,'#9af5ff',2);
@@ -333,7 +343,8 @@ function renderBeam(p){
   c.restore();
 }
 function renderBeamCharge(p){
-  const x=Math.round(p.x)+poseSide(p)*2*heroPose.width,y=Math.round(p.y)+poseHeight(-15);
+  const vertical=castDirection(p);
+  const {x,y}=vertical?beamOrigin(p):{x:p.x+poseSide(p)*2*heroPose.width,y:p.y+poseHeight(-15)};
   const charge=lim(p.beamCharge/.55,0,1);
   const radius=2+charge*4;
   const light=c.createRadialGradient(x,y,1,x,y,radius*2.3);
@@ -351,7 +362,7 @@ function renderBeamCharge(p){
     fill(x+Math.cos(angle)*radius*1.6,y+Math.sin(angle)*radius*1.6,1,1,'#9af5ff');
   }
 }
-function act(a,down){if(mode!=='play')return;let p=player;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p);else releaseBeam(p)}if(a==='dash'&&down&&p.dashCD<=0&&p.ki>=5){p.ki-=5;p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;notice('SURGE MODE!');burst(p.x,p.y-15,'#fff0a0',18)}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
+function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&p.dashCD<=0&&p.ki>=5){p.ki-=5;p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;notice('SURGE MODE!');burst(p.x,p.y-15,'#fff0a0',18)}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
 let stickPointer=null,stickX=0,stickY=0;
 function resetStick(){
@@ -389,7 +400,39 @@ for(const event of ['pointerup','pointercancel','lostpointercapture']){
   stick.addEventListener(event,e=>{if(e.pointerId===stickPointer)resetStick()});
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden){resetStick();stopKi();resetBeam(player)}});
-const kmap={KeyW:'up',ArrowUp:'up',KeyA:'left',ArrowLeft:'left',KeyS:'down',ArrowDown:'down',KeyD:'right',ArrowRight:'right',KeyJ:'hit',KeyK:'ki',KeyR:'charge',KeyB:'beam',KeyF:'fly',KeyL:'surge',Space:'dash'},pressed=new Set();window.addEventListener('keydown',e=>{let a=kmap[e.code];if(!a||pressed.has(e.code))return;e.preventDefault();pressed.add(e.code);held.add(a);act(a,true)});window.addEventListener('keyup',e=>{let a=kmap[e.code];if(!a)return;e.preventDefault();pressed.delete(e.code);held.delete(a);act(a,false)});window.addEventListener('blur',()=>{
+const kmap={
+  KeyW:'up',ArrowUp:'up',KeyA:'left',ArrowLeft:'left',KeyS:'down',ArrowDown:'down',
+  KeyD:'right',ArrowRight:'right',KeyJ:'hit',KeyK:'ki',KeyR:'charge',
+  KeyB:'beam',KeyF:'fly',KeyL:'surge',ShiftLeft:'dash',ShiftRight:'dash',Space:'dash',
+};
+const pressed=new Set();
+window.addEventListener('keydown',e=>{
+  if(e.code==='Escape'){
+    if(e.repeat)return;
+    if(mode==='paused')resumeButton.click();
+    else if(!powersMenu.hidden)setPowers(false);
+    else pauseButton.click();
+    return;
+  }
+  const action=kmap[e.code];
+  if(mode!=='play'||!action||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.code==='Space'&&e.target instanceof HTMLButtonElement)return;
+  e.preventDefault();
+  if(pressed.has(e.code))return;
+  const alreadyHeld=Array.from(pressed).some(code=>kmap[code]===action);
+  pressed.add(e.code);
+  held.add(action);
+  if(!alreadyHeld)act(action,true);
+});
+window.addEventListener('keyup',e=>{
+  const action=kmap[e.code];
+  if(!action||!pressed.delete(e.code))return;
+  e.preventDefault();
+  if(Array.from(pressed).some(code=>kmap[code]===action))return;
+  held.delete(action);
+  act(action,false);
+});
+window.addEventListener('blur',()=>{
   resetStick();
   stopKi();
   held.clear();
@@ -399,30 +442,64 @@ const kmap={KeyW:'up',ArrowUp:'up',KeyA:'left',ArrowLeft:'left',KeyS:'down',Arro
 });
 const kiButton=root.querySelector('[data-a=ki]');
 let kiPointer=null,kiTimer=null,kiHeld=false;
+function beginKi(pointer){
+  kiPointer=pointer;
+  kiButton.classList.add('down');
+  kiTimer=setTimeout(()=>{kiHeld=true;act('beam',true,'ki-control')},220);
+}
 function stopKi(release=false){
   if(kiPointer===null)return;
   const pointer=kiPointer;
   kiPointer=null;
   clearTimeout(kiTimer);
-  if(kiHeld){if(release)act('beam',false);else resetBeam(player)}
-  else if(release)act('ki',true);
+  if(kiHeld){
+    if(release)act('beam',false,'ki-control');
+    else if(player?.beamChargeSource==='ki-control')resetBeam(player);
+  }else if(release)act('ki',true);
   kiHeld=false;
   kiButton.classList.remove('down');
-  if(kiButton.hasPointerCapture(pointer))kiButton.releasePointerCapture(pointer);
+  if(pointer!=='mouse'&&kiButton.hasPointerCapture(pointer))kiButton.releasePointerCapture(pointer);
 }
 kiButton.addEventListener('pointerdown',e=>{
   if(mode!=='play'||kiPointer!==null||e.button!==0)return;
   e.preventDefault();
   kiButton.setPointerCapture(e.pointerId);
-  kiPointer=e.pointerId;
-  kiButton.classList.add('down');
-  kiTimer=setTimeout(()=>{kiHeld=true;act('beam',true)},220);
+  beginKi(e.pointerId);
 });
 kiButton.addEventListener('pointerup',e=>{if(e.pointerId===kiPointer)stopKi(true)});
 for(const event of ['pointercancel','lostpointercapture']){
   kiButton.addEventListener(event,e=>{if(e.pointerId===kiPointer)stopKi()});
 }
 kiButton.addEventListener('click',e=>{if(e.detail===0)act('ki',true)});
+function aimAtMouse(e){
+  const bounds=cv.getBoundingClientRect();
+  const x=(e.clientX-bounds.left)*W/bounds.width+Math.floor(lim(player.x-W/2,0,MW-W));
+  const y=(e.clientY-bounds.top)*H/bounds.height+Math.floor(lim(player.y-H/2,0,MH-H));
+  const dx=x-player.x,dy=y-(player.y+poseHeight(-15)),distance=hyp(dx,dy);
+  if(distance<3)return;
+  player.fx=dx/distance;
+  player.fy=dy/distance;
+  if(Math.abs(player.fx)>.16)player.facing=Math.sign(player.fx);
+}
+cv.addEventListener('contextmenu',e=>{if(mode==='play')e.preventDefault()});
+cv.addEventListener('mousedown',e=>{
+  if(mode!=='play'||(e.button!==0&&e.button!==2))return;
+  e.preventDefault();
+  if(document.activeElement instanceof HTMLButtonElement)document.activeElement.blur();
+  aimAtMouse(e);
+  if(e.button===0)act('hit',true);
+  else if(kiPointer===null)beginKi('mouse');
+});
+window.addEventListener('mousemove',e=>{
+  if(mode!=='play'||kiPointer!=='mouse')return;
+  if((e.buttons&2)===0)stopKi();
+  else aimAtMouse(e);
+});
+window.addEventListener('mouseup',e=>{
+  if(e.button!==2||kiPointer!=='mouse')return;
+  if(mode==='play')aimAtMouse(e);
+  stopKi(true);
+});
 for(const btn of btns){
   const action=btn.dataset.a;
   if(btn===kiButton)continue;
@@ -451,7 +528,7 @@ for(const btn of btns){
   btn.addEventListener('click',e=>{if(e.detail===0)act(action,true)});
 }
 const powersButton=root.querySelector('#kfpowers'),powersMenu=root.querySelector('#kfpower-menu');
-const resumeButton=root.querySelector('#kfresume');
+const resumeButton=root.querySelector('#kfresume'),pauseButton=root.querySelector('#kfpause');
 function setPowers(open){
   powersMenu.hidden=!open;
   powersButton.setAttribute('aria-expanded',String(open));
@@ -462,7 +539,7 @@ function setPowers(open){
 powersButton.onclick=()=>setPowers(powersMenu.hidden);
 root.addEventListener('pointerdown',e=>{if(!e.target.closest('.powers'))setPowers(false)});
 resumeButton.onclick=()=>{mode='play';modal.style.display='none';resumeButton.hidden=true};
-root.querySelector('#kfpause').onclick=()=>{
+pauseButton.onclick=()=>{
   if(mode!=='play')return;
   resetStick();
   stopKi();
@@ -487,7 +564,11 @@ function damagePlayer(amount){
   player.healDelay=healingDelay;
   player.inv=.6;
 }
-function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;let p=player;recoverHealth(p,dt);const attackBefore=p.attack;for(let k of ['inv','cd','attack','link','dash','dashCD'])p[k]=Math.max(0,p[k]-dt);p.ki=lim(p.ki+dt*(held.has('charge')?23:p.beam?-3:p.surge?-8:p.fly?-3:0),0,p.mki);if(p.beam&&p.ki<=0)resetBeam(p);if(p.beamCharge!==null)p.beamCharge=Math.min(.55,p.beamCharge+dt);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking){p.fx=dx/m;p.fy=dy/m}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);if(p.beam||p.beamCharge!==null||held.has('charge')){p.vx*=.45;p.vy*=.45}move(p,p.vx*dt,p.vy*dt);
+function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;let p=player;recoverHealth(p,dt);const attackBefore=p.attack;for(let k of ['inv','cd','attack','link','dash','dashCD'])p[k]=Math.max(0,p[k]-dt);p.ki=lim(p.ki+dt*(held.has('charge')?23:p.beam?-3:p.surge?-8:p.fly?-3:0),0,p.mki);if(p.beam&&p.ki<=0)resetBeam(p);if(p.beamCharge!==null)p.beamCharge=Math.min(.55,p.beamCharge+dt);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beam||p.beamCharge!==null||held.has('charge'))speed*=.32;p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
+move(p,p.vx*dt,p.vy*dt);
+const travel=hyp(p.x-fromX,p.y-fromY);
+p.stride+=(lim(travel/Math.max(dt*67,.001),0,1)-p.stride)*(1-Math.exp(-dt*11));
+p.gait=(p.gait+travel*.24)%(Math.PI*2);
 if(attackBefore>0&&!p.attackHit&&p.attack<=p.attackDuration*.75){p.attackHit=true;meleeHit(p)}
 if(p.beam){
   beamHit(dt);
@@ -495,7 +576,7 @@ if(p.beam){
   if(p.beamAge>=beam.duration)resetBeam(p);
 }
 for(let b of balls){b.x+=b.dx*210*dt;b.y+=b.dy*210*dt;b.time-=dt;for(let e of enemies){if(e.hp>0&&hyp(b.x-e.x,b.y-e.y+10)<(e.boss?18:13)+b.r){e.hp-=b.damage*(p.surge?1.3:1);e.flash=.18;b.time=0;burst(e.x,e.y-12,'#b1f8ff',12);shake=.13;break}}if(b.time>0&&solid(b.x,b.y))b.time=0}balls=balls.filter(b=>b.time>0);
-for(let e of enemies){if(e.hp<=0)continue;e.flash=Math.max(0,e.flash-dt);e.cd-=dt;let dx=p.x-e.x,dy=p.y-e.y,m=hyp(dx,dy)||1;e.fx=dx/m;e.fy=dy/m;e.walking=m>23;let ranged=e.kind==='ninja';if(m>(ranged?95:23)&&m<250)move(e,e.fx*(enemySpeed[e.kind])*dt,e.fy*(enemySpeed[e.kind])*dt);if(ranged&&m<160&&e.cd<=0){e.cd=1.7;enemyShots.push({x:e.x,y:e.y-12,dx:e.fx,dy:e.fy,time:2})}if(m<(e.boss?32:23)&&e.cd<=0&&!p.fly){e.cd=e.boss?1.1:1.4;if(!p.inv){damagePlayer(e.boss?18:8);shake=.14;burst(p.x,p.y-17,'#ff9191',12);if(p.hp<=0){p.hp=0;end(false)}}}}for(let e of enemies.filter(e=>e.hp<=0)){kills++;p.xp+=e.boss?100:20;burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);if(p.xp>=p.level*55){p.xp-=p.level*55;p.level++;p.points++;p.hp=lim(p.hp+25,0,p.max);p.ki=p.mki;mode='level';showLevel()}for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(8);q.time=0;burst(p.x,p.y-12,'#ff9fcf',7);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);if(enemies.length===0){if(wave===3){if(mode==='play')end(true)}else if((wait-=dt)<=0){spawn();wait=1.2}}else wait=1.2}
+for(let e of enemies){if(e.hp<=0)continue;e.flash=Math.max(0,e.flash-dt);e.cd-=dt;let dx=p.x-e.x,dy=p.y-e.y,m=hyp(dx,dy)||1;e.fx=dx/m;e.fy=dy/m;e.walking=m>23;let ranged=e.kind==='ninja';if(m>(ranged?95:23)&&m<250)move(e,e.fx*(enemySpeed[e.kind])*dt,e.fy*(enemySpeed[e.kind])*dt);if(ranged&&m<160&&e.cd<=0){e.cd=1.7;enemyShots.push({x:e.x,y:e.y-12,dx:e.fx,dy:e.fy,time:2})}if(m<(e.boss?32:23)&&e.cd<=0&&!p.fly){e.cd=e.boss?1.1:1.4;if(!p.inv){damagePlayer(e.boss?13:6);shake=.14;burst(p.x,p.y-17,'#ff9191',12);if(p.hp<=0){p.hp=0;end(false)}}}}for(let e of enemies.filter(e=>e.hp<=0)){kills++;p.xp+=e.boss?100:20;burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);if(p.xp>=p.level*55){p.xp-=p.level*55;p.level++;p.points++;p.hp=lim(p.hp+25,0,p.max);p.ki=p.mki;mode='level';showLevel()}for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(6);q.time=0;burst(p.x,p.y-12,'#ff9fcf',7);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);if(enemies.length===0){if(wave===3){if(mode==='play')end(true)}else if((wait-=dt)<=0){spawn();wait=1.2}}else wait=1.2}
 function showLevel(){resetStick();stopKi();resetBeam(player);setPowers(false);let el=root.querySelector('#kflevel');el.style.display='flex';root.querySelector('#kfpoints').textContent='Choose 1 upgrade';root.querySelector('#kfstats').textContent=`STR ${player.str}  •  KI ${player.kistat}  •  DEX ${player.dex}`}
 for(let b of root.querySelectorAll('[data-stat]'))b.onclick=()=>{if(mode!=='level')return;let stat=b.dataset.stat;if(stat==='ki')player.kistat++;else player[stat]++;player.points--;root.querySelector('#kflevel').style.display='none';mode='play';notice(stat.toUpperCase()+' UPGRADED!')};
 const combatAtlas=new Image();
@@ -585,10 +666,66 @@ function tree(t){
   c.drawImage(treeImage,-24,-50,48,58);
   c.restore();
 }
-function character(o,type){
-  const x=Math.round(o.x),y=Math.round(o.y);
+function drawGuard(o){
+  if(o.stride<.015){
+    drawCombatFrame(combatAtlas,0);
+    return;
+  }
+  const split=36;
+  const bob=-Math.abs(Math.sin(o.gait))*o.stride;
+  const legHeight=combatCell-split;
+  for(const side of [-1,1]){
+    const start=side<0?0:26;
+    const swing=Math.sin(o.gait)*side*o.stride;
+    const lift=Math.max(0,swing)*1.65;
+    const pivot=side*4;
+    c.save();
+    c.translate(pivot,split-48+bob-lift);
+    c.rotate(swing*.24);
+    c.drawImage(combatAtlas,start*artScale,split*artScale,26*artScale,legHeight*artScale,
+      start-26-pivot,0,26,legHeight);
+    c.restore();
+  }
+  c.drawImage(combatAtlas,0,0,combatCell*artScale,(split+2)*artScale,-26,-48+bob,combatCell,split+2);
+}
+function drawMotionFrame(o,type,row,frame=0){
+  c.drawImage(spr,(type*104+frame*26)*artScale,row*36*artScale,26*artScale,36*artScale,-13,-30,26,36);
+}
+function drawVerticalCast(o,type,direction){
   c.save();
-  c.translate(x,y);
+  const body=new Path2D('M -13 -30 H 13 V -20 H 4.5 V -8 H 13 V 6 H -13 V -8 H -4.5 V -20 H -13 Z');
+  c.clip(body);
+  drawMotionFrame(o,type,direction<0?1:0);
+  c.restore();
+  const handY=beamOrigin(o).y-o.y;
+  const ready=!!o.beam;
+  for(const side of [-1,1]){
+    const shoulder=side*5;
+    const wrist=side*(ready?2.7:4.5);
+    const elbowY=direction<0?-21:-13;
+    c.lineCap='round';
+    c.lineJoin='round';
+    c.beginPath();
+    c.moveTo(shoulder,-17);
+    c.lineTo(shoulder*1.25,elbowY);
+    c.lineTo(wrist,handY);
+    c.lineWidth=4.1;
+    c.strokeStyle='#271c2b';
+    c.stroke();
+    c.lineWidth=2.6;
+    c.strokeStyle='#d28b55';
+    c.stroke();
+    c.fillStyle='#343e71';
+    c.fillRect(wrist-1.65,handY+(direction<0?1:-3),3.3,2.6);
+    c.fillStyle='#f6bf85';
+    c.beginPath();
+    c.ellipse(wrist,handY,1.8,2.25,0,0,Math.PI*2);
+    c.fill();
+  }
+}
+function character(o,type){
+  c.save();
+  c.translate(o.x,o.y);
   c.fillStyle='#16291f90';
   c.beginPath();
   c.ellipse(0,3,8,3,0,0,Math.PI*2);
@@ -600,19 +737,23 @@ function character(o,type){
     c.fillStyle=aura;
     c.fillRect(-23,-36,46,46);
   }
-  if(combatAtlas.complete&&combatAtlas.naturalWidth&&(o.attack>0||o.beam||o.beamCharge!==null||!o.walking)){
+  const casting=o.beam||o.beamCharge!==null;
+  const vertical=casting?castDirection(o):0;
+  if(vertical&&spr.complete&&spr.naturalWidth){
+    drawVerticalCast(o,type,vertical);
+  }else if(combatAtlas.complete&&combatAtlas.naturalWidth){
     const progress=o.attack>0?1-o.attack/o.attackDuration:0;
     const frame=o.beam?5:o.beamCharge!==null?4:o.attack>0&&progress>=.25&&progress<.76?o.combo:0;
-    const side=o.attack>0&&o.attackX!==0?Math.sign(o.attackX):poseSide(o);
+    const side=o.attack>0&&Math.abs(o.attackX)>.16?Math.sign(o.attackX):poseSide(o);
     c.translate(0,heroPose.feet);
     c.scale(side*(frame===0?heroPose.guardWidth:heroPose.width),heroPose.height);
     c.translate(0,-2);
-    drawCombatFrame(combatAtlas,frame);
+    if(frame===0&&o.attack<=0)drawGuard(o);
+    else drawCombatFrame(combatAtlas,frame);
   }else if(spr.complete&&spr.naturalWidth){
     const row=Math.abs(o.fx)>.55?2:o.fy<-.4?1:0;
-    const frame=o.walking?Math.floor(now*9)%4:0;
     if(row===2&&o.fx<0)c.scale(-1,1);
-    c.drawImage(spr,(type*104+frame*26)*artScale,row*36*artScale,26*artScale,36*artScale,-13,-30,26,36);
+    drawMotionFrame(o,type,row);
   }
   c.restore();
 }
