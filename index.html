@@ -248,8 +248,8 @@ bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
 // KF_WORLD_SLICE_V1
 let quest='new',questKills=0;
-const trainer={x:137,y:285},SAVE='ki-fighter-forest-v2';
-const roster=[{name:'Kairo',role:'Balanced',color:'#79dfff',str:1,kistat:1,dex:1},{name:'Rin',role:'Speed',color:'#ffba68',str:1,kistat:1,dex:3},{name:'Taro',role:'Ki',color:'#d4a2ff',str:1,kistat:3,dex:1}];
+const trainer={x:137,y:285},SAVE='ki-fighter-forest-v3';
+const roster=[{name:'Goku',role:'Balanced Saiyan',color:'#f9a64e',str:2,kistat:2,dex:2},{name:'Piccolo',role:'Ki specialist',color:'#a6d982',str:1,kistat:3,dex:1},{name:'Gohan',role:'Fast learner',color:'#b7a0e8',str:1,kistat:2,dex:3}];
 let activeFighter=0,rosterStats=[],switchCD=0;
 function resetRoster(){rosterStats=roster.map(ch=>({level:1,xp:0,points:0,str:ch.str,kistat:ch.kistat,dex:ch.dex}))}
 function captureFighter(){if(player)rosterStats[activeFighter]={level:player.level,xp:player.xp,points:player.points,str:player.str,kistat:player.kistat,dex:player.dex}}
