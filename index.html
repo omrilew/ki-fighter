@@ -323,7 +323,7 @@ function beamShape(age){
   const width=.35+.35*expand+.30*settle;
   return {body:beam.body*length,tip:beam.tip*length,wide:beam.wide*width};
 }
-const {ease:animationEase,damp:animationDamp,sample:samplePose,actionPhase,clips:animationClips}=KiAnimation;
+const {ease:animationEase,damp:animationDamp,sample:samplePose,framesAt,actionPhase,clips:animationClips}=KiAnimation;
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
 function turnToward(current,target,dt){
   if(!Number.isFinite(current))return target;
@@ -1288,14 +1288,10 @@ function drawForestProp(obj){
     -width*.5,-height+2,width,height);
   c.restore();
 }
-function drawGuard(o,ink=c){
+function drawGuardFrame(o,frame,ink){
   const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
-  if(o.stride<.015){
-    drawCombatFrame(art,fighterFrames.guard,0,ink);
-    return;
-  }
-  const walkFrame=Math.abs(Math.sin(o.gait))>.58&&o.stride>.42?fighterFrames.walk:fighterFrames.guard;
-  const sourceX=walkFrame*combatCell*artScale;
+
+  const sourceX=frame*combatCell*artScale;
   const split=36;
   const bob=-Math.abs(Math.sin(o.gait))*o.stride;
   const legHeight=combatCell-split;
@@ -1312,6 +1308,30 @@ function drawGuard(o,ink=c){
     ink.restore();
   }
   ink.drawImage(art,sourceX,0,combatCell*artScale,(split+2)*artScale,-26,-48+bob,combatCell,split+2);
+}
+const sideWalkFrames=[[0,fighterFrames.guard],[.20,fighterFrames.guard],[.84,fighterFrames.walk],[1,fighterFrames.walk]];
+const frontWalkFrames=[[0,0],[.25,1],[.5,2],[.75,3],[1,0]];
+const dashFrames=[[0,fighterFrames.guard],[.13,fighterFrames.walk],[.28,fighterFrames.dash],
+  [.74,fighterFrames.dash],[.88,fighterFrames.walk],[1,fighterFrames.guard]];
+function paintFramePair(pair,draw,ink=c){
+  if(pair.blend<=.015){draw(pair.first);return}
+  if(pair.blend>=.985){draw(pair.second);return}
+  ink.save();
+  const alpha=ink.globalAlpha;
+  ink.globalAlpha=alpha*(1-pair.blend);
+  draw(pair.first);
+  ink.globalAlpha=alpha*pair.blend;
+  draw(pair.second);
+  ink.restore();
+}
+function drawGuard(o,ink=c){
+  if(o.stride<.015){
+    const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
+    drawCombatFrame(art,fighterFrames.guard,0,ink);
+    return;
+  }
+  const progress=Math.abs(Math.sin(o.gait))*o.stride;
+  paintFramePair(framesAt(sideWalkFrames,progress),frame=>drawGuardFrame(o,frame,ink),ink);
 }
 function drawMotionFrame(o,type,row,frame=0,ink=c){
   ink.drawImage(spr,(type*104+frame*26)*artScale,row*36*artScale,26*artScale,36*artScale,-13,-30,26,36);
@@ -1376,8 +1396,10 @@ function drawHeroProfile(o,type,angle){
     if(canBlend)ink.globalCompositeOperation='lighter';
     ink.globalAlpha=inheritedAlpha*(canBlend?blend:1);
     ink.translate(Math.cos(angle)*1.15,-bob*.75);
-    const frame=o.stride>.35?Math.floor(o.gait*2/Math.PI)%4:0;
-    drawMotionFrame(o,type,rear?1:0,frame,ink);
+    const progress=(o.gait/(Math.PI*2))%1;
+    if(o.stride>.24)paintFramePair(framesAt(frontWalkFrames,progress),
+      frame=>drawMotionFrame(o,type,rear?1:0,frame,ink),ink);
+    else drawMotionFrame(o,type,rear?1:0,0,ink);
   }
   ink.restore();
   if(canBlend)c.drawImage(profileLayer,-24,-44,48,52);
@@ -1385,12 +1407,17 @@ function drawHeroProfile(o,type,angle){
 const verticalStrikes=new Image();
 verticalStrikes.src='assets/vertical-strikes.webp';
 verticalStrikes.addEventListener('load',()=>{surgeStrikeArt=makeFormArt(verticalStrikes,[0,1,2,3,4,5])});
+const strikeFrames=Object.fromEntries(Object.entries(strikes).map(([name,strike])=>{
+  const windup=strike.frame===fighterFrames.jab?fighterFrames.cross:fighterFrames.jab;
+  return [name,[[0,windup],[.15,windup],[.34,strike.frame],[.64,strike.frame],[.90,windup],[1,windup]]];
+}));
 function drawStrike(o,type,progress){
   const strike=strikes[o.strike];
   const aim=Math.atan2(o.attackY,o.attackX);
   const kicking=strike.frame===fighterFrames.kick;
   const pose=samplePose(animationClips[kicking?'kick':'strike'],progress);
   const {weight}=pose;
+  const frames=framesAt(strikeFrames[o.strike],progress);
   if(weight===0){
     drawHeroProfile(o,type,aim);
     return;
@@ -1398,13 +1425,14 @@ function drawStrike(o,type,progress){
   const vertical=Math.abs(o.attackY)>.64;
   if(weight<1)drawHeroProfile(o,type,aim);
   if(vertical&&verticalStrikes.complete&&verticalStrikes.naturalWidth){
-    const frame=strike.frame-1+(o.attackY<0?3:0);
+    const row=o.attackY<0?3:0;
     const flip=Math.abs(o.attackX)>.16?Math.sign(o.attackX):o.strikeSide;
     c.save();
     c.globalAlpha*=weight;
     c.translate(o.attackX*pose.reach,pose.reach*o.attackY*.80-pose.lift);
     c.scale(flip,1);
-    drawCombatFrame(o.surge&&surgeStrikeArt?surgeStrikeArt:verticalStrikes,frame);
+    const art=o.surge&&surgeStrikeArt?surgeStrikeArt:verticalStrikes;
+    paintFramePair(frames,frame=>drawCombatFrame(art,row+frame-1));
     c.restore();
     return;
   }
@@ -1418,7 +1446,8 @@ function drawStrike(o,type,progress){
   c.translate((kicking?2.2:1.45)*o.attackX*pose.reach,heroPose.feet-pose.lift);
   c.scale(side*heroPose.width,heroPose.height);
   c.translate(0,-2);
-  drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,strike.frame);
+  const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
+  paintFramePair(frames,frame=>drawCombatFrame(art,frame));
   c.restore();
 }
 function character(o,type,referencePose){
@@ -1466,10 +1495,11 @@ function character(o,type,referencePose){
       const pose=o.beamCharge!==null?'gather':o.beam?'release':'jab';
       drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,fighterFrames[pose]);
       c.restore();
-    }else if(o.dash>.035&&Math.abs(o.fx)>.62){
+    }else if(o.dash>0&&Math.abs(o.fx)>.62){
       c.save();
       c.scale(poseSide(o)*heroPose.width,heroPose.height);
-      drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,fighterFrames.dash);
+      const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
+      paintFramePair(framesAt(dashFrames,1-o.dash/.19),frame=>drawCombatFrame(art,frame));
       c.restore();
     }else if(o.attack>0){
       drawStrike(o,type,1-o.attack/o.attackDuration);

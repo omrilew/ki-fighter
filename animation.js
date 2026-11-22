@@ -23,6 +23,19 @@
     return pose;
   }
 
+  // Pairs two authored sprite frames for a smooth visual transition.
+  function framesAt(sequence,time){
+    const position=clamp01(time);
+    let right=1;
+    while(right<sequence.length-1&&position>sequence[right][0])right++;
+    const from=sequence[right-1],to=sequence[right];
+    return {
+      first:from[1],
+      second:to[1],
+      blend:from[1]===to[1]?0:ease((position-from[0])/(to[0]-from[0])),
+    };
+  }
+
   function actionPhase(elapsed,windup,recovery,impact=.54){
     if(elapsed<=windup)return clamp01(elapsed/windup)*impact;
     return impact+clamp01((elapsed-windup)/recovery)*(1-impact);
@@ -59,5 +72,5 @@
     },
   };
 
-  root.KiAnimation={ease,damp,sample,actionPhase,clips};
+  root.KiAnimation={ease,damp,sample,framesAt,actionPhase,clips};
 })(globalThis);

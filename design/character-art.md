@@ -12,3 +12,5 @@ Draw full-body poses where the silhouette matters, especially kicks and strong p
 `animation.js` samples normalized keyframes for strikes, kicks, enemy lunges and throws, recoil, and falls. Each track names its channels, such as reach or opacity. Renderers apply those channels around the feet and reuse the same pose art and hand anchors.
 
 Use an existing clip for a new fighter, or add a clip with the same channels and a new timing curve. An enemy can set `animationRig` to choose an attack clip and its reach multiplier. `actionPhase` maps the move's existing windup and recovery timings onto the visual clip, keeping contact and animation in sync.
+
+Use `framesAt` with a sequence of `[normalizedTime, frame]` pairs when new artwork provides intermediate poses. The game uses this for the current walk, dash, and strike art. The pose track and sprite sequence share the same progress, so frame selection stays synchronized with impact timing and hand anchors.
