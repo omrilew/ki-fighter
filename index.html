@@ -702,7 +702,7 @@ function renderBeamCharge(p){
   }
   c.restore();
 }
-function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=.32;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
+function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=surgeIgnitionTime;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
 let stickPointer=null,stickX=0,stickY=0;
 function resetStick(){
@@ -1740,7 +1740,7 @@ function drawStrike(o,type,progress){
 // Whole-body frames cut from the approved board. Effects use the palm
 // coordinates of the same displayed frame and are drawn independently.
 const approvedHero=new Image();
-approvedHero.src='assets/hero-approved.webp';
+approvedHero.src='assets/hero-approved.webp?v=orange';
 const approvedEffects=new Image();
 approvedEffects.src='assets/hero-approved-effects.webp';
 const approvedEffectSizes=[[61,61],[126,38],[135,36],[230,92],[129,106],[160,95],[106,105]];
@@ -1812,7 +1812,7 @@ function approvedHeroPose(o,referencePose){
     if(vertical)return pose(directionRow+1,0,1);
     return pose(8,frameInClip(o.rechargeVisual,4));
   }
-  if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/.32,4));
+  if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/surgeIgnitionTime,4));
   if(o.stride>.18){
     if(vertical)return pose(directionRow,frameInClip(gait,4)+1,1);
     return pose(1,frameInClip(gait,4),side);
@@ -2003,6 +2003,46 @@ function renderKiPulse(f){
   }
   c.restore();
 }
+const surgeIgnitionTime=.47;
+function drawSurgeAura(p){
+  const age=surgeIgnitionTime-p.surgeFlare;
+  const flare=lim(age/surgeIgnitionTime,0,1);
+  const ignition=animationEase((flare-.2)/.18)*(1-animationEase((flare-.59)/.41));
+  const breathing=1+.05*Math.sin(storyClock*16)+.026*Math.sin(storyClock*25);
+  const width=38*breathing+ignition*11;
+  const height=39+ignition*15+Math.sin(storyClock*22)*1.6;
+  c.globalAlpha=(.77+.13*Math.sin(storyClock*17))*animationEase(flare/.34);
+  drawApprovedEffect(6,-width/2,4-height,width,height);
+
+  if(ignition>.01){
+    const spread=44+flare*29;
+    c.globalAlpha=ignition;
+    drawApprovedEffect(5,-spread/2,4-spread*.66,spread,spread*.66);
+    const radius=9+flare*36;
+    c.lineWidth=1.05;
+    c.strokeStyle='#ffefb2';
+    c.beginPath();
+    c.ellipse(0,3,radius,radius*.24,0,0,Math.PI*2);
+    c.stroke();
+  }
+
+  // Sparks rise along alternating sides while the body and ground stay readable.
+  for(let i=0;i<7;i++){
+    const rise=(storyClock*(1.07+i*.07)+i*.37)%1;
+    const side=i%2?1:-1;
+    const x=side*(10+Math.sin(i*5.1+rise*7)*3+rise*8);
+    const y=2-rise*(height+5);
+    c.globalAlpha=Math.sin(rise*Math.PI)*(.3+.5*animationEase(flare/.4));
+    c.strokeStyle=i%3===0?'#fff5be':'#ffb744';
+    c.lineWidth=i%3===0?1.2:.7;
+    c.beginPath();
+    c.moveTo(x-side*2,y+4);
+    c.lineTo(x+side,y+1);
+    c.lineTo(x-side*.1,y+1);
+    c.lineTo(x+side*3,y-4);
+    c.stroke();
+  }
+}
 function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 function energyAura(p){
   if(!storyReady())return;
@@ -2011,22 +2051,18 @@ function energyAura(p){
   c.scale(poseSide(p),1);
   const flicker=(.93+.07*Math.sin(storyClock*14))*(p.surge?1:p.rechargeVisual);
   if(atlasReady(approvedEffects)){
-    const pulse=1+.055*Math.sin(storyClock*19);
-    const ignition=p.surge?animationEase(p.surgeFlare/.25):0;
-    const size=(p.surge?44:32+18*p.rechargeVisual)*pulse;
-    c.globalAlpha=flicker*(1-ignition*.8);
-    drawApprovedEffect(p.surge?6:4,-size/2,4-size,size,size);
-    if(ignition>0){
-      const burst=52+13*(1-ignition);
-      c.globalAlpha=flicker*ignition;
-      drawApprovedEffect(5,-burst/2,4-burst*.69,burst,burst*.69);
+    if(p.surge)drawSurgeAura(p);
+    else{
+      const size=(32+18*p.rechargeVisual)*(1+.055*Math.sin(storyClock*19));
+      c.globalAlpha=flicker;
+      drawApprovedEffect(4,-size/2,4-size,size,size);
     }
     c.restore();
     return;
   }
   const rippleHeight=storyScale*(1+.045*Math.sin(storyClock*17));
   if(p.surge&&atlasReady(kiActions)){
-    const progress=lim(1-p.surgeFlare/.32,0,1);
+    const progress=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
     const size=58;
     c.globalAlpha=flicker;
     if(progress<1){
@@ -2043,7 +2079,7 @@ function energyAura(p){
   c.globalAlpha=flicker*(1-ignition);
   if(ignition<1)drawStoryMotion(p.surge?'sustainAura':'rechargeAura',storyClock,storyScale,rippleHeight);
   if(ignition>0){
-    const age=.32-p.surgeFlare;
+    const age=surgeIgnitionTime-p.surgeFlare;
     const expansion=1+.20*animationEase(age/.16);
     c.globalAlpha=flicker*ignition;
     drawStoryMotion('igniteAura',age,storyScale*expansion,rippleHeight);
