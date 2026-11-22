@@ -36,6 +36,28 @@
 #kfg .modal[style*="none"]{pointer-events:none}
 @media(max-width:600px){#kfg .top{top:78px;right:8px;gap:4px}#kfg .top button{padding:7px 8px;font-size:11px}#kfg .hud{inset:8px 8px auto}#kfg .modal::before{inset:7px}#kfg .character-head{padding:10px 12px}#kfg .character-main{padding:10px}}
 @media(max-height:420px){#kfg .modal{gap:6px}#kfg .modal h2{font-size:27px}#kfg .modal p{padding:6px 10px;line-height:1.3}#kfg .modal button{min-height:35px;padding:5px 14px}#kfg .menu-footer{display:none}}
+
+#kfg .rpg-menu{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#030916d9;backdrop-filter:blur(3px);padding:12px;pointer-events:auto}
+#kfg .rpg-menu[hidden]{display:none}
+#kfg .rpg-panel{width:min(760px,100%);max-height:calc(100dvh - 24px);overflow:auto;border:3px solid #d3b471;background:linear-gradient(145deg,#1b345b,#0c1931 75%);box-shadow:inset 0 0 0 4px #0b1427,0 12px 0 #060b16,0 25px 65px #000b;padding:18px;color:#f5f2e8}
+#kfg .rpg-panel h2{margin:0 0 12px;color:#ffda79;text-transform:uppercase;letter-spacing:.08em;font-size:clamp(22px,4vw,34px)}
+#kfg .rpg-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+#kfg .rpg-tabs button{padding:10px 12px;min-height:44px}
+#kfg .rpg-tabs button[aria-selected=true]{border-color:#ffdc7c;background:linear-gradient(#85642e,#443016)}
+#kfg .rpg-body{min-height:155px;padding:12px;border:1px solid #637ca9;background:#0a172cbb;line-height:1.6}
+#kfg .rpg-body h3{color:#ffda79;margin:0 0 8px}
+#kfg .rpg-body p{margin:6px 0 12px}
+#kfg .rpg-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+#kfg .rpg-actions button{min-height:44px;padding:9px 16px}
+#kfg .rpg-list{display:grid;gap:8px}
+#kfg .rpg-row{padding:9px;border:1px solid #536b93;background:#172b4b}
+#kfg .rpg-row strong{color:#ffe09c}
+#kfg .rpg-map{position:relative;width:100%;height:155px;border:3px solid #90a5ce;background:linear-gradient(90deg,#658c52 0 31%,#9f9b6e 31% 37%,#365d3d 37%);overflow:hidden}
+#kfg .rpg-map::before{content:"";position:absolute;top:48%;left:30%;width:70%;height:12px;background:#a58e63;transform:translateY(-50%)}
+#kfg .rpg-map span{position:absolute;font-size:11px;font-weight:900;text-shadow:1px 2px #000;white-space:nowrap}
+#kfg .rpg-panel input[type=range]{width:min(250px,100%);accent-color:#ffcf68}
+#kfg .rpg-panel label{display:block;margin:12px 0}
+@media(max-width:460px){#kfg .rpg-panel{padding:12px}#kfg .rpg-tabs button{font-size:11px;padding:8px}#kfg .rpg-body{padding:8px}}
 </style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
 <style>
 #kfg *{box-sizing:border-box}
@@ -162,6 +184,7 @@
     </div>
   </div>
 </dialog>
+<section class="rpg-menu" id="kf-rpg-menu" hidden aria-label="Game menu"><div class="rpg-panel" role="dialog" aria-modal="true" aria-labelledby="kf-rpg-title"><h2 id="kf-rpg-title">Adventure Menu</h2><nav class="rpg-tabs" id="kf-rpg-tabs" aria-label="Menu sections"></nav><div class="rpg-body" id="kf-rpg-body"></div><div class="rpg-actions" id="kf-rpg-actions"></div></div></section>
 <script src="animation.js?v=172a878"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=960,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
@@ -306,8 +329,8 @@ window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&mode==='play
 function villageArt(){for(let [x,y] of [[32,151],[170,151],[54,333]]){c.fillStyle='#c2a27a';c.fillRect(x,y,90,65);c.fillStyle='#704439';c.beginPath();c.moveTo(x-6,y);c.lineTo(x+45,y-28);c.lineTo(x+96,y);c.fill();c.fillStyle='#d48c55';c.fillRect(x+37,y+34,17,31)}let x=trainer.x,y=trainer.y;c.fillStyle='#433f6c';c.fillRect(x-7,y-20,14,18);c.fillStyle='#edc18b';c.fillRect(x-6,y-30,12,12);c.fillStyle='#30232b';c.fillRect(x-7,y-33,14,5);c.fillStyle='#ffe5a5';c.font='bold 8px system-ui';c.textAlign='center';c.fillText('MENTOR',x,y-38);c.textAlign='start'}
 function questUI(){if(!player)return;switchButton.textContent='Switch [Q] · '+roster[activeFighter].name;switchButton.disabled=switchCD>0;talkButton.style.display=mode==='play'&&hyp(player.x-trainer.x,player.y-trainer.y)<48?'block':'none';questHud.textContent=quest==='new'?'Find the village mentor':quest==='active'?'Defeat scouts '+questKills+'/3':quest==='return'?'Return to your mentor':'Saiyan prologue complete'}
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:137,y:315,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=9999;mode='play';modal.style.display='none';held.clear();quest='new';questKills=0;activeFighter=0;resetRoster();switchCD=0;loadWorld();if(quest==='active')questSpawn();notice('SAIYAN SAGA PROLOGUE · Talk to the mentor (E)')}
-function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
+function start(){closeRpgMenu(true);summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:137,y:315,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=9999;mode='play';modal.style.display='none';held.clear();quest='new';questKills=0;activeFighter=0;resetRoster();switchCD=0;loadWorld();if(quest==='active')questSpawn();notice('SAIYAN SAGA PROLOGUE · Talk to the mentor (E)')}
+function end(win){closeRpgMenu(true);if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96};
 function xpRequired(level){return 55+(level-1)*35}
 function applyLevelUps(p){
@@ -954,21 +977,47 @@ function setPowers(open){
 powersButton.onclick=()=>setPowers(powersMenu.hidden);
 root.addEventListener('pointerdown',e=>{if(!e.target.closest('.powers'))setPowers(false)});
 resumeButton.onclick=()=>{mode='play';modal.style.display='none';resumeButton.hidden=true;summaryCharacter.hidden=true};
-pauseButton.onclick=()=>{
-  if(mode!=='play')return;
-  resetStick();
-  stopKi();
-  setPowers(false);
-  resetBeam(player);
-  mode='paused';
-  summaryCharacter.hidden=false;
-  title.textContent='PAUSED';
-  desc.textContent='Resume your fight or start over.';
-  resumeButton.hidden=false;
-  root.querySelector('#kfplay').textContent='↻ RESTART';
-  modal.style.display='flex';
-};
+pauseButton.onclick=()=>openRpgMenu('party');
 
+const rpgMenu=root.querySelector('#kf-rpg-menu'),rpgTabs=root.querySelector('#kf-rpg-tabs'),rpgBody=root.querySelector('#kf-rpg-body'),rpgActions=root.querySelector('#kf-rpg-actions');
+let rpgTab='party',rpgReturn='play';
+const rpgSections=[['party','Fighters'],['quests','Quests'],['map','World Map'],['settings','Settings']];
+const gameSettings={sound:true,screenShake:true};
+function menuButton(label,fn,parent=rpgActions){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;parent.appendChild(b);return b}
+function menuText(tag,content,parent=rpgBody){const el=document.createElement(tag);el.textContent=content;parent.appendChild(el);return el}
+function closeRpgMenu(force=false){if(!force&&rpgMenu.hidden)return;rpgMenu.hidden=true;if(!force&&mode==='rpg')mode=rpgReturn==='title'?'title':'play'}
+function openRpgMenu(tab='party'){
+ if(!['play','paused','title'].includes(mode))return;
+ rpgReturn=mode==='title'?'title':'play';
+ if(mode==='play'){resetStick();stopKi();resetBeam(player);held.clear();setPowers(false)}
+ mode='rpg';rpgTab=tab;rpgMenu.hidden=false;modal.style.display='none';renderRpgMenu();
+}
+function renderRpgMenu(){
+ rpgTabs.replaceChildren();rpgBody.replaceChildren();rpgActions.replaceChildren();
+ root.querySelector('#kf-rpg-title').textContent=rpgTab==='party'?'Fighter Select':rpgTab==='quests'?'Quest Journal':rpgTab==='map'?'World Map':'Game Settings';
+ for(const [key,label] of rpgSections){const b=menuButton(label,()=>{rpgTab=key;renderRpgMenu()},rpgTabs);b.setAttribute('aria-selected',String(key===rpgTab));b.setAttribute('role','tab')}
+ if(rpgTab==='party'){
+  menuText('p','Choose your active fighter. Progress is saved separately for each character.');
+  for(let i=0;i<roster.length;i++){const ch=roster[i],stats=rosterStats[i],row=menuText('div','',rpgBody);row.className='rpg-row';menuText('strong',(i===activeFighter?'▶ ':'')+ch.name+' — '+ch.role,row);menuText('div','Level '+stats.level+' · Strength '+stats.str+' · Ki '+stats.kistat+' · Dexterity '+stats.dex,row);const b=menuButton(i===activeFighter?'Active Fighter':'Select Fighter',()=>{if(i!==activeFighter){captureFighter();activeFighter=i;Object.assign(player,rosterStats[i]);player.combo=0;player.link=0;player.fly=false;player.surge=false;saveWorld()}renderRpgMenu()},row);b.disabled=i===activeFighter}
+  menuButton('Upgrade Stats',()=>{closeRpgMenu();openCharacter(characterButton)});
+ }else if(rpgTab==='quests'){
+  menuText('h3','Saiyan Saga · Prologue');menuText('p',quest==='new'?'Find the village mentor to begin your mission.':quest==='active'?'Defeat the scouts east of the village: '+questKills+' / 3':quest==='return'?'The scouts are defeated. Return to your mentor for the reward.':'Completed · The Saiyan threat is approaching.');
+  menuText('p','Main story: Saiyan Saga → Namek → Frieza → Androids → Cell → Majin Buu.');
+ }else if(rpgTab==='map'){
+  menuText('h3','Earth · Village and Eastern Forest');const map=menuText('div','',rpgBody);map.className='rpg-map';const mark=menuText('span','● YOU',map);mark.style.left=player?Math.max(2,Math.min(90,player.x/MW*100))+'%':'14%';mark.style.top=player?Math.max(4,Math.min(88,player.y/MH*100))+'%':'50%';const village=menuText('span','Village',map);village.style.cssText='left:5%;top:12%';const forest=menuText('span','Eastern Forest',map);forest.style.cssText='right:6%;top:12%';menuText('p','Travel east from the village to reach the scout encounter. The map tracks your current position.');
+ }else{
+  menuText('h3','Preferences');
+  const sound=menuText('label','',rpgBody),toggle=document.createElement('input');toggle.type='checkbox';toggle.checked=gameSettings.sound;toggle.onchange=()=>{gameSettings.sound=toggle.checked;saveSettings()};sound.append(toggle,document.createTextNode(' Sound enabled'));
+  const shake=menuText('label','',rpgBody),shakeInput=document.createElement('input');shakeInput.type='checkbox';shakeInput.checked=gameSettings.screenShake;shakeInput.onchange=()=>{gameSettings.screenShake=shakeInput.checked;saveSettings()};shake.append(shakeInput,document.createTextNode(' Screen shake'));
+  menuText('p','Controls: WASD / arrows move · Q switch · C profile · Shift dash · R recharge · Esc menu.');
+ }
+ menuButton('Resume Game',()=>{closeRpgMenu();modal.style.display='none'});
+ menuButton('Save Now',()=>{saveWorld();menuText('p','Progress saved on this device.')});
+ menuButton('Restart',()=>{if(window.confirm('Restart the adventure? Saved quest progress remains.'))start()});
+}
+function saveSettings(){try{localStorage.setItem('ki-fighter-settings-v1',JSON.stringify(gameSettings))}catch(e){}}
+try{Object.assign(gameSettings,JSON.parse(localStorage.getItem('ki-fighter-settings-v1'))||{})}catch(e){}
+rpgMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeRpgMenu()}});
 const healingDelay=3,healingRate=8;
 function spendKi(p,amount){
   p.ki=Math.max(0,p.ki-amount);
@@ -2121,7 +2170,7 @@ function renderSceneryDebris(f){
   c.fillRect(-f.size*.5,-f.size*.3,f.size,f.size*.63);
   c.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);villageArt();const northBeam=player?.beam&&castDirection(player)<0;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose);if(activeFighter!==0){c.save();c.strokeStyle=roster[activeFighter].color;c.lineWidth=2;c.beginPath();c.ellipse(o.x,o.y-17,12,24,0,0,Math.PI*2);c.stroke();c.restore()}}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD();questUI()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&gameSettings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);villageArt();const northBeam=player?.beam&&castDirection(player)<0;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose);if(activeFighter!==0){c.save();c.strokeStyle=roster[activeFighter].color;c.lineWidth=2;c.beginPath();c.ellipse(o.x,o.y-17,12,24,0,0,Math.PI*2);c.stroke();c.restore()}}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD();questUI()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','wave','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
