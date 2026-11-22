@@ -1383,19 +1383,25 @@ function paintFramePair(pair,draw,ink=c){
 }
 const heroSideAtlas=new Image();
 heroSideAtlas.src='assets/hero-side.webp';
+const heroSideSurge=new Image();
+heroSideSurge.src='assets/hero-side-surge.webp';
 const heroSideClips=[
   [0,.25,.5,.75,1],
   [0,.125,.25,.375,.5,.625,.75,.875,1],
   [0,.14,.32,.5,.73,1],
   [0,.10,.22,.36,.5,.65,.82,1],
 ].map((times,row)=>times.map((time,frame)=>[time,row<2?frame%(times.length-1):frame]));
-function heroSideReady(o){
-  return !o.surge&&heroSideAtlas.complete&&heroSideAtlas.naturalWidth>0;
+function heroSideArt(o){
+  const art=o.surge?heroSideSurge:heroSideAtlas;
+  return atlasReady(art)?art:null;
 }
-function drawHeroSide(row,progress,ink=c){
-  paintFramePair(framesAt(heroSideClips[row],progress),frame=>{
-    ink.drawImage(heroSideAtlas,frame*128,row*128,128,128,-25.6,-44.8,51.2,51.2);
-  },ink);
+function visibleFrame(sequence,progress){
+  const pair=framesAt(sequence,progress);
+  return pair.blend<.5?pair.first:pair.second;
+}
+function drawHeroSide(art,row,progress){
+  const frame=visibleFrame(heroSideClips[row],progress);
+  drawActionCell(art,row,frame,-25.6,-44.8,51.2,51.2);
 }
 function drawGuard(o,ink=c){
   if(o.stride<.015){
@@ -1441,55 +1447,29 @@ function drawVerticalCast(o,type,direction){
     c.fill();
   }
 }
-const profileLayer=document.createElement('canvas');
-profileLayer.width=144;
-profileLayer.height=156;
-const profileInk=profileLayer.getContext('2d');
 function drawHeroProfile(o,type,angle){
   const {side,rear,blend}=facingProfile(angle);
-  const bob=o.stride*Math.abs(Math.sin(o.gait));
-  const canBlend=blend>0&&blend<1&&spr.complete&&spr.naturalWidth;
-  const ink=canBlend?profileInk:c;
-  const inheritedAlpha=canBlend?1:ink.globalAlpha;
-  ink.save();
-  if(canBlend){
-    ink.clearRect(0,0,profileLayer.width,profileLayer.height);
-    ink.setTransform(3,0,0,3,72,132);
+  const walking=o.stride>.18;
+  const gait=(o.gait/(Math.PI*2))%1;
+  if(atlasReady(spr)&&blend>=.5){
+    c.save();
+    c.translate(0,-5);
+    drawMotionFrame(o,type,rear?1:0,walking?visibleFrame(frontWalkFrames,gait):0);
+    c.restore();
+    return;
   }
-  if(blend<1){
-    ink.globalAlpha=inheritedAlpha*(canBlend?1-blend:1);
-    ink.save();
-    if(heroSideReady(o)){
-      ink.scale(side,1);
-      const gait=(o.gait/(Math.PI*2))%1;
-      const stride=lim(o.stride/.24,0,1);
-      if(stride<1){
-        ink.globalAlpha*=1-stride;
-        drawHeroSide(0,(storyClock*.85)%1,ink);
-      }
-      if(stride>0){
-        ink.globalAlpha=inheritedAlpha*(canBlend?1-blend:1)*stride;
-        drawHeroSide(1,gait,ink);
-      }
-    }else{
-      ink.translate(0,heroPose.feet);
-      ink.scale(side*heroPose.guardWidth,heroPose.height);
-      ink.translate(0,-2);
-      drawGuard(o,ink);
-    }
-    ink.restore();
+  c.save();
+  const art=heroSideArt(o);
+  if(art){
+    c.scale(side,1);
+    drawHeroSide(art,walking?1:0,walking?gait:(storyClock*.85)%1);
+  }else{
+    c.translate(0,heroPose.feet);
+    c.scale(side*heroPose.guardWidth,heroPose.height);
+    c.translate(0,-2);
+    drawGuard(o);
   }
-  if(blend>0&&spr.complete&&spr.naturalWidth){
-    if(canBlend)ink.globalCompositeOperation='lighter';
-    ink.globalAlpha=inheritedAlpha*(canBlend?blend:1);
-    ink.translate(Math.cos(angle)*1.15,-bob*.75);
-    const progress=(o.gait/(Math.PI*2))%1;
-    if(o.stride>.24)paintFramePair(framesAt(frontWalkFrames,progress),
-      frame=>drawMotionFrame(o,type,rear?1:0,frame,ink),ink);
-    else drawMotionFrame(o,type,rear?1:0,0,ink);
-  }
-  ink.restore();
-  if(canBlend)c.drawImage(profileLayer,-24,-44,48,52);
+  c.restore();
 }
 const verticalStrikes=new Image();
 verticalStrikes.src='assets/vertical-strikes.webp';
@@ -1502,24 +1482,35 @@ function drawStrike(o,type,progress){
   const strike=strikes[o.strike];
   const aim=Math.atan2(o.attackY,o.attackX);
   const kicking=strike.frame===fighterFrames.kick;
+  const vertical=Math.abs(o.attackY)>.64;
+  const side=o.attackX<0?-1:1;
+  const sideArt=heroSideArt(o);
+  if(!vertical&&sideArt){
+    const impact=strike.impact;
+    const animationProgress=progress<=impact
+      ? .5*progress/impact
+      : .5+.5*(progress-impact)/(1-impact);
+    c.save();
+    c.scale(side,1);
+    drawHeroSide(sideArt,kicking?3:2,animationProgress);
+    c.restore();
+    return;
+  }
   const pose=samplePose(animationClips[kicking?'kick':'strike'],progress);
   const {weight}=pose;
-  const frames=framesAt(strikeFrames[o.strike],progress);
-  if(weight===0){
+  const frame=visibleFrame(strikeFrames[o.strike],progress);
+  if(weight<.35){
     drawHeroProfile(o,type,aim);
     return;
   }
-  const vertical=Math.abs(o.attackY)>.64;
-  if(weight<1)drawHeroProfile(o,type,aim);
   if(vertical&&verticalStrikes.complete&&verticalStrikes.naturalWidth){
     const row=o.attackY<0?3:0;
     const flip=Math.abs(o.attackX)>.16?Math.sign(o.attackX):o.strikeSide;
     c.save();
-    c.globalAlpha*=weight;
     c.translate(o.attackX*pose.reach,pose.reach*o.attackY*.80-pose.lift);
     c.scale(flip,1);
     const art=o.surge&&surgeStrikeArt?surgeStrikeArt:verticalStrikes;
-    paintFramePair(frames,frame=>drawCombatFrame(art,row+frame-1));
+    drawCombatFrame(art,row+frame-1);
     c.restore();
     return;
   }
@@ -1527,24 +1518,12 @@ function drawStrike(o,type,progress){
     drawHeroProfile(o,type,aim);
     return;
   }
-  const side=o.attackX<0?-1:1;
   c.save();
-  c.globalAlpha*=weight;
-  if(heroSideReady(o)){
-    c.scale(side,1);
-    const impact=strike.impact;
-    const animationProgress=progress<=impact
-      ? .5*progress/impact
-      : .5+.5*(progress-impact)/(1-impact);
-    drawHeroSide(kicking?3:2,animationProgress);
-    c.restore();
-    return;
-  }
   c.translate((kicking?2.2:1.45)*o.attackX*pose.reach,heroPose.feet-pose.lift);
   c.scale(side*heroPose.width,heroPose.height);
   c.translate(0,-2);
   const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
-  paintFramePair(frames,frame=>drawCombatFrame(art,frame));
+  drawCombatFrame(art,frame);
   c.restore();
 }
 function character(o,type,referencePose){
@@ -1560,23 +1539,18 @@ function character(o,type,referencePose){
     c.rotate((o.hurtX||1)*pose.tilt*.11);
     c.filter=pose.flash>.04?`brightness(${1+.65*pose.flash}) saturate(${1-.45*pose.flash})`:'none';
   }
-  if(referencePose){
+  if(referencePose==='ignite'||referencePose==='sustain'){
+    drawHeroProfile(o,type,o.faceAngle);
+    c.restore();
+    return;
+  }
+  // The storyboard gather contains a baked-in orb. Use the clean fighter pose
+  // with the separately rendered charge effect whenever the fighter atlas is ready.
+  if(referencePose&&(!atlasReady(combatAtlas)||(!o.surge&&referencePose!=='gather'))){
     c.scale(poseSide(o),1);
     const body=referencePose+'Body';
-    if(atlasReady(kiActions)&&(referencePose==='ignite'||referencePose==='sustain')){
-      const breath=1+.014*Math.sin(storyClock*10);
-      drawActionCell(kiActions,4,0,-25.6,-44.8*breath,51.2,51.2*breath);
-    }else if(storyMotionReady()&&storyMotion[body]){
+    if(storyMotionReady()&&storyMotion[body]){
       const breath=1+.018*Math.sin(storyClock*10);
-      if(referencePose==='ignite'){
-        const ignition=surgeIgnitionWeight(o.surgeFlare);
-        const alpha=c.globalAlpha;
-        if(ignition<1){
-          c.globalAlpha=alpha;
-          drawStoryMotion('sustainBody',0,storyScale,storyScale*breath);
-        }
-        c.globalAlpha=alpha*ignition;
-      }
       drawStoryMotion(body,0,storyScale,storyScale*breath);
     }else drawStorySprite(referencePose);
     c.restore();
