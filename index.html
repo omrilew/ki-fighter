@@ -86,7 +86,7 @@
 </div>
 <div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or keep holding to charge and fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfplay">▶ PLAY</button></div><div id="kflevel" style="display:none;position:absolute;inset:0;z-index:6;background:#0b1539e8;align-items:center;justify-content:center;flex-direction:column;gap:10px"><h2 style="color:#ffe38a;margin:0">LEVEL UP!</h2><div id="kfpoints"></div><button data-stat="str">⚔ STR — Melee power</button><button data-stat="ki">✦ KI — Energy damage</button><button data-stat="dex">➤ DEX — Speed</button><div id="kfstats"></div></div>
 <script>
-(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=720,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
+(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=720,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const trees=[],rocks=[];for(let i=0;i<115;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(Math.abs(x-355)<64&&Math.abs(y-280)<87||Math.abs(x-355)<13||Math.abs(y-280)<13||hyp((x-530)*.75,(y-340)*1.3)<80)continue;trees.push({x,y,scale:rnd(.84,1.25),variant:i%4===0?1:0})}for(let i=0;i<28;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);rocks.push({x,y})}const pond={x:528,y:345,rx:75,ry:48};
 const mapScale=2.5;
@@ -204,8 +204,8 @@ ambientShade.addColorStop(.45,'#101e3100');
 ambientShade.addColorStop(1,'#101e314a');
 bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
-function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,kiDelay:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
+function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
+function start(){resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:352,y:280,hp:100,max:100,healDelay:0,kiDelay:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=.7;mode='play';modal.style.display='none';held.clear();notice('FOREST TRIAL BEGINS')}
 function end(win){resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=start;
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96};
 function xpRequired(level){return 55+(level-1)*35}
@@ -223,7 +223,7 @@ function applyLevelUps(p){
   }
 }
 const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
-function spawn(){wave++;let n=wave===3?4:wave+2;for(let i=0;i<n;i++){let x,y;for(let j=0;j<100;j++){let a=rnd(0,7),r=rnd(85,160);x=lim(player.x+Math.cos(a)*r,30,MW-30);y=lim(player.y+Math.sin(a)*r,40,MH-30);if(!solid(x,y))break}let kind=wave===3&&i===0?'brute':wave===2&&i===3?'soldier':['bandit','thug','ninja'][i%3],hp={bandit:27,thug:59,ninja:32,soldier:29,brute:158}[kind];enemies.push({x,y,hp,max:hp,kind,boss:kind==='brute',fx:0,fy:1,walking:true,faceAngle:Math.PI/2,gait:0,stride:0,hurt:0,flash:0,cd:rnd(.5,1.2),phase:rnd(0,7)})}notice(wave===3?'BOSS BRUTE!':'WAVE '+wave+' / 3')}
+function spawn(){wave++;let n=wave===3?4:wave+2;for(let i=0;i<n;i++){let x,y;for(let j=0;j<100;j++){let a=rnd(0,7),r=rnd(85,160);x=lim(player.x+Math.cos(a)*r,30,MW-30);y=lim(player.y+Math.sin(a)*r,40,MH-30);if(!solid(x,y))break}let kind=wave===3&&i===0?'brute':wave===2&&i===3?'soldier':['bandit','thug','ninja'][i%3],hp={bandit:27,thug:59,ninja:32,soldier:29,brute:158}[kind];enemies.push({x,y,hp,max:hp,kind,flank:i%2?-1:1,boss:kind==='brute',fx:0,fy:1,walking:true,faceAngle:Math.PI/2,gait:0,stride:0,hurt:0,flash:0,cd:rnd(.5,1.2),phase:rnd(0,7)})}notice(wave===3?'BOSS BRUTE!':'WAVE '+wave+' / 3')}
 const fighterFrames={guard:0,jab:1,cross:2,kick:3,gather:4,release:5,dash:11,walk:12};
 const strikes={
   jab:{frame:fighterFrames.jab,range:32,arc:1.04,impact:.27},
@@ -251,18 +251,19 @@ function punch(){
 }
 function meleeHit(p){
   const strike=strikes[p.strike],edge=Math.cos(strike.arc);
+  const damage=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1);
   for(const e of enemies){
     if(e.hp<=0)continue;
     const dx=e.x-p.x,dy=e.y-p.y,d=hyp(dx,dy);
-    if(d>=strike.range+(e.boss?9:0)||(d>0&&(dx*p.attackX+dy*p.attackY)/d<edge))continue;
-    e.hp-=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1);
+    if(!insideStrike(dx,dy,p.attackX,p.attackY,strike.range+(e.boss?9:0),edge))continue;
+    e.hp-=damage;
     if(e.hp<=0)e.defeatedByMelee=true;
     e.flash=.16;
     hurtReaction(e,dx,dy);
-    e.x+=dx/(d||1)*9;
-    e.y+=dy/(d||1)*9;
+    move(e,dx/(d||1)*9,dy/(d||1)*9);
     shake=.1;
   }
+  sceneryStrike(p.x,p.y,p.attackX,p.attackY,strike.range,edge,damage);
 }
 function fire(){
   const p=player;
@@ -360,26 +361,31 @@ function resetBeam(p){
   p.beamCharge=null;
   p.beamChargeSource=null;
 }
+function insideBeam(vx,vy,dx,dy,{body,tip,wide},radius){
+  const distance=vx*dx+vy*dy;
+  const along=lim(distance,0,body+tip);
+  const side=Math.abs(vx*dy-vy*dx);
+  return hyp(distance-along,Math.max(0,side-beamWidth(along,body,tip,wide)))<=radius;
+}
 function beamHit(dt){
   const p=player,{fx:dx,fy:dy}=p;
   const origin=beamOrigin(p);
-  const {body,tip,wide}=beamShape(p.beamAge);
+  const shape=beamShape(p.beamAge);
+  const damage=dt*beam.damage*(1+(p.kistat-1)*.24);
   for(const e of enemies){
-    if(e.hp<=0)continue;
-    const vx=e.x-origin.x,vy=e.y+poseHeight(-15)-origin.y;
-    const distance=vx*dx+vy*dy;
-    const radius=e.boss?11:8;
-    const along=lim(distance,0,body+tip);
-    const side=Math.abs(vx*dy-vy*dx);
-    const width=beamWidth(along,body,tip,wide);
-    if(hyp(distance-along,Math.max(0,side-width))<=radius){
-      e.hp-=dt*beam.damage*(1+(p.kistat-1)*.24);
-      if(!e.hurt&&e.flash<=0){
-        hurtReaction(e,dx,dy);
-        e.flash=.19;
-        kiPulse(e.x,e.y-15,e.boss?10:7);
-      }
-      if(Math.random()<dt*20)burst(e.x,e.y-15,'#9af5ff',2);
+    if(e.hp<=0||!insideBeam(e.x-origin.x,e.y+poseHeight(-15)-origin.y,dx,dy,shape,e.boss?11:8))continue;
+    e.hp-=damage;
+    if(!e.hurt&&e.flash<=0){
+      hurtReaction(e,dx,dy);
+      e.flash=.19;
+      kiPulse(e.x,e.y-15,e.boss?10:7);
+    }
+    if(Math.random()<dt*20)burst(e.x,e.y-15,'#9af5ff',2);
+  }
+  for(const prop of breakableProps){
+    const rule=sceneryRules[prop.variant];
+    if(!prop.broken&&insideBeam(prop.x-origin.x,prop.y-rule.center-origin.y,dx,dy,shape,rule.radius)){
+      damageScenery(prop,damage*.85,dx,dy);
     }
   }
 }
@@ -424,15 +430,35 @@ function drawStorySprite(name,scaleX=storyScale,scaleY=scaleX){
   c.drawImage(storyboardAtlas,x,y,w,h,-anchorX*scaleX,-anchorY*scaleY,w*scaleX,h*scaleY);
 }
 function storyMotionReady(){return storyMotionAtlas.complete&&storyMotionAtlas.naturalWidth>0}
+const motionBlend=document.createElement('canvas');
+motionBlend.width=280;
+motionBlend.height=244;
+const motionInk=motionBlend.getContext('2d');
 function drawStoryMotion(name,time,scaleX=storyScale,scaleY=scaleX){
   if(!storyMotionReady()){
     if(storySprites[name])drawStorySprite(name,scaleX,scaleY);
     return;
   }
   const [w,h,anchorX,anchorY,frames]=storyMotion[name];
-  const frame=Math.floor(Math.max(0,time)*18)%frames.length;
-  const [x,y]=frames[frame];
-  c.drawImage(storyMotionAtlas,x,y,w,h,-anchorX*scaleX,-anchorY*scaleY,w*scaleX,h*scaleY);
+  const clock=Math.max(0,time)*18;
+  const index=Math.floor(clock)%frames.length;
+  const blend=clock-Math.floor(clock);
+  const [x,y]=frames[index];
+  const left=-anchorX*scaleX,top=-anchorY*scaleY;
+  if(frames.length===1||blend<.015){
+    c.drawImage(storyMotionAtlas,x,y,w,h,left,top,w*scaleX,h*scaleY);
+    return;
+  }
+  const [nextX,nextY]=frames[(index+1)%frames.length];
+  motionInk.save();
+  motionInk.clearRect(0,0,w,h);
+  motionInk.globalAlpha=1-blend;
+  motionInk.drawImage(storyMotionAtlas,x,y,w,h,0,0,w,h);
+  motionInk.globalCompositeOperation='lighter';
+  motionInk.globalAlpha=blend;
+  motionInk.drawImage(storyMotionAtlas,nextX,nextY,w,h,0,0,w,h);
+  motionInk.restore();
+  c.drawImage(motionBlend,0,0,w,h,left,top,w*scaleX,h*scaleY);
 }
 function storyPose(o,recharging){
   if(!storyReady())return null;
@@ -579,8 +605,8 @@ for(const event of ['pointercancel','lostpointercapture']){
 kiButton.addEventListener('click',e=>{if(e.detail===0)act('ki',true)});
 function aimAtMouse(e,ki=false){
   const bounds=cv.getBoundingClientRect();
-  const x=(e.clientX-bounds.left)*W/bounds.width+Math.floor(lim(player.x-W/2,0,MW-W));
-  const y=(e.clientY-bounds.top)*H/bounds.height+Math.floor(lim(player.y-H/2,0,MH-H));
+  const x=(e.clientX-bounds.left)*W/bounds.width+lim(player.x-W/2,0,MW-W);
+  const y=(e.clientY-bounds.top)*H/bounds.height+lim(player.y-H/2,0,MH-H);
   const dx=x-player.x,dy=y-(player.y+poseHeight(-15)),distance=hyp(dx,dy);
   if(distance<3)return;
   player.fx=dx/distance;
@@ -693,6 +719,70 @@ function recoverHealth(p,dt){
   p.healDelay=Math.max(0,p.healDelay-dt);
   if(healingTime&&p.hp<p.max)p.hp=Math.min(p.max,p.hp+healingRate*healingTime);
 }
+function approachEnemy(e,distance,dt,ranged){
+  let x=e.fx,y=e.fy;
+  if(!ranged&&distance<98&&distance>28){
+    const flank=(e.flank||1)*.42*lim((distance-28)/23,0,1);
+    x-=e.fy*flank;
+    y+=e.fx*flank;
+  }
+  for(const ally of enemies){
+    if(ally===e||ally.hp<=0)continue;
+    const dx=e.x-ally.x,dy=e.y-ally.y,d=hyp(dx,dy);
+    if(d>0&&d<20){
+      const push=(20-d)/23;
+      x+=dx/d*push;
+      y+=dy/d*push;
+    }
+  }
+  const length=hyp(x,y)||1,step=enemySpeed[e.kind]*dt;
+  x/=length;
+  y/=length;
+  if(solid(e.x+x*5,e.y+y*5)){
+    const side=e.flank||1;
+    for(const angle of [side*.98,-side*.98,side*1.51,-side*1.51]){
+      const dx=x*Math.cos(angle)-y*Math.sin(angle),dy=x*Math.sin(angle)+y*Math.cos(angle);
+      if(solid(e.x+dx*6,e.y+dy*6))continue;
+      x=dx;
+      y=dy;
+      break;
+    }
+  }
+  move(e,x*step,y*step);
+}
+function drawEnemyWarning(e){
+  if(!e.attack||e.attack.time>=e.attack.windup)return;
+  const a=e.attack,age=a.time/a.windup;
+  const aim=Math.atan2(a.y,a.x);
+  c.save();
+  c.translate(e.x,e.y+2);
+  if(e.kind==='ninja'){
+    c.globalAlpha=.20+age*.45;
+    c.strokeStyle='#db80be';
+    c.lineWidth=1+age*.45;
+    c.setLineDash([3,3]);
+    c.beginPath();
+    c.moveTo(a.x*10,a.y*10);
+    c.lineTo(a.x*65,a.y*65);
+    c.stroke();
+  }else{
+    const range=e.boss?34:25,arc=e.boss?1.03:.86;
+    c.globalAlpha=.085+age*.11;
+    c.fillStyle='#e99650';
+    c.beginPath();
+    c.moveTo(0,0);
+    c.arc(0,0,range,aim-arc,aim+arc);
+    c.closePath();
+    c.fill();
+    c.globalAlpha=.30+age*.39;
+    c.strokeStyle='#efb578';
+    c.lineWidth=.75+age*.7;
+    c.beginPath();
+    c.arc(0,0,range,aim-arc,aim+arc);
+    c.stroke();
+  }
+  c.restore();
+}
 function advanceEnemy(e,p,dt){
   e.flash=Math.max(0,e.flash-dt);
   e.cd-=dt;
@@ -705,11 +795,16 @@ function advanceEnemy(e,p,dt){
     attack.time+=dt;
     if(elapsed<attack.windup&&attack.time>=attack.windup){
       if(ranged)enemyShots.push({x:e.x,y:e.y-12,dx:attack.x,dy:attack.y,time:2});
-      else if(distance<reach&&!p.fly&&!p.inv){
-        damagePlayer(e.boss?9:4,-dx,-dy);
-        shake=.14;
-        burst(p.x,p.y-17,'#ff9191',12);
-        if(p.hp<=0)end(false);
+      else{
+        const edge=Math.cos(e.boss?1.03:.86);
+        const damage=e.boss?9:4;
+        sceneryStrike(e.x,e.y,attack.x,attack.y,reach,edge,e.boss?30:11);
+        if(!p.fly&&!p.inv&&insideStrike(dx,dy,attack.x,attack.y,reach,edge)){
+          damagePlayer(damage,-dx,-dy);
+          shake=.14;
+          burst(p.x,p.y-17,'#ff9191',12);
+          if(p.hp<=0)end(false);
+        }
       }
     }
     if(attack.time>=attack.windup+.22)e.attack=null;
@@ -720,14 +815,14 @@ function advanceEnemy(e,p,dt){
   e.fy=dy/(distance||1);
   e.faceAngle=turnToward(e.faceAngle,Math.atan2(dy,dx),dt);
   if(e.cd<=0&&(ranged?distance<160:distance<reach&&!p.fly)){
-    const windup=ranged?.23:e.boss?.24:.17;
+    const windup=ranged?.31:e.boss?.36:.25;
     e.attack={time:0,windup,x:e.fx,y:e.fy};
     e.cd=ranged?1.7:e.boss?1.1:1.4;
     e.walking=false;
     return;
   }
   const oldX=e.x,oldY=e.y;
-  if(distance>(ranged?95:23)&&distance<250)move(e,e.fx*enemySpeed[e.kind]*dt,e.fy*enemySpeed[e.kind]*dt);
+  if(distance>(ranged?95:23)&&distance<250)approachEnemy(e,distance,dt,ranged);
   const travel=hyp(e.x-oldX,e.y-oldY);
   e.walking=travel>.001;
   e.stride=(e.stride||0)+((e.walking?1:0)-(e.stride||0))*(1-Math.exp(-dt*12));
@@ -750,7 +845,14 @@ function damagePlayer(amount,dx=0,dy=0){
   player.attack=0;
   hurtReaction(player,dx,dy);
 }
-function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;let p=player;recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)resetBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
+function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+for(const enemy of fallen)enemy.koTime-=dt;
+fallen=fallen.filter(enemy=>enemy.koTime>0);
+for(const prop of breakableProps){
+  if(prop.impact>0)prop.impact=Math.max(0,prop.impact-dt);
+  if(prop.fall>0)prop.fall=Math.max(0,prop.fall-dt);
+}
+let p=player;recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)resetBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
 move(p,p.vx*dt,p.vy*dt);
 const travel=hyp(p.x-fromX,p.y-fromY);
@@ -765,12 +867,18 @@ if(p.beam){
   p.beamCharge+=dt;
   if(p.beamCharge>=beam.chargeTime)fireChargedBeam(p);
 }
-for(let b of balls){b.x+=b.dx*210*dt;b.y+=b.dy*210*dt;b.time-=dt;for(let e of enemies){if(e.hp>0&&hyp(b.x-e.x,b.y-e.y+10)<(e.boss?18:13)+b.r){e.hp-=b.damage*(p.surge?1.3:1);e.flash=.18;hurtReaction(e,b.dx,b.dy);b.time=0;kiPulse(e.x,e.y-12,10,false,true);shake=.13;break}}if(b.time>0&&solid(b.x,b.y)){kiPulse(b.x,b.y,5,false,true);b.time=0}}balls=balls.filter(b=>b.time>0);
+for(let b of balls){b.x+=b.dx*210*dt;b.y+=b.dy*210*dt;b.time-=dt;
+if(b.time>0&&sceneryProjectile(b,b.damage)){
+  kiPulse(b.x,b.y,5,false,true);
+  b.time=0;
+  continue;
+}
+for(let e of enemies){if(e.hp>0&&hyp(b.x-e.x,b.y-e.y+10)<(e.boss?18:13)+b.r){e.hp-=b.damage*(p.surge?1.3:1);e.flash=.18;hurtReaction(e,b.dx,b.dy);b.time=0;kiPulse(e.x,e.y-12,10,false,true);shake=.13;break}}if(b.time>0&&solid(b.x,b.y)){kiPulse(b.x,b.y,5,false,true);b.time=0}}balls=balls.filter(b=>b.time>0);
 for(const enemy of enemies){
   if(mode!=='play')break;
   if(enemy.hp>0)advanceEnemy(enemy,p,dt);
 }
-for(let e of enemies.filter(e=>e.hp<=0)){kills++;p.xp+=enemyExperience[e.kind];if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);if(mode==='play')applyLevelUps(p);if(enemies.length===0){if(wave===3){if(mode==='play')end(true)}else if((wait-=dt)<=0){spawn();wait=1.2}}else wait=1.2}
+for(let e of enemies.filter(e=>e.hp<=0)){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;p.xp+=enemyExperience[e.kind];if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);if(mode==='play')applyLevelUps(p);if(enemies.length===0){if(wave===3){if(mode==='play')end(true)}else if((wait-=dt)<=0){spawn();wait=1.2}}else wait=1.2}
 function showLevel(){resetStick();stopKi();resetBeam(player);setPowers(false);let el=root.querySelector('#kflevel');el.style.display='flex';root.querySelector('#kfpoints').textContent=player.points===1?'Choose 1 upgrade':`Choose ${player.points} upgrades`;root.querySelector('#kfstats').textContent=`STR ${player.str}  •  KI ${player.kistat}  •  DEX ${player.dex}`}
 for(let b of root.querySelectorAll('[data-stat]'))b.onclick=()=>{if(mode!=='level')return;let stat=b.dataset.stat;if(stat==='ki')player.kistat++;else player[stat]++;player.points--;if(player.points){showLevel();return}root.querySelector('#kflevel').style.display='none';mode='play';notice(stat.toUpperCase()+' UPGRADED!')};
 const combatAtlas=new Image();
@@ -859,7 +967,7 @@ function drawEnemyPose(image,frame,o){
   c.drawImage(image,sourceX,split*artScale,combatCell*artScale,band*artScale,
     -26,split-48,combatCell,band);
   c.save();
-  c.translate(drive,-Math.abs(drive)*.45);
+  c.translate(drive*Math.abs(o.attack.x),drive*o.attack.y*.72-Math.abs(drive)*.36);
   c.transform(1,0,-movement*.10,1,0,0);
   c.drawImage(image,sourceX,0,combatCell*artScale,(split+3)*artScale,
     -26,-48,combatCell,split+3);
@@ -877,14 +985,22 @@ function enemyArt(o){
   c.beginPath();
   c.ellipse(0,2,o.boss?18:11,2.6,0,0,Math.PI*2);
   c.fill();
-  if(o.hurt)c.translate(o.hurtX*o.hurt*32,o.hurtY*o.hurt*32);
+  if(o.koTime){
+    const progress=1-o.koTime/.29;
+    c.globalAlpha=1-progress*.94;
+    c.translate((o.hurtX||side)*progress*5,progress*2);
+    c.rotate(-side*progress*.66);
+    c.scale(1,1-progress*.32);
+  }else if(o.hurt)c.translate(o.hurtX*o.hurt*32,o.hurtY*o.hurt*32);
   c.scale(side*(.77+.23*blend),1);
   drawEnemyPose(combatAtlas,frame,o);
   if(rear&&blend>0){
-    c.globalAlpha=blend;
+    c.save();
+    c.globalAlpha*=blend;
     drawEnemyPose(combatAtlas,rearFrame,o);
+    c.restore();
   }
-  if(o.flash>0&&flashAtlas.width===combatAtlas.naturalWidth){
+  if(!o.koTime&&o.flash>0&&flashAtlas.width===combatAtlas.naturalWidth){
     c.globalAlpha=o.hurt?.64:.30;
     drawEnemyPose(flashAtlas,rear&&blend>.5?rearFrame:frame,o);
   }
@@ -914,10 +1030,83 @@ for(let i=0;i<20;i++){
   const y=pond.y+Math.sin(angle)*(pond.ry+3);
   scenery.push({x,y,variant:5,scale:terrainBetween(.65,1.15)});
 }
+const sceneryRules=[
+  {hp:60,radius:9,center:13,remains:7,material:'wood'},
+  {hp:52,radius:8,center:15,remains:7,material:'wood'},
+  {hp:14,radius:8,center:6,material:'leaf'},
+  {hp:36,radius:6,center:5,remains:3,material:'stone'},
+  {hp:5,radius:4,center:3,material:'leaf'},
+  {hp:8,radius:5,center:5,material:'leaf'},
+  {hp:5,radius:4,center:2,material:'leaf'},
+  {hp:22,radius:7,center:5,material:'wood'},
+];
+const breakableProps=trees.concat(scenery);
+const debrisColors={
+  wood:['#472a1b','#855331','#c1884f','#96994a'],
+  leaf:['#3c5030','#788247','#b3a15c'],
+  stone:['#3e4048','#737982','#b1b6ac'],
+};
+function resetScenery(){
+  for(const prop of breakableProps){
+    prop.hp=sceneryRules[prop.variant].hp;
+    prop.broken=false;
+    prop.impact=0;
+    prop.fall=0;
+  }
+}
+function damageScenery(prop,damage,dx,dy){
+  if(prop.broken)return;
+  const rule=sceneryRules[prop.variant];
+  prop.hp-=damage;
+  const destroyed=prop.hp<=0;
+  const firstHit=prop.impact<=0;
+  prop.broken=destroyed;
+  if(destroyed)prop.fall=.34;
+  if(firstHit||destroyed){
+    prop.impact=.19;
+    prop.hitSide=dx<-.12?-1:1;
+    const colors=debrisColors[rule.material];
+    const count=destroyed?(prop.variant<2?15:9):3;
+    for(let i=0;i<count;i++){
+      const direction=Math.atan2(dy,dx)+rnd(-1.45,1.45);
+      const speed=rnd(10,destroyed?64:32);
+      fx.push({x:prop.x+rnd(-3,3),y:prop.y-rule.center+rnd(-3,3),
+        vx:Math.cos(direction)*speed,vy:Math.sin(direction)*speed-rnd(16,48),
+        time:rnd(.22,.57),color:colors[i%colors.length],debris:true,size:rnd(1.4,destroyed?4.4:2.6),
+        rotation:rnd(0,Math.PI*2),spin:rnd(-9,9)});
+    }
+  }
+}
+function insideStrike(x,y,dx,dy,range,edge){
+  const distance=hyp(x,y);
+  return distance<range&&(distance===0||(x*dx+y*dy)/distance>=edge);
+}
+function sceneryStrike(x,y,dx,dy,range,edge,damage){
+  for(const prop of breakableProps){
+    const radius=sceneryRules[prop.variant].radius;
+    if(!prop.broken&&insideStrike(prop.x-x,prop.y-y,dx,dy,range+radius*.45,edge)){
+      damageScenery(prop,damage,dx,dy);
+    }
+  }
+}
+function sceneryProjectile(shot,damage){
+  let blocked=false;
+  for(const prop of breakableProps){
+    if(prop.broken)continue;
+    const rule=sceneryRules[prop.variant];
+    if(hyp(shot.x-prop.x,shot.y-(prop.y-rule.center))>rule.radius+2)continue;
+    damageScenery(prop,damage,shot.dx,shot.dy);
+    if(prop.variant<2||prop.variant===3||prop.variant===7)blocked=true;
+  }
+  return blocked;
+}
 function drawForestProp(obj){
   if(!forestAtlas.complete||!forestAtlas.naturalWidth)return;
-  const [sourceX,sourceWidth,sourceHeight,width,height]=forestProps[obj.variant];
-  const size=obj.scale||1;
+  const remains=obj.broken&&!obj.fall;
+  const variant=remains?sceneryRules[obj.variant].remains:obj.variant;
+  if(variant===undefined)return;
+  const [sourceX,sourceWidth,sourceHeight,width,height]=forestProps[variant];
+  const size=(obj.scale||1)*(remains?.70:1);
   const hidesFighter=fighter=>fighter&&fighter.y<obj.y&&obj.y-fighter.y<height*size*.82&&
     Math.abs(fighter.x-obj.x)<width*size*.42;
   const obscures=width>25&&player&&(hidesFighter(player)||enemies.some(enemy=>
@@ -930,6 +1119,13 @@ function drawForestProp(obj){
   c.beginPath();
   c.ellipse(width*.055,1,width*.35,Math.max(1,width*.10),0,0,Math.PI*2);
   c.fill();
+  if(obj.fall>0){
+    const fall=1-obj.fall/.34;
+    c.rotate((obj.hitSide||1)*fall*fall*(obj.variant<2?1.28:.28));
+    c.globalAlpha*=1-fall*.88;
+  }else if(obj.impact>0){
+    c.rotate((obj.hitSide||1)*Math.sin(obj.impact*39)*obj.impact*.68);
+  }
   c.drawImage(forestAtlas,sourceX,0,sourceWidth,sourceHeight,
     -width*.5,-height+2,width,height);
   c.restore();
@@ -1033,15 +1229,18 @@ verticalStrikes.addEventListener('load',()=>{surgeStrikeArt=makeFormArt(vertical
 function drawStrike(o,type,progress){
   const strike=strikes[o.strike];
   const aim=Math.atan2(o.attackY,o.attackX);
-  if(progress<.16||progress>.79){
+  const weight=lim(Math.min((progress-.09)/.18,(.92-progress)/.21),0,1);
+  if(weight===0){
     drawHeroProfile(o,type,aim);
     return;
   }
   const vertical=Math.abs(o.attackY)>.64;
+  if(weight<1)drawHeroProfile(o,type,aim);
   if(vertical&&verticalStrikes.complete&&verticalStrikes.naturalWidth){
     const frame=strike.frame-1+(o.attackY<0?3:0);
     const flip=Math.abs(o.attackX)>.16?Math.sign(o.attackX):o.strikeSide;
     c.save();
+    c.globalAlpha*=weight;
     c.scale(flip,1);
     drawCombatFrame(o.surge&&surgeStrikeArt?surgeStrikeArt:verticalStrikes,frame);
     c.restore();
@@ -1053,7 +1252,8 @@ function drawStrike(o,type,progress){
   }
   const side=o.attackX<0?-1:1;
   c.save();
-  c.translate((strike.frame===3?2:1)*o.attackX,heroPose.feet);
+  c.globalAlpha*=weight;
+  c.translate((strike.frame===3?2:1)*o.attackX*weight,heroPose.feet);
   c.scale(side*heroPose.width,heroPose.height);
   c.translate(0,-2);
   drawCombatFrame(o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas,strike.frame);
@@ -1202,7 +1402,16 @@ function energyAura(p){
   drawStoryMotion(name,time,storyScale*flare,storyScale*(1+.045*Math.sin(storyClock*17)));
   c.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake)c.translate(rnd(-1,1),rnd(-1,1));c.imageSmoothingEnabled=true;c.drawImage(map,Math.floor(x)*mapScale,Math.floor(y)*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-Math.floor(x),-Math.floor(y));let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((recharging||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.pulse)renderKiPulse(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD()}
+function renderSceneryDebris(f){
+  c.save();
+  c.globalAlpha=Math.min(1,f.time*6);
+  c.translate(f.x,f.y);
+  c.rotate(f.rotation);
+  c.fillStyle=f.color;
+  c.fillRect(-f.size*.5,-f.size*.3,f.size,f.size*.63);
+  c.restore();
+}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((recharging||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','wave','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
