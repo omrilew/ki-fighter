@@ -1,6 +1,6 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('index.html','utf8');
-const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)].map(x=>x[1]).filter(x=>x.trim());
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(x=>x.trim());
 assert(scripts.length>0,'Missing inline game script');
 for(const script of scripts)new vm.Script(script,{filename:'index.html'});
 for(const token of ['function canSwitchFighter()','function selectFighter(','function saveWorld()','function loadWorld()','function resetAdventure()','function openRpgMenu(','function renderRpgMenu()','function questSpawn()'])assert(html.includes(token),'Missing feature: '+token);
