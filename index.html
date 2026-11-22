@@ -1,4 +1,42 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}</style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}
+/* DBZ campaign menu system — crisp, readable and touch-friendly */
+#kfg{--ui-ink:#0b1427;--ui-panel:#111d36;--ui-gold:#ffd36b;--ui-line:#b9c9ec;letter-spacing:.015em}
+#kfg button{border-radius:5px;border:2px solid #637ba5;background:linear-gradient(180deg,#344b77 0%,#1b2d52 46%,#101c35 100%);color:#f9f6e9;text-shadow:0 1px #0009;box-shadow:inset 0 2px #ffffff2b,inset 0 -3px #071020,0 3px 0 #080e1b;font-weight:850;transition:filter .1s,transform .1s}
+#kfg button:hover{filter:brightness(1.16)}
+#kfg button:active{transform:translateY(2px);box-shadow:inset 0 2px 4px #0008}
+#kfg button:disabled{opacity:.5;cursor:not-allowed}
+#kfg .vitals,#kfg .counters,#kfg .notice{border:2px solid #a6b9df;border-radius:6px;background:linear-gradient(180deg,#1c3055ed,#0b172dec);box-shadow:inset 0 1px #ffffff2b,0 3px 0 #070d1dbb,0 7px 22px #0006}
+#kfg .meter{height:8px;border:1px solid #8d9bbb;border-radius:2px;background:#10182a}
+#kfg .meter i{border-radius:0}
+#kfg .top{top:82px}
+#kfg .top button{min-height:40px}
+#kfg .power-menu{flex-direction:column;min-width:115px}
+#kfg .power-menu button{width:100%}
+#kfg .modal{background:radial-gradient(ellipse at center,#263e70ed 0%,#101c39f7 60%,#060b1afc 100%);gap:13px}
+#kfg .modal::before{content:"";position:absolute;inset:12px;border:2px solid #a5b9e670;pointer-events:none;box-shadow:inset 0 0 0 5px #060d2066}
+#kfg .modal h2{font:1000 clamp(30px,6vw,62px) system-ui;letter-spacing:.065em;text-transform:uppercase;color:#ffdf72;-webkit-text-stroke:1px #77421e;text-shadow:0 3px #8e4c21,0 6px #1a2347,0 9px 20px #000c}
+#kfg .modal p{font-size:clamp(12px,1.5vw,15px);line-height:1.65;max-width:440px;color:#e1eafc;background:#0c1932bb;border:1px solid #6d83b5;padding:12px 18px;border-radius:4px}
+#kfg .modal button{position:relative;min-width:190px;min-height:49px;padding:11px 24px;background:linear-gradient(180deg,#ffe58d,#e6a839);color:#292032;text-shadow:none;border:2px solid #fff4b4;box-shadow:inset 0 2px #fff9d8,0 4px #9c5829,0 8px 20px #0008;text-transform:uppercase;letter-spacing:.06em}
+#kfg .modal #kfresume{background:linear-gradient(#5475a7,#263e6b);color:white;border-color:#a9c7f3}
+#kfg #kfcharacter{width:min(720px,calc(100% - 20px));max-height:calc(100dvh - 20px);border:3px solid #c1d0ef;border-radius:7px;background:repeating-linear-gradient(135deg,#172847,#172847 8px,#192b4c 8px,#192b4c 16px);box-shadow:inset 0 0 0 4px #08152c,0 14px 0 #080f20,0 24px 70px #000d}
+#kfg #kfcharacter::backdrop{background:#020817d9;backdrop-filter:blur(3px)}
+#kfg .character-head{background:linear-gradient(90deg,#243f6c,#122343);border-bottom:3px solid #d7ae5e;padding:13px 18px}
+#kfg .character-head h2{font-size:clamp(20px,4vw,30px);text-transform:uppercase;letter-spacing:.07em;color:#ffdc77;text-shadow:2px 3px #07152e}
+#kfg .character-preview{border:2px solid #657fac;border-radius:4px;background:radial-gradient(ellipse at center,#42608d,#152744 78%);box-shadow:inset 0 0 0 3px #0c1b35}
+#kfg .character-preview strong{font-size:16px;color:#ffdf86}
+#kfg .points-total{border:1px solid #a88a52;border-radius:3px;background:#3b3350;color:#ffde8b}
+#kfg .stat-row{border:2px solid #607ca9;border-radius:4px;background:#122340e8}
+#kfg .stat-row button{background:linear-gradient(#eac477,#a66e2f);color:#221c24;text-shadow:none;border-color:#ffecb2}
+#kfg .acts{border-radius:6px;border-width:2px;background:#0a1734d9}
+#kfg .acts button{border-radius:5px}
+#kfg .notice{z-index:1}
+#kfg .keyboard{border:1px solid #829bcc;border-radius:4px}
+#kfg .menu-kicker{color:#d1e2ff;text-transform:uppercase;letter-spacing:.24em;font-size:11px;font-weight:900;text-shadow:0 2px #000}
+#kfg .menu-footer{font-size:11px;color:#b9cbea;text-transform:uppercase;letter-spacing:.11em}
+#kfg .modal[style*="none"]{pointer-events:none}
+@media(max-width:600px){#kfg .top{top:78px;right:8px;gap:4px}#kfg .top button{padding:7px 8px;font-size:11px}#kfg .hud{inset:8px 8px auto}#kfg .modal::before{inset:7px}#kfg .character-head{padding:10px 12px}#kfg .character-main{padding:10px}}
+@media(max-height:420px){#kfg .modal{gap:6px}#kfg .modal h2{font-size:27px}#kfg .modal p{padding:6px 10px;line-height:1.3}#kfg .modal button{min-height:35px;padding:5px 14px}#kfg .menu-footer{display:none}}
+</style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
 <style>
 #kfg *{box-sizing:border-box}
 #kfg canvas{display:block;width:100%;height:100%;image-rendering:auto;touch-action:none}
@@ -96,7 +134,7 @@
   </div>
   <div class="controls">
     <div class="stick" role="img" aria-label="Movement joystick"><span class="stick-knob"></span></div>
-    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · C character · Esc pause</p>
+    <p class="keyboard">WASD move · Q switch fighter · C profile · Shift dash · R charge · Mouse strike / Ki · Esc pause</p>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
@@ -105,9 +143,9 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or keep holding to charge and fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
+<div class="modal" id="kfmodal"><div class="menu-kicker">Dragon Ball Z · Story Mode</div><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or keep holding to charge and fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button><div class="menu-footer">Explore · Train · Fight · Transform</div></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
   <header class="character-head">
-    <h2 id="kfcharacter-title">Character</h2>
+    <h2 id="kfcharacter-title">Fighter Profile</h2>
     <button id="kfcharacter-close" type="button" autofocus>Back</button>
   </header>
   <div class="character-main">
