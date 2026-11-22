@@ -1324,6 +1324,22 @@ function paintFramePair(pair,draw,ink=c){
   draw(pair.second);
   ink.restore();
 }
+const heroSideAtlas=new Image();
+heroSideAtlas.src='assets/hero-side.webp';
+const heroSideClips=[
+  [0,.25,.5,.75,1],
+  [0,.125,.25,.375,.5,.625,.75,.875,1],
+  [0,.14,.32,.5,.73,1],
+  [0,.10,.22,.36,.5,.65,.82,1],
+].map((times,row)=>times.map((time,frame)=>[time,row<2?frame%(times.length-1):frame]));
+function heroSideReady(o){
+  return !o.surge&&heroSideAtlas.complete&&heroSideAtlas.naturalWidth>0;
+}
+function drawHeroSide(row,progress,ink=c){
+  paintFramePair(framesAt(heroSideClips[row],progress),frame=>{
+    ink.drawImage(heroSideAtlas,frame*128,row*128,128,128,-25.6,-44.8,51.2,51.2);
+  },ink);
+}
 function drawGuard(o,ink=c){
   if(o.stride<.015){
     const art=o.surge&&surgeCombatArt?surgeCombatArt:combatAtlas;
@@ -1386,10 +1402,24 @@ function drawHeroProfile(o,type,angle){
   if(blend<1){
     ink.globalAlpha=inheritedAlpha*(canBlend?1-blend:1);
     ink.save();
-    ink.translate(0,heroPose.feet);
-    ink.scale(side*heroPose.guardWidth,heroPose.height);
-    ink.translate(0,-2);
-    drawGuard(o,ink);
+    if(heroSideReady(o)){
+      ink.scale(side,1);
+      const gait=(o.gait/(Math.PI*2))%1;
+      const stride=lim(o.stride/.24,0,1);
+      if(stride<1){
+        ink.globalAlpha*=1-stride;
+        drawHeroSide(0,(storyClock*.85)%1,ink);
+      }
+      if(stride>0){
+        ink.globalAlpha=inheritedAlpha*(canBlend?1-blend:1)*stride;
+        drawHeroSide(1,gait,ink);
+      }
+    }else{
+      ink.translate(0,heroPose.feet);
+      ink.scale(side*heroPose.guardWidth,heroPose.height);
+      ink.translate(0,-2);
+      drawGuard(o,ink);
+    }
     ink.restore();
   }
   if(blend>0&&spr.complete&&spr.naturalWidth){
@@ -1443,6 +1473,16 @@ function drawStrike(o,type,progress){
   const side=o.attackX<0?-1:1;
   c.save();
   c.globalAlpha*=weight;
+  if(heroSideReady(o)){
+    c.scale(side,1);
+    const impact=strike.impact;
+    const animationProgress=progress<=impact
+      ? .5*progress/impact
+      : .5+.5*(progress-impact)/(1-impact);
+    drawHeroSide(kicking?3:2,animationProgress);
+    c.restore();
+    return;
+  }
   c.translate((kicking?2.2:1.45)*o.attackX*pose.reach,heroPose.feet-pose.lift);
   c.scale(side*heroPose.width,heroPose.height);
   c.translate(0,-2);
