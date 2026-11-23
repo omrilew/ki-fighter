@@ -4,8 +4,8 @@ if(name==='desktop'){
   await page.keyboard.down('KeyB');
   await page.waitForTimeout(1100);
   await page.screenshot({path:'/tmp/desktop-fullscreen-kamehameha.png'});
-  const beamDraws=await page.evaluate(()=>window.__spriteDraws['beam-plasma.webp']||0);
-  assert(beamDraws>0,'Holding Kamehameha must draw its animated plasma atlas');
+  const beamDraws=await page.evaluate(()=>window.__spriteDraws['cinematic-kamehameha-layer.svg']||0);
+  assert(beamDraws>0,'Holding Kamehameha must draw its dedicated sprite layer');
   await page.keyboard.up('KeyB');
   await page.waitForTimeout(200);
 }
@@ -34,8 +34,12 @@ assert(gameSource.includes("const kamehamehaVisualTiers=Object.freeze({base:'cin
 assert(gameSource.includes("function renderBeamTrace(f){")&&
   gameSource.includes("drawCinematicKamehameha(f.x,f.y,f.angle,f.age+beamTraceTime-f.time")&&
   gameSource.includes("function renderBeamCharge(p){")&&
-  gameSource.includes("Rotating containment arcs are unique to cinematic Kamehameha"),
+  gameSource.includes("cinematicBeamAtlas,frame*64,0,64,64"),
   'Cinematic Kamehameha charge and fade must match its active beam');
+assert(gameSource.includes("function cinematicBeamDirection(p)")&&
+  gameSource.includes("const facing=cinematicBeamDirection(p);")&&
+  gameSource.includes("p.fx=facing.x;p.fy=facing.y;"),
+  'Kamehameha direction must match the visible fighter pose and lock at release');
 assert(gameSource.includes("function drawCinematicKamehameha(")&&
   gameSource.includes("drawCinematicKamehameha(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence)"),
   'Active Kamehameha must use the cinematic beam renderer');
