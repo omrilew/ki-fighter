@@ -2822,11 +2822,11 @@ function drawApprovedHero(o,referencePose){
 
 // Detailed atlas combines the fighter and aura in each frame.
 function detailedSsjIdle(o,referencePose){
-  const transforming=o.surgeFlare>0;
+  // Use the detailed fighter for every non-combat SSJ frame, including
+  // moving and scripted poses. The old sprite was hiding it on mobile.
   return o===player&&o.surge&&atlasReady(ssjDetailedAtlas)&&
     !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!o.beam&&
-    o.beamCharge===null&&!(o.beamRecoveryUntil>now)&&
-    (transforming||(!o.walking&&o.stride<.18&&(!referencePose||referencePose==='sustain')));
+    o.beamCharge===null&&!(o.beamRecoveryUntil>now);
 }
 function detailedSsjFrame(o){
   if(o.surgeFlare>0){
