@@ -2990,13 +2990,13 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // Pixel-aligned SSJ forearms and fists shared by every SSJ movement/action pose.
 // Draw on the character layer AFTER the sprite (not behind the golden aura).
 function drawSsjHands(o,state,rear,front){
-  const scale=approvedCell*approvedScale/96;
+  const scale=1;
   const active=state==='attack'||state==='ki';
   const charging=state==='charge';
-  const stride=(state==='walk'||state==='dash')?Math.sin(o.gait)*2:0;
-  const strike=state==='attack'?Math.sin(Math.PI*lim(1-o.attack/Math.max(.001,o.attackDuration),0,1))*7:0;
+  const stride=(state==='walk'||state==='dash')?Math.sin(o.gait)*1.2:0;
+  const strike=state==='attack'?Math.sin(Math.PI*lim(1-o.attack/Math.max(.001,o.attackDuration),0,1))*4:0;
   const beam=state==='ki'&&(o.beam||o.beamCharge!==null);
-  const fists=rear?[[-13,-49],[12,-49]]:front?[[-13,-39],[12,-39]]:[[-12,-41],[11,-39]];
+  const fists=rear?[[-10,-23],[10,-23]]:front?[[-11,-20],[11,-20]]:[[-11,-21],[10,-20]];
   const outline='#372021',skin='#f5ae6c',light='#ffcf91',shade='#bd6942',sleeve='#e4771b';
   c.save();c.imageSmoothingEnabled=false;
   // Use small unfiltered pixel geometry so it remains readable at 46px height.
@@ -3007,19 +3007,19 @@ function drawSsjHands(o,state,rear,front){
     if(charging){hx+=side*2;hy-=2+Math.sin(storyClock*8+i)*1.3}
     if(state==='walk'||state==='dash')hy+=side*stride;
     if(active){
-      if(beam){hx=side*(i?4:9);hy=-39+(i?1:-2)}
+      if(beam){hx=side*(i?5:8);hy=-19+(i?1:-2)}
       else{hx+=side*(strike*.8);hy-=strike*.5}
     }
     // Forearm/sleeve links torso to hand: prevents floating fists.
-    const shoulderX=side*9,shoulderY=rear?-55:-48;
+    const shoulderX=side*7,shoulderY=rear?-28:-26;
     const ex=(shoulderX+hx)/2,ey=(shoulderY+hy)/2;
-    c.strokeStyle=outline;c.lineWidth=6/scale;c.lineCap='square';
-    c.beginPath();c.moveTo(shoulderX*scale,shoulderY*scale);c.lineTo(ex*scale,ey*scale);c.stroke();
-    c.strokeStyle=sleeve;c.lineWidth=3/scale;c.stroke();
-    pixel(hx-4,hy-4,8,9,outline);
-    pixel(hx-3,hy-3,6,7,shade);
-    pixel(hx-3,hy-3,5,5,skin);
-    pixel(hx-2,hy-3,3,2,light);
+    c.strokeStyle=outline;c.lineWidth=4;c.lineCap='square';
+    c.beginPath();c.moveTo(shoulderX,shoulderY);c.lineTo(ex,ey);c.stroke();
+    c.strokeStyle=sleeve;c.lineWidth=2;c.stroke();
+    pixel(hx-3,hy-3,6,7,outline);
+    pixel(hx-2,hy-2,4,5,shade);
+    pixel(hx-2,hy-2,4,4,skin);
+    pixel(hx-2,hy-2,2,1,light);
   }
   c.restore();
 }
