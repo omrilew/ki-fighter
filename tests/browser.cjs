@@ -88,18 +88,22 @@ assert(gameSource.includes("drawHeroAtlasFrame(beamBodyArt,body.row+(o.surge?6:0
   'Beam action rendering must restore canvas state after the sprite draw');
 assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
   'Dojo building must load the high-detail architectural atlas');
-assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
-  'Dojo must render the new modular facade when its atlas is ready');
 assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();"),
-  'Dojo courtyard, facade and props must render before character layers');
-assert(gameSource.includes("function drawDojoTrainingProps()")&&gameSource.includes("Paired training dummies"),
-  'Dojo training equipment must be rendered as part of the courtyard');
-assert(gameSource.includes("function drawDojoCourtyard()")&&gameSource.includes("Tatami sparring mat"),
-  'Dojo must render a textured wood and tatami training courtyard');
-assert(gameSource.includes("const walls=[[0,144,70,144],[80,144,145,144],[230,144,149,144],[385,144,126,144]]"),
-  'Dojo walls must crop real shoji panels instead of arbitrary 128-pixel cells');
-assert(gameSource.includes("const sx=(row+col)%2?345:230"),
-  'Tatami tiles must sample the actual woven-mat region of the atlas');
+  'Dojo layers must render in correct order');
+assert(gameSource.includes("Continuous wood planks")&&gameSource.includes("six woven tatami panels")&&
+  gameSource.includes("One coherent wooden facade"),
+  'Outdoor dojo must use unified wood, tatami and roof materials');
+assert(gameSource.includes("dojo-master-production-")&&
+  gameSource.includes("c.drawImage(dojoMasterFrames[gesture],-17,-48+bob,34,48)"),
+  'Master Sora must use the updated NPC artwork');
+assert(gameSource.includes("const itemCatalog=Object.freeze(")&&
+  gameSource.includes("function collectItem(id)")&&
+  gameSource.includes("function equipItem(id)")&&
+  gameSource.includes("function grantExperience(amount)")&&
+  gameSource.includes(")*itemEffects().speed")&&
+  gameSource.includes("version:3,step:journeyStep")&&
+  gameSource.includes("case 'trial-cleared'"),
+  'Invisible item collection, equipment modifiers, save migration and dojo reward must be integrated');
 const newArt=await page.evaluate(async()=>{
   const paths=['assets/dojo-architecture-4x2.png','assets/ssj-movement-4x4.png','assets/normal-movement-4x4.png'];
   return Promise.all(paths.map(src=>new Promise(resolve=>{
