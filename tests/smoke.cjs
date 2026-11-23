@@ -3,7 +3,7 @@ const html=fs.readFileSync('index.html','utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(x=>x.trim());
 assert(scripts.length>0,'Game script missing');
 for(const script of scripts)new vm.Script(script,{filename:'index.html'});
-for(const token of ['function chooseFighter(','function canChangeFighter()','function saveJourney()','function loadJourney()','function renderFighterRoster()','function openJourneyMenu(','function drawNavigationMap(','function renderHUD()','version:2,step:journeyStep'])assert(html.includes(token),'Missing integration: '+token);
+for(const token of ['function chooseFighter(','function canChangeFighter()','function saveJourney()','function loadJourney()','function renderFighterRoster()','function openJourneyMenu(','function drawNavigationMap(','function renderHUD()','version:3,step:journeyStep'])assert(html.includes(token),'Missing integration: '+token);
 assert(html.includes('party:(captureParty(),partyStats)'),'Party state must save with Cedar Journey');
 assert(html.includes('if(Array.isArray(data.party)'),'Legacy save migration missing');
 assert(html.includes('function startNewJourney()'),'New Game missing');
