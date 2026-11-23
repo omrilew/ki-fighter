@@ -2822,30 +2822,31 @@ function drawApprovedHero(o,referencePose){
 
 // Detailed atlas combines the fighter and aura in each frame.
 function detailedSsjIdle(o,referencePose){
-  // Use the detailed fighter for every non-combat SSJ frame, including
-  // moving and scripted poses. The old sprite was hiding it on mobile.
-  return o===player&&o.surge&&atlasReady(ssjDetailedAtlas)&&
+  return o===player&&o.surge&&
+    (atlasReady(ssjTransformationAtlas)||atlasReady(ssjDetailedAtlas))&&
     !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!o.beam&&
     o.beamCharge===null&&!(o.beamRecoveryUntil>now);
 }
 function detailedSsjFrame(o){
+  const useNew=atlasReady(ssjTransformationAtlas);
   if(o.surgeFlare>0){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
-    return Math.min(7,Math.floor(progress*8));
+    return Math.min(useNew?11:7,Math.floor(progress*(useNew?12:8)));
   }
-  // Alternate idle poses, but never play the early transformation poses again.
-  return 6+(Math.floor(storyClock/.22)%2);
+  // New 12-frame art ends with three calm golden-haired idle poses.
+  return useNew?9+(Math.floor(storyClock/.24)%3):6+(Math.floor(storyClock/.22)%2);
 }
 function drawDetailedSsj(o){
+  const useNew=atlasReady(ssjTransformationAtlas);
+  const art=useNew?ssjTransformationAtlas:ssjDetailedAtlas;
+  const cols=4,cellW=useNew?art.naturalWidth/4:443,cellH=useNew?art.naturalHeight/3:443;
   const frame=detailedSsjFrame(o);
-  // Eight 443px square frames in a four-column atlas. No double-drawn aura.
   const ignite=o.surgeFlare>0;
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
   const pulse=ignite?1+.08*Math.sin(Math.PI*Math.max(0,progress)):1;
-  // The feet stay planted while the upper body lifts and settles.
   const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*2:Math.sin(storyClock*5)*.65;
   c.imageSmoothingEnabled=false;
-  c.drawImage(ssjDetailedAtlas,(frame%4)*443,Math.floor(frame/4)*443,443,443,-34*pulse,-63*pulse-bob,68*pulse,68*pulse);
+  c.drawImage(art,(frame%cols)*cellW,Math.floor(frame/cols)*cellH,cellW,cellH,-34*pulse,-63*pulse-bob,68*pulse,68*pulse);
 }
 function character(o,type,referencePose){
   c.save();
@@ -3200,6 +3201,7 @@ const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
+const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png';
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
 const mentorArt=new Image();
