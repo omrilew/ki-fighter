@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}#kfg .world-objective{position:absolute;top:91px;left:12px;z-index:2;margin:0;padding:6px 10px;max-width:min(55%,360px);border:1px solid #c5a27377;border-left:2px solid #e2b875;border-radius:5px;background:#182524e8;color:#f2dfb5;font-size:11px;line-height:1.35;pointer-events:none}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><style>body{margin:0}#kfg .world-objective{position:absolute;top:91px;left:12px;z-index:2;margin:0;padding:6px 10px;max-width:min(55%,360px);border:1px solid #c5a27377;border-left:2px solid #e2b875;border-radius:5px;background:#182524e8;color:#f2dfb5;font-size:11px;line-height:1.35;pointer-events:none}
 #kfg .minimap{position:absolute;top:125px;right:12px;width:clamp(112px,23vw,182px);padding:4px;border:1px solid #bba27599;border-radius:8px;background:#172524ec;box-shadow:0 3px 12px #0b14189c;pointer-events:none}
 #kfg .minimap[hidden]{display:none}
 #kfg .minimap canvas{width:100%;height:auto;border-radius:4px;aspect-ratio:13/7}
@@ -38,7 +38,7 @@
 #kfmenu .discipline-list small{font-weight:400}
 #kfmenu label{display:flex;align-items:center;gap:9px;min-height:36px}
 #kfmenu input{accent-color:#e5bc74}
-</style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
+</style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
 <style>
 #kfg *{box-sizing:border-box}
 #kfg canvas{display:block;width:100%;height:100%;image-rendering:auto;touch-action:none}
@@ -306,16 +306,6 @@
  #kfg #kfmenu #kfmap-travel-dojo{margin-top:8px;width:100%}
 }
 </style>
-<style id="kf-mobile-overlap-fix">
-@media(max-width:650px){
-#kfg .top{top:68px!important;left:auto!important;right:7px!important;width:auto!important;max-width:calc(100% - 14px)!important;display:flex!important;flex-wrap:nowrap!important;gap:3px!important}
-#kfg .top>button,#kfg .top>.powers>button{font-size:9px!important;padding:5px 6px!important;min-height:30px!important;max-width:78px!important}
-#kfg #kfparty-switch{position:absolute!important;top:107px!important;right:7px!important;left:auto!important;max-width:132px!important;min-height:30px!important;font-size:9px!important;z-index:5!important}
-#kfg .world-objective{top:142px!important;max-width:calc(100% - 150px)!important;font-size:10px!important}
-#kfg #kfmenu .menu-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}
-#kfg #kfmenu .menu-tabs button{font-size:9px!important;min-width:0!important}
-}
-</style>
 <style id="kf-continuous-world">#kfg #kfmenu .map-destination-note{margin:8px 0 0;color:#e5d5af;font-size:11px;line-height:1.45;padding:8px;border-left:3px solid #c7a465;background:#15253b}</style>
 <style id="kf-visual-refresh">
 /* Unified restrained GBA-style interface: clear hierarchy, compact controls and sharp borders */
@@ -347,11 +337,7 @@
  #kfg .vitals{min-width:0}
  #kfg .vital{grid-template-columns:clamp(58px,17vw,94px) auto;gap:4px}
  #kfg .counters{font-size:10px}
- #kfg .top{top:62px!important;right:7px!important}
  #kfg .top>button,#kfg .top>.powers>button{font-size:10px!important;padding:5px 7px!important}
- #kfg #kfparty-switch{top:103px!important;right:7px!important;max-width:118px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #kfg .world-objective{top:108px!important;left:7px!important;max-width:calc(100% - 144px)!important;padding:5px 7px;font-size:9px!important}
- #kfg .minimap{top:146px;right:7px;width:clamp(94px,24vw,135px)}
  #kfg #kfmenu .menu-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}
  #kfg #kfmenu .menu-tabs button{font-size:9px!important;padding:7px 1px!important;min-height:38px!important}
  #kfg #kfmenu .menu-head h2{font-size:15px}
@@ -369,36 +355,125 @@
 #kfg .power-menu button:disabled{opacity:.52;cursor:not-allowed}
 @media(max-width:650px){#kfg .ki-gauges{grid-template-rows:4px 6px;gap:2px}}
 </style>
+<style id="kf-responsive-hud">
+/* Keep the map and both rows of navigation in flow as labels and permissions change. */
+#kfg.is-title .hud{visibility:hidden}
+#kfg .hud{inset:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) auto max(10px,env(safe-area-inset-left));display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;z-index:3}
+#kfg .hud-player,#kfg .hud-world{display:grid;align-content:start;gap:7px;min-width:0}
+#kfg .hud-player{justify-items:start}
+#kfg .hud-world{justify-items:end}
+#kfg .hud .vitals{width:fit-content;max-width:100%}
+#kfg .hud .vital{grid-template-columns:minmax(36px,clamp(49px,13vw,144px)) minmax(0,1fr)}
+#kfg .hud .world-objective,#kfg .hud .minimap,#kfg .hud .top{position:static}
+#kfg .hud .world-objective{max-width:min(100%,290px);padding:6px 9px;font-size:11px;overflow-wrap:anywhere}
+#kfg .hud .minimap{width:clamp(110px,17vw,184px);padding:3px}
+#kfg .hud .counters{display:flex;align-items:center;gap:9px;padding:5px 8px}
+#kfg .counters #kfko{border-left:1px solid #7186a3;padding-left:8px;color:#cdd9e9;white-space:nowrap}
+#kfg .hud .top,#kfg .hud-utilities{display:flex;justify-content:flex-end;gap:5px}
+#kfg .hud .top .powers{z-index:1}
+#kfg .hud .top button,#kfg .hud-utilities button{min-height:34px;padding:5px 9px;font-size:11px;color:#f8e7c0;text-shadow:none}
+#kfg .hud .top .power-menu button,#kfg .hud-utilities button{border-color:#8a9bb7;background:#192e49}
+#kfg .hud .top button:disabled,#kfg .hud-utilities button:disabled{opacity:.68}
+#kfg .hud #kfcharacter-open{max-width:none;white-space:nowrap}
+#kfg .hud .power-menu{right:auto;left:0}
+#kfg .world-interact{min-height:44px}
+#kfg .keyboard{max-width:100%;padding:5px 9px;font-size:11px;line-height:2.3;background:#101d32ed}
+#kfg .keyboard span{display:inline-block;white-space:nowrap;padding:0 4px}
+#kfg .keyboard kbd{padding:2px 4px;border:1px solid #677d98;border-radius:3px;color:#ffe1a4;font:inherit;font-weight:700}
+#kfg #kfmenu .menu-head h2::before{content:none}
+#kfg #kfmenu #kfmenu-steps{gap:5px}
+#kfg #kfmenu #kfmenu-steps li{margin:0;padding:8px 10px}
+#kfg #kfcharacter .party-roster{grid-column:1 / -1;margin:0}
+#kfg #kf-inventory{width:min(420px,calc(100vw - 20px));max-height:calc(100dvh - 20px);overflow:auto;touch-action:pan-y;padding:18px;background:#121e35;border:2px solid var(--ui-edge);color:#e3ecf8;box-shadow:0 16px 44px #040811a8}
+#kfg #kf-inventory::backdrop{background:#040a16d9}
+#kfg #kf-inventory h2{margin:0;color:#ffe3a3}
+#kfg #kf-inventory p,#kfg #kf-inventory .inventory-item{font-size:13px;line-height:1.5}
+#kfg #kf-inventory .inventory-item{padding:9px 0;border-top:1px solid #536c89}
+#kfg #kf-inventory button{min-height:44px;margin-top:8px;padding:6px 12px;color:#f8e7c0}
+#kfg #kf-inventory .inventory-close{display:block;margin:18px 0 0 auto}
+#kfg .modal{justify-content:safe center;overflow:auto;touch-action:pan-y}
+#kfg .title-actions button{color:#f2e5c6}
+#kfg .title-actions button:disabled{color:#9eabc0}
+#kfg .title-actions button:not(:disabled):focus-visible,#kfg .title-actions button:not(:disabled):hover{color:#111c31}
+@media(max-width:600px){
+  #kfg .hud{gap:5px;inset:7px 7px auto}
+  #kfg .hud-player,#kfg .hud-world{gap:5px}
+  #kfg .hud .vitals{padding:5px}
+  #kfg .hud .vital{grid-template-columns:minmax(28px,15vw) minmax(0,1fr)}
+  #kfg .hud .world-objective{padding:5px;font-size:10px}
+  #kfg .hud .counters{font-size:10px;gap:5px}
+  #kfg .hud .top,#kfg .hud-utilities{gap:3px}
+  #kfg .hud .top button,#kfg .hud-utilities button{min-height:44px;padding:5px 6px;font-size:10px}
+  #kfg .hud .top #kfpause{min-width:42px}
+  #kfg .hud .minimap{width:clamp(95px,26vw,125px)}
+  #kfg #kfmenu .menu-head{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  #kfg #kfmenu .menu-actions{width:auto;gap:4px}
+  #kfg #kfmenu .menu-actions button{min-height:44px;font-size:10px;padding-inline:7px}
+  #kfg #kfmenu .menu-tabs button{min-height:44px!important}
+}
+@media(max-height:430px) and (min-width:500px){
+  #kfg .hud .minimap{width:115px}
+  #kfg .notice{bottom:72px}
+  #kfg .world-interact{bottom:62px}
+  #kfg .modal{gap:7px}
+  #kfg .modal h2{font-size:clamp(30px,11dvh,45px)}
+  #kfg .title-actions{display:flex;width:auto}
+  #kfg .title-actions button{width:auto;text-align:center}
+  #kfg .title-actions button::before{display:none}
+}
+@media (pointer:coarse){
+  #kfg .controls{bottom:max(12px,env(safe-area-inset-bottom));gap:12px}
+  #kfg .controls .acts{gap:7px}
+  #kfg .controls .acts button{box-shadow:inset 0 0 0 3px #09152688,0 2px 4px #07132199}
+  #kfg .controls .acts button.down{transform:translateY(2px) scale(.96);filter:brightness(1.22)}
+}
+@media(prefers-reduced-motion:reduce){#kfg .controls .acts button{transition:none}}
+</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
+  <div class="hud-player">
     <div class="vitals">
       <div class="vital"><span class="meter"><i id="kfhp-meter"></i></span><span id="kflv">LV 1</span></div>
       <div class="vital ki-vital"><span class="ki-gauges"><span class="meter hyper-meter" id="kfhyper-track"><i id="kfhyper-meter"></i></span><span class="meter"><i id="kfki-meter"></i></span></span><span id="kfki">100 Ki</span></div>
       <div class="vital"><span class="meter"><i id="kfxp-meter"></i></span><span id="kfxp">0 / 55 XP</span></div>
     </div>
-    <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
+    <p id="kfobjective" class="world-objective" hidden></p>
   </div>
-  <div class="notice" id="kfnotice" hidden></div>
-  <div id="kfminimap" class="minimap" hidden>
-    <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
-  </div>
-  <p id="kfobjective" class="world-objective" hidden></p>
-  <button id="kfinteract" class="world-interact" type="button" hidden>Interact</button>
-  <div class="top">
-    <div class="powers">
-      <button id="kfpowers" aria-expanded="false" aria-controls="kfpower-menu">Powers</button>
-      <div class="power-menu" id="kfpower-menu" hidden>
-        <button data-a="fly" aria-pressed="false">Fly</button>
-        <button data-a="surge" aria-pressed="false" disabled title="Fill the yellow Hyper bar by holding Charge at 100 Ki">Surge locked</button>
+  <div class="hud-world">
+    <nav class="top" aria-label="Game controls">
+      <div class="powers">
+        <button id="kfpowers" aria-expanded="false" aria-controls="kfpower-menu">Powers</button>
+        <div class="power-menu" id="kfpower-menu" hidden>
+          <button data-a="fly" aria-pressed="false">Fly</button>
+          <button data-a="surge" aria-pressed="false" disabled title="Fill the yellow Hyper bar by holding Charge at 100 Ki">Surge locked</button>
+        </div>
       </div>
+      <button id="kfcharacter-open" type="button" aria-haspopup="dialog">Character<span id="kfpoint-badge" hidden></span></button>
+      <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
+    </nav>
+    <div class="hud-utilities" aria-label="Fighter and equipment"></div>
+    <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
+    <div id="kfminimap" class="minimap" hidden>
+      <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
     </div>
-    <button id="kfcharacter-open" type="button" aria-haspopup="dialog">Character<span id="kfpoint-badge" hidden></span></button>
-    <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
   </div>
+  </div>
+  <div class="notice" id="kfnotice" role="status" hidden></div>
+  <button id="kfinteract" class="world-interact" type="button" hidden>Interact</button>
   <div class="controls">
     <div class="stick" role="img" aria-label="Movement joystick"><span class="stick-knob"></span></div>
-    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · E interact · M map · C character · Esc menu</p>
+    <p class="keyboard">
+      <span><kbd>WASD</kbd> or <kbd>↑↓←→</kbd> Move</span>
+      <span><kbd>Left click</kbd> Strike</span>
+      <span><kbd>Right click</kbd> Tap blast / hold beam</span>
+      <span><kbd>Shift</kbd> Dash</span>
+      <span><kbd>R</kbd> Charge</span>
+      <span><kbd>E</kbd> Interact</span>
+      <span><kbd>M</kbd> Map</span>
+      <span><kbd>C</kbd> Character</span>
+      <span><kbd>Esc</kbd> Menu</span>
+    </p>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
@@ -431,9 +506,9 @@
   <p id="kfstory-text"></p>
   <div class="story-actions"><button id="kfstory-close" type="button">Close</button><button id="kfstory-continue" type="button">Continue</button></div>
 </dialog>
-<dialog id="kfmenu" aria-labelledby="kfmenu-title">
+<dialog id="kfmenu" aria-labelledby="kfmenu-heading">
   <header class="menu-head">
-    <h2 id="kfmenu-title">Journey</h2>
+    <h2 id="kfmenu-heading">Journey</h2>
     <div class="menu-actions"><button id="kfmenu-save" type="button">Save</button><button id="kfmenu-title" type="button">Title</button><button id="kfmenu-close" type="button" autofocus>Resume</button></div>
   </header>
   <nav aria-label="Journey menu" class="menu-tabs">
@@ -468,7 +543,7 @@
 <div class="technique-list">
 <div><strong>Strike Combo</strong><span>Left click / Strike · Three-hit melee chain</span></div>
 <div><strong>Ki Blast</strong><span>Right click or tap Ki · Quick ranged attack</span></div>
-<div><strong>Charged Beam</strong><span>Hold and release Ki · Sustained energy attack</span></div>
+<div><strong>Charged Beam</strong><span>Hold Ki until the beam fires · Release to stop</span></div>
 <div><strong>Dash</strong><span>Shift / Dash · Short evasive movement</span></div>
 <div><strong>Ki Recharge</strong><span>R / Charge · Restore energy</span></div>
 <div><strong>Flight / Surge</strong><span>Open Powers · Toggle advanced movement or power</span></div>
@@ -695,7 +770,13 @@ function resetParty(){fighterIndex=0;partyStats=fighters.map(f=>({level:1,xp:0,p
 function captureParty(){if(player&&partyStats[fighterIndex])partyStats[fighterIndex]=Object.fromEntries(partyFields.map(k=>[k,player[k]]))}
 function canChangeFighter(){return mode==='play'&&player&&player.hp>0&&partySwitchCooldown<=0&&player.attack<=0&&!player.beam&&player.beamCharge===null&&player.hurt<=0&&player.dash<=0}
 function chooseFighter(i){if(!canChangeFighter()||i===fighterIndex||!partyStats[i])return false;captureParty();fighterIndex=i;Object.assign(player,partyStats[i]);syncLevelResources(player);player.combo=0;player.link=0;player.fly=false;player.surge=false;player.vx=0;player.vy=0;partySwitchCooldown=.75;saveJourney();notice(fighters[i].name+' · '+fighters[i].role);return true}
-const partySwitchButton=document.createElement('button');partySwitchButton.id='kfparty-switch';partySwitchButton.type='button';partySwitchButton.textContent='Switch [Q]';partySwitchButton.style.cssText='position:absolute;right:8px;top:126px;z-index:2;padding:8px 10px;min-height:44px';root.appendChild(partySwitchButton);partySwitchButton.onclick=()=>chooseFighter((fighterIndex+1)%fighters.length);
+const hudUtilities=root.querySelector('.hud-utilities');
+const partySwitchButton=document.createElement('button');
+partySwitchButton.id='kfparty-switch';
+partySwitchButton.type='button';
+partySwitchButton.title='Switch fighter (Q)';
+hudUtilities.appendChild(partySwitchButton);
+partySwitchButton.onclick=()=>chooseFighter((fighterIndex+1)%fighters.length);
 const fighterRoster=document.createElement('div');fighterRoster.className='party-roster';fighterRoster.setAttribute('aria-label','Playable fighters');
 root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
 function renderFighterRoster(){fighterRoster.replaceChildren();for(let i=0;i<fighters.length;i++){const b=document.createElement('button');b.type='button';b.textContent=(i===fighterIndex?'▶ ':'')+fighters[i].name+' · LV '+partyStats[i].level;b.disabled=i===fighterIndex;b.onclick=()=>{closeCharacter();if(!chooseFighter(i))notice('Finish your current action first')};fighterRoster.appendChild(b)}}
@@ -731,22 +812,26 @@ function equipItem(id){
 }
 function grantExperience(amount){const earned=Math.max(0,Math.round(amount*itemEffects().xp));player.xp+=earned;return earned}
 const inventoryButton=document.createElement('button');
-inventoryButton.type='button';inventoryButton.id='kf-inventory-open';inventoryButton.textContent='Items [I]';
-inventoryButton.style.cssText='position:absolute;right:8px;top:176px;z-index:3;padding:8px 10px;min-height:40px';
-root.appendChild(inventoryButton);
-const inventoryPanel=document.createElement('dialog');inventoryPanel.id='kf-inventory';
-inventoryPanel.style.cssText='background:#15241e;color:#f4e6c7;border:2px solid #b28a55;border-radius:8px;max-width:min(90vw,420px);max-height:75vh;overflow:auto;padding:18px;z-index:100';
+inventoryButton.type='button';
+inventoryButton.id='kf-inventory-open';
+inventoryButton.textContent='Items';
+inventoryButton.title='Open inventory (I)';
+inventoryButton.setAttribute('aria-haspopup','dialog');
+hudUtilities.appendChild(inventoryButton);
+const inventoryPanel=document.createElement('dialog');
+inventoryPanel.id='kf-inventory';
+inventoryPanel.setAttribute('aria-labelledby','kf-inventory-heading');
 root.appendChild(inventoryPanel);
 function renderInventory(){
  inventoryPanel.replaceChildren();
- const heading=document.createElement('h2');heading.textContent='Inventory · Equipment';inventoryPanel.appendChild(heading);
+ const heading=document.createElement('h2');heading.id='kf-inventory-heading';heading.textContent='Inventory';inventoryPanel.appendChild(heading);
  const effects=itemEffects(),stats=document.createElement('p');
  stats.textContent='Movement '+Math.round(effects.speed*100)+'% · XP '+Math.round(effects.xp*100)+'%';
  inventoryPanel.appendChild(stats);
  const list=document.createElement('div');
  for(const id of inventory){
   const item=itemCatalog[id],line=document.createElement('div');
-  line.style.cssText='padding:9px 0;border-top:1px solid #4c5b4a';
+  line.className='inventory-item';
   const name=document.createElement('strong');name.textContent=item.name;line.appendChild(name);
   const description=document.createElement('div');
   description.textContent=(item.slot?'Speed '+Math.round(item.speed*100)+'% · XP '+Math.round(item.xp*100)+'%':'Quest item');
@@ -756,7 +841,7 @@ function renderInventory(){
  }
  if(!inventory.size)list.textContent='No items yet. Defeat enemies and complete the dojo trial.';
  inventoryPanel.appendChild(list);
- const close=document.createElement('button');close.textContent='Close';close.onclick=()=>inventoryPanel.close();inventoryPanel.appendChild(close);
+ const close=document.createElement('button');close.className='inventory-close';close.textContent='Close';close.onclick=()=>inventoryPanel.close();inventoryPanel.appendChild(close);
 }
 function toggleInventory(){if(mode!=='play')return;if(inventoryPanel.open){inventoryPanel.close();return}renderInventory();inventoryPanel.showModal()}
 inventoryButton.onclick=toggleInventory;
@@ -4015,7 +4100,10 @@ function render(){const recharging=player&&held.has('charge')&&!player.beam&&pla
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
-  partySwitchButton.hidden=mode!=='play';partySwitchButton.disabled=!canChangeFighter();partySwitchButton.textContent='Switch [Q] · '+fighters[fighterIndex].name;
+  partySwitchButton.hidden=mode!=='play';
+  partySwitchButton.disabled=!canChangeFighter();
+  const switchLabel='Switch · '+fighters[fighterIndex].name;
+  if(partySwitchButton.textContent!==switchLabel)partySwitchButton.textContent=switchLabel;
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
   hud['ki-meter'].style.transform=`scaleX(${player?player.ki/player.mki:1})`;
   hud['hyper-meter'].style.transform=`scaleX(${player?.hyper||0})`;
