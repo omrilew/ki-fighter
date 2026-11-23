@@ -2850,20 +2850,26 @@ function drawSsjMovement(o,referencePose){
   const width=size*64/96;
   // The uploaded combat sheet contains the older character design. Keep the
   // approved SSJ movement silhouette for Ki actions until matching poses exist.
-  const combat=atlasReady(ssjCombatAtlas);
-  const action=state==='attack'||state==='charge';
+  const productionCombat=atlasReady(ssjProductionAtlas);
+  const combat=productionCombat||atlasReady(ssjCombatAtlas);
+  const action=state==='attack'||state==='charge'||(state==='ki'&&productionCombat);
   const kiAction=state==='ki';
   let art=ssjMovementAtlas,row=0,frame=0;
   if(action&&combat){
-    art=ssjCombatAtlas;
+    art=productionCombat?ssjProductionAtlas:ssjCombatAtlas;
     if(state==='attack'){
       const kick=o.strike==='sidekick'||o.strike==='roundhouse';
       const progress=Math.max(0,Math.min(.999,1-o.attack/Math.max(.001,o.attackDuration)));
       row=kick?1:0;
       frame=kick?[0,1,2,3][Math.floor(progress*4)]:[0,1,2,3][Math.floor(progress*4)];
+    }else if(state==='ki'){
+      row=2;
+      frame=o.beam||o.blastPose>0?3:o.beamCharge!==null?2:1;
+      if(o.beam&&productionCombat){row=3;frame=2;}
     }else{
-      row=3;
-      frame=held.has('charge')?2+(Math.floor(storyClock*7)%2):1;
+      row=productionCombat?2:3;
+      frame=productionCombat?Math.min(3,Math.floor(storyClock*5)%4):
+        held.has('charge')?2+(Math.floor(storyClock*7)%2):1;
     }
   }else{
     const moving=state==='walk'||state==='dash';
@@ -3325,6 +3331,8 @@ const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architectur
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
+const ssjProductionAtlas=new Image();
+ssjProductionAtlas.src='assets/ssj-production-actions-4x4.png?v=production-1';
 const ssjCombatAtlas=new Image();ssjCombatAtlas.src='assets/ssj-combat-actions-4x4.png?v=combat-1';
 const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=clean-body-3';
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
