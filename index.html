@@ -3486,7 +3486,7 @@ const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
 const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
-const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
+const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-production-'+i+'.svg?v=1';return img});
 const mentorArt=new Image();
 mentorArt.src='assets/mentor.webp';
 const worldSpriteFrames={cottage:0,hall:1,tent:2,sign:3,fire:4,shrine:5};
@@ -3530,7 +3530,7 @@ function drawWorldObject(o){
       const bob=Math.sin(t*4)*.6;
       c.fillStyle='#111e24a8';c.beginPath();c.ellipse(0,2,10,3,0,0,Math.PI*2);c.fill();
       if(atlasReady(dojoMasterFrames[gesture])){
-        c.drawImage(dojoMasterFrames[gesture],-19,-46+bob,38,46);
+        c.drawImage(dojoMasterFrames[gesture],-17,-48+bob,34,48);
       }else if(atlasReady(mentorArt)){
         const frame=gesture===1?2:gesture===2?3:Math.sin(t*2)>0?0:1;
         c.drawImage(mentorArt,frame*192,0,192,192,-23,-45+bob,46,46);
@@ -3603,101 +3603,115 @@ function drawHyperWave(p){
 // Tile the training courtyard from the same high-resolution material palette
 // as the hall, replacing the old flat vector courtyard and its cartoon props.
 function drawDojoCourtyard(){
+  // Outdoor dojo: stable world-space footprint and collision layout.
+  // Native-pixel geometric materials avoid stretched mixed-size atlas crops.
   const x=1105,y=139,w=316,h=308;
-  if(!atlasReady(dojoArchitecture)){
-    if(atlasReady(dojoCourtArt)){
-      c.save();c.imageSmoothingEnabled=false;
-      c.drawImage(dojoCourtArt,x,y,w,h);c.restore();
-    }
-    return;
-  }
   c.save();c.imageSmoothingEnabled=false;
-  c.fillStyle='#263b2e';c.fillRect(x-8,y-8,w+16,h+16);
-  c.fillStyle='#8b6541';c.fillRect(x-5,y-5,w+10,h+10);
-  c.fillStyle='#382d27';c.fillRect(x-2,y-2,w+4,h+4);
+  c.fillStyle='#1c322c';c.fillRect(x-10,y-10,w+20,h+20);
+  c.fillStyle='#977454';c.fillRect(x-7,y-7,w+14,h+14);
+  c.fillStyle='#382b28';c.fillRect(x-4,y-4,w+8,h+8);
+  c.fillStyle='#76543b';c.fillRect(x,y,w,h);
   c.beginPath();c.rect(x,y,w,h);c.clip();
-  // Two repeating wood grain tiles with offset seams, drawn at native
-  // pixel-art resolution. This is the ground layer, behind all actors.
-  const tileW=64,tileH=72;
-  for(let row=0;row<Math.ceil(h/tileH);row++){
-    for(let col=0;col<Math.ceil(w/tileW);col++){
-      const variant=(row+col)%2;
-      const sx=variant?115:0;
-      c.drawImage(dojoArchitecture,sx,2,110,136,
-        x+col*tileW,y+row*tileH,tileW,tileH);
+  // Continuous wood planks: deterministic knots, joints and highlights.
+  for(let row=0;row<22;row++){
+    const py=y+row*14,offset=row%2?33:0;
+    c.fillStyle=row%3===0?'#876044':row%3===1?'#9a7150':'#79573f';
+    c.fillRect(x,py,w,13);
+    c.fillStyle='#b68c5d';c.fillRect(x,py,w,1);
+    c.fillStyle='#493b32';c.fillRect(x,py+13,w,1);
+    for(let col=-1;col<7;col++){
+      const px=x+col*66+offset;
+      c.fillStyle='#5d4536';c.fillRect(px,py+1,1,12);
+      c.fillStyle='#b78a5c';c.fillRect(px+3,py+4,20,1);
+      c.fillStyle='#6d503a';c.fillRect(px+29,py+9,14,1);
+      if((row+col)%4===0){c.fillStyle='#5b4537';c.fillRect(px+39,py+6,5,2)}
     }
   }
-  // Tatami sparring mat, with individual green-edged woven panels.
+  // Dark walnut mat frame and six woven tatami panels.
   const mx=x+56,my=y+78,mw=204,mh=152;
-  c.fillStyle='#342f24';c.fillRect(mx-5,my-5,mw+10,mh+10);
+  c.fillStyle='#201f23';c.fillRect(mx-8,my-8,mw+16,mh+16);
+  c.fillStyle='#bd8b50';c.fillRect(mx-6,my-6,mw+12,mh+12);
+  c.fillStyle='#2e493d';c.fillRect(mx-3,my-3,mw+6,mh+6);
   for(let row=0;row<2;row++)for(let col=0;col<3;col++){
-    const sx=(row+col)%2?345:230;
-    c.drawImage(dojoArchitecture,sx,2,108,136,
-      mx+col*68,my+row*76,68,76);
+    const px=mx+col*68,py=my+row*76;
+    c.fillStyle=(row+col)%2?'#c8b68a':'#d8c59a';
+    c.fillRect(px+2,py+2,64,72);
+    c.fillStyle='#4c6753';c.fillRect(px,py,2,76);c.fillRect(px+66,py,2,76);
+    c.fillStyle='#b2a17d';
+    for(let i=0;i<17;i++)c.fillRect(px+4,py+5+i*4,60,1);
+    c.fillStyle='#e9d9b0';
+    for(let i=0;i<15;i++)c.fillRect(px+7+(i%2)*3,py+7+i*4,44,1);
   }
-  c.strokeStyle='#a98250';c.lineWidth=2;
-  c.strokeRect(x+8,y+8,w-16,h-16);
-  c.strokeStyle='#33271e';c.lineWidth=1;
-  c.strokeRect(mx-4,my-4,mw+8,mh+8);
-  // Architectural corner bases and lantern-like warm pools of light.
+  c.strokeStyle='#d1a269';c.lineWidth=2;c.strokeRect(x+8,y+8,w-16,h-16);
+  c.strokeStyle='#302923';c.lineWidth=1;c.strokeRect(mx-7,my-7,mw+14,mh+14);
   for(const [px,py] of [[x+14,y+14],[x+w-14,y+14],[x+14,y+h-14],[x+w-14,y+h-14]]){
-    c.fillStyle='#3e3027';c.fillRect(px-7,py-7,14,14);
-    c.fillStyle='#b8884a';c.fillRect(px-5,py-5,10,10);
-    c.fillStyle='#f2d28a';c.fillRect(px-3,py-3,6,6);
+    c.fillStyle='#342e2a';c.fillRect(px-7,py-7,14,14);
+    c.fillStyle='#b48c56';c.fillRect(px-5,py-5,10,10);
+    c.fillStyle='#f6d68b';c.fillRect(px-2,py-2,4,4);
   }
   c.restore();
 }
-// Courtyard furniture is rendered after the floor and before actors, so
-// fighters can stand in front of it without the props covering their sprites.
 function drawDojoTrainingProps(){
-  if(!atlasReady(dojoArchitecture))return;
   c.save();c.imageSmoothingEnabled=false;
-  // Low wooden equipment racks at both sides of the sparring mat.
   for(const px of [1122,1387]){
     const py=314;
-    c.fillStyle='#251d1a';c.fillRect(px-13,py-7,26,14);
-    c.fillStyle='#7b5034';c.fillRect(px-12,py-9,24,11);
-    c.fillStyle='#c49a60';c.fillRect(px-10,py-8,20,2);
-    c.fillStyle='#48372a';c.fillRect(px-9,py+2,4,9);c.fillRect(px+5,py+2,4,9);
-    // Practice staffs rest on the rack at a diagonal.
-    c.strokeStyle='#b99867';c.lineWidth=2;
-    for(let i=0;i<3;i++){
-      c.beginPath();c.moveTo(px-11+i*8,py-12);c.lineTo(px-7+i*8,py+2);c.stroke();
-    }
+    c.fillStyle='#241c1b';c.fillRect(px-14,py-9,28,18);
+    c.fillStyle='#815838';c.fillRect(px-12,py-9,24,10);
+    c.fillStyle='#d6a870';c.fillRect(px-10,py-8,20,2);
+    c.fillStyle='#443126';c.fillRect(px-10,py+1,4,10);c.fillRect(px+6,py+1,4,10);
+    c.strokeStyle='#d6af7c';c.lineWidth=2;
+    for(let i=0;i<3;i++){c.beginPath();c.moveTo(px-10+i*8,py-15);c.lineTo(px-6+i*8,py+1);c.stroke()}
   }
-  // Paired training dummies at the upper courtyard edges.
   for(const px of [1143,1379]){
     const py=230;
-    c.fillStyle='#19231e88';c.beginPath();c.ellipse(px,py+3,12,4,0,0,Math.PI*2);c.fill();
-    c.fillStyle='#473124';c.fillRect(px-2,py-29,4,32);
-    c.fillStyle='#ad7950';c.fillRect(px-7,py-29,14,18);
-    c.fillStyle='#d2a16a';c.fillRect(px-5,py-27,10,2);
-    c.fillStyle='#59402d';c.fillRect(px-14,py-23,28,3);
-    c.fillStyle='#d0a06a';c.fillRect(px-13,py-23,26,1);
-    c.fillStyle='#35271f';c.fillRect(px-6,py-10,12,3);
+    c.fillStyle='#17282188';c.beginPath();c.ellipse(px,py+3,12,4,0,0,Math.PI*2);c.fill();
+    c.fillStyle='#3b2c27';c.fillRect(px-3,py-31,6,35);
+    c.fillStyle='#b8895d';c.fillRect(px-7,py-28,14,18);
+    c.fillStyle='#e1b47a';c.fillRect(px-5,py-27,10,2);
+    c.fillStyle='#634832';c.fillRect(px-15,py-24,30,4);
+    c.fillStyle='#c99965';c.fillRect(px-14,py-24,28,1);
+    c.fillStyle='#2d2725';c.fillRect(px-7,py-11,14,3);
   }
-  // Small framed banner at the center of the hall's entrance.
-  c.fillStyle='#241d1b';c.fillRect(1250,178,26,6);
-  c.fillStyle='#ba8754';c.fillRect(1252,179,22,3);
+  c.fillStyle='#282020';c.fillRect(1250,178,26,6);
+  c.fillStyle='#c99a61';c.fillRect(1252,179,22,3);
   c.restore();
 }
 function drawDojoBuilding(){
- c.save();c.imageSmoothingEnabled=false;
- if(atlasReady(dojoArchitecture)){
-   // The source image is a 512×288 composed sheet, not a uniform
-   // 128×144 grid. Crop its four actual facade panels at their seams.
-   const x=1105,y=77,w=82,h=104;
-   const walls=[[0,144,70,144],[80,144,145,144],[230,144,149,144],[385,144,126,144]];
-   for(let i=0;i<4;i++){
-     const [sx,sy,sw,sh]=walls[i];
-     c.drawImage(dojoArchitecture,sx,sy,sw,sh,x+i*w,y,w,h);
-   }
-   // Timber threshold from the approved planked floor tile.
-   for(let i=0;i<4;i++)c.drawImage(dojoArchitecture,115,120,110,18,x+i*w,y+h-2,w,10);
- }else if(atlasReady(dojoHallArt)){
-   c.drawImage(dojoHallArt,1106,77,326,111);
- }
- c.restore();
+  c.save();c.imageSmoothingEnabled=false;
+  const x=1105,y=77,w=328,h=111;
+  // One coherent wooden facade with layered blue-gray tiled roof.
+  c.fillStyle='#2c292c';c.fillRect(x-5,y+21,w+10,92);
+  c.fillStyle='#a47a51';c.fillRect(x,y+29,w,82);
+  c.fillStyle='#d6b78a';c.fillRect(x+6,y+35,w-12,68);
+  for(let i=0;i<9;i++){
+    const px=x+6+i*39;
+    c.fillStyle='#4b332b';c.fillRect(px,y+29,6,82);
+    c.fillStyle='#bd9465';c.fillRect(px+1,y+29,2,82);
+  }
+  for(let i=0;i<7;i++){
+    const px=x+19+i*43;
+    c.fillStyle='#4d514c';c.fillRect(px,y+46,30,48);
+    c.fillStyle='#efe1bd';c.fillRect(px+2,y+48,26,44);
+    c.fillStyle='#ac9e81';c.fillRect(px+14,y+48,2,44);
+    c.fillRect(px+2,y+69,26,2);
+  }
+  // Entrance sits behind the master; the fighting area stays outdoors.
+  c.fillStyle='#2a2527';c.fillRect(x+133,y+43,62,68);
+  c.fillStyle='#7c543c';c.fillRect(x+139,y+47,50,64);
+  c.fillStyle='#d4ac72';c.fillRect(x+143,y+52,42,54);
+  c.fillStyle='#392c2a';c.fillRect(x+162,y+52,4,54);
+  c.fillStyle='#e5c68b';c.fillRect(x+158,y+76,3,3);c.fillRect(x+168,y+76,3,3);
+  c.fillStyle='#273544';c.fillRect(x-9,y+12,w+18,19);
+  c.fillStyle='#536575';c.fillRect(x-12,y+9,w+24,8);
+  c.fillStyle='#182a3a';c.fillRect(x-15,y+16,w+30,7);
+  for(let i=0;i<21;i++){
+    const px=x-8+i*16;
+    c.fillStyle=i%2?'#607485':'#455b6e';c.fillRect(px,y+9,14,5);
+    c.fillStyle='#a1a7a2';c.fillRect(px,y+9,12,1);
+    c.fillStyle='#1c2935';c.fillRect(px+3,y+21,10,3);
+  }
+  c.fillStyle='#bd8d59';c.fillRect(x+125,y+107,78,4);
+  c.restore();
 }
 function drawWorldWater(view){
   if(pond.x+pond.rx<view||pond.x-pond.rx>view+W)return;
