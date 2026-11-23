@@ -50,4 +50,27 @@ for y in range(src.height):
         lum = (r * 3 + g * 4 + b) / 8
         rgb = (90, 101, 124) if lum > 180 else (54, 65, 87) if lum > 125 else (32, 40, 61) if lum > 80 else (21, 27, 43)
         normal.putpixel((x, y), (*rgb, a))
+# Normalize the upper hair spikes to a restrained three-tone navy palette.
+# The original atlas mixes pale gray/blue highlight specks with recolored
+# amber pixels. Restrict this pass to the upper spikes, safely above the face,
+# and leave all facial, shoulder, gi and boot pixels unchanged.
+for y in range(normal.height):
+    ly = y % 96
+    if ly > 22:
+        continue
+    for x in range(normal.width):
+        lx = x % 64
+        if not 12 <= lx <= 51:
+            continue
+        r, g, b, a = normal.getpixel((x, y))
+        if a < 100:
+            continue
+        # Only cool blue-gray hair pixels: preserve near-black outlines.
+        cool = b >= r * 1.12 and b >= g * 1.04 and b > 37
+        if not cool:
+            continue
+        lightness = (r + g + b) / 3
+        rgb = (76, 88, 111) if lightness > 82 else (46, 56, 77) if lightness > 49 else (27, 34, 52)
+        normal.putpixel((x, y), (*rgb, a))
+
 normal.save("assets/normal-movement-4x4.png", optimize=True)
