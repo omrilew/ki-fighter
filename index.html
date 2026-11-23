@@ -2818,12 +2818,19 @@ function drawSsjMovement(o,referencePose){
   const art=ssjMovementAtlas;
   if(!atlasReady(art))return false;
   const state=fighterAnimationState(o);
-  if(state!=='idle'&&state!=='walk')return false;
+  // Keep the approved SSJ silhouette for combat instead of switching to
+  // older, visually incompatible action sheets. Action-specific movement
+  // and impact effects remain handled by the existing combat renderer.
+  if(state==='transform')return false;
   const rear=Math.sin(o.faceAngle)<-.82;
   const front=Math.sin(o.faceAngle)>.82;
-  const moving=state==='walk';
-  // Idle holds the approved standing frame; walking alone advances the gait.
-  const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+  const moving=state==='walk'||state==='dash';
+  const action=state==='attack'||state==='ki'||state==='hurt'||state==='charge';
+  const actionPhaseTime=state==='attack'?1-o.attack/Math.max(.001,o.attackDuration):
+    state==='hurt'?1-o.hurt/Math.max(.001,hitStagger):storyClock*2;
+  // Action poses stay on the SSJ sprite sheet: no legacy body swap.
+  const cycle=action?Math.max(0,Math.min(3,Math.floor(actionPhaseTime*4)%4)):
+    moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
   // Preserve facing direction while stationary: never snap to front on idle.
   // The movement sheet provides a dedicated rear and lateral row.
   const row=rear?2:front?(moving?1:0):3;
@@ -2831,6 +2838,17 @@ function drawSsjMovement(o,referencePose){
   const size=approvedCell*approvedScale;
   const width=size*64/96;
   c.save();
+  if(state==='attack'){
+    const strikeProgress=1-o.attack/Math.max(.001,o.attackDuration);
+    const thrust=Math.sin(Math.PI*Math.max(0,Math.min(1,strikeProgress)))*3;
+    c.translate(Math.cos(o.faceAngle)*thrust,Math.sin(o.faceAngle)*thrust);
+    c.rotate(Math.sin(Math.PI*strikeProgress)*.045*flip);
+  }else if(state==='hurt'){
+    c.translate((o.hurtX||0)*Math.min(1,o.hurt/hitStagger)*2,
+      (o.hurtY||0)*Math.min(1,o.hurt/hitStagger)*2);
+  }else if(state==='charge'){
+    c.translate(0,Math.sin(storyClock*13)*.4);
+  }
   c.scale(flip,1);
   c.imageSmoothingEnabled=false;
   c.drawImage(art,cycle*64,row*96,64,96,-width/2,-size+4,width,size);
