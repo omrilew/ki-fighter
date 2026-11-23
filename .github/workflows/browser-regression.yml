@@ -6,6 +6,8 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -13,7 +15,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --no-save playwright@1.58.2
-      - run: npx playwright install --with-deps chromium
       - run: node tests/browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
