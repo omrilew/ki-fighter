@@ -15,11 +15,12 @@ assert.equal(preflight.missingClips.length,0);
 
 const transformation=fs.readFileSync(directory+'transformation-fit.png');
 assert.equal(special.ssjTransformation.frames.length,12);
-for(const {sheet,rect:[x,y,w,h],feet} of special.ssjTransformation.frames){
+for(const {sheet,rect:[x,y,w,h],feet,durationMs} of special.ssjTransformation.frames){
   assert.equal(sheet,'transformation-fit.png');
   assert(x>=0&&x+w<=transformation.readUInt32BE(16));
   assert(y>=0&&y+h<=transformation.readUInt32BE(20));
   assert.equal(feet.join(','),'48,96');
+  assert(durationMs>0);
 }
 
 for(const idle of Object.values(clips.normal.idle)){
@@ -45,7 +46,8 @@ for(const form of ['normal','ssj']){
     if(action.startsWith('beam'))for(const facing of ['upRight','downRight'])assert(directions[facing]);
   }
   for(const [action,directions] of Object.entries(clips[form])){
-    for(const {frames} of Object.values(directions)){
+    for(const {frames,contactFrame} of Object.values(directions)){
+      if(/^(punch|kick)/.test(action))assert(contactFrame>0&&contactFrame<frames.length-1);
       assert(frames.length);
       for(const {rect:[x,y,w,h],feet,muzzle,durationMs} of frames){
         assert(w===cell[0]&&h===cell[1]&&x%w===0&&y%h===0);
