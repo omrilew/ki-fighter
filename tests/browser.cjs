@@ -40,6 +40,10 @@ assert(gameSource.includes("const total=Math.min(190,travel*112)")&&
   gameSource.includes("const travel=Math.max(0,age-.09)")&&
   gameSource.includes("const beamEmergenceTime=.18"),
   'Kamehameha must grow from zero at fixed speed, cap range and share collision geometry');
+assert(gameSource.includes("if(p.hero&&p.surge&&atlasReady(ssjMovementAtlas))")&&
+  gameSource.includes("x:p.x+side*width*.48,y:p.y-size*.37")&&
+  gameSource.includes("const muzzleSize=Math.min(13,width*.68)"),
+  'SSJ Kamehameha must anchor to its current sprite and render a hand-centered muzzle');
 assert(gameSource.includes("function cinematicBeamDirection(p)")&&
   gameSource.includes("const facing=cinematicBeamDirection(p);")&&
   gameSource.includes("p.fx=facing.x;p.fy=facing.y;"),
