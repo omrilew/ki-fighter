@@ -37,6 +37,20 @@ assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
   'Dojo building must load the high-detail architectural atlas');
 assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
   'Dojo must render the new modular facade when its atlas is ready');
+assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();"),
+  'Dojo courtyard must be rebuilt before the building and character layers');
+assert(gameSource.includes("function drawDojoCourtyard()")&&gameSource.includes("Tatami sparring mat"),
+  'Dojo must render a textured wood and tatami training courtyard');
+const newArt=await page.evaluate(async()=>{
+  const paths=['assets/dojo-architecture-4x2.png','assets/ssj-movement-4x4.png'];
+  return Promise.all(paths.map(src=>new Promise(resolve=>{
+    const img=new Image();img.onload=()=>resolve([src,img.naturalWidth,img.naturalHeight]);
+    img.onerror=()=>resolve([src,0,0]);img.src=src;
+  })));
+});
+assert.deepEqual(newArt.map(x=>x.slice(1)),[[512,288],[256,384]],
+  'Uploaded dojo and SSJ atlases must load with their production cell dimensions');
+
 assert(gameSource.includes("case 14:return [4,pose.frame]")&&
   gameSource.includes("case 17:return [5,pose.frame]"),
   'Front and rear directions must use separate sprite atlas rows');
