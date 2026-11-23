@@ -3253,7 +3253,7 @@ function renderSceneryDebris(f){
 const worldProps=new Image();
 worldProps.src='assets/world-props.webp';
 const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
-// Eight 128×144 panels: wood/tatami floors (top row), architectural walls (bottom).
+// Cropped architectural reference: actual 512×288 composed layout, not a uniform grid.
 const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architecture-4x2.png';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
@@ -3379,7 +3379,8 @@ function drawDojoCourtyard(){
   for(let row=0;row<Math.ceil(h/tileH);row++){
     for(let col=0;col<Math.ceil(w/tileW);col++){
       const variant=(row+col)%2;
-      c.drawImage(dojoArchitecture,variant*128,0,128,144,
+      const sx=variant?115:0;
+      c.drawImage(dojoArchitecture,sx,2,110,136,
         x+col*tileW,y+row*tileH,tileW,tileH);
     }
   }
@@ -3387,7 +3388,8 @@ function drawDojoCourtyard(){
   const mx=x+56,my=y+78,mw=204,mh=152;
   c.fillStyle='#342f24';c.fillRect(mx-5,my-5,mw+10,mh+10);
   for(let row=0;row<2;row++)for(let col=0;col<3;col++){
-    c.drawImage(dojoArchitecture,(2+(row+col)%2)*128,0,128,144,
+    const sx=(row+col)%2?345:230;
+    c.drawImage(dojoArchitecture,sx,2,108,136,
       mx+col*68,my+row*76,68,76);
   }
   c.strokeStyle='#a98250';c.lineWidth=2;
@@ -3405,16 +3407,16 @@ function drawDojoCourtyard(){
 function drawDojoBuilding(){
  c.save();c.imageSmoothingEnabled=false;
  if(atlasReady(dojoArchitecture)){
-   // Build a real modular dojo facade from the new high-detail atlas.
-   // Individual source panels are 128×144; destination panels are 82×104.
-   // Align all panel baselines so the shoji and wood framing join cleanly.
+   // The source image is a 512×288 composed sheet, not a uniform
+   // 128×144 grid. Crop its four actual facade panels at their seams.
    const x=1105,y=77,w=82,h=104;
+   const walls=[[0,144,70,144],[80,144,145,144],[230,144,149,144],[385,144,126,144]];
    for(let i=0;i<4;i++){
-     const panel=[0,1,2,3][i];
-     c.drawImage(dojoArchitecture,panel*128,144,128,144,x+i*w,y,w,h);
+     const [sx,sy,sw,sh]=walls[i];
+     c.drawImage(dojoArchitecture,sx,sy,sw,sh,x+i*w,y,w,h);
    }
-   // Continuous timber porch across the front of the hall.
-   for(let i=0;i<4;i++)c.drawImage(dojoArchitecture,128,0,128,144,x+i*w,y+h-2,w,10);
+   // Timber threshold from the approved planked floor tile.
+   for(let i=0;i<4;i++)c.drawImage(dojoArchitecture,115,120,110,18,x+i*w,y+h-2,w,10);
  }else if(atlasReady(dojoHallArt)){
    c.drawImage(dojoHallArt,1106,77,326,111);
  }
