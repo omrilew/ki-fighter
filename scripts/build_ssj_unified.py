@@ -31,4 +31,4 @@ atlas.save(out,optimize=True)
 print('Unified atlas:',out,atlas.size,layout)
 # JavaScript data-only manifest; the game loads just ONE SSJ image.
 manifest=Path('ssj-unified-layout.js')
-manifest.write_text('window.KiSsjUnifiedLayout='+repr(layout).replace("'",'"')+';\\n')
+manifest.write_text('window.KiSsjUnifiedLayout='+repr(layout).replace("'",'"')+';')
