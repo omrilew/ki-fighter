@@ -2,7 +2,7 @@ name: Game smoke checks
 on:
   pull_request:
   push:
-    branches: [feature/forest-trial-vertical-slice]
+    branches: [main, feature/story-campaign]
 jobs:
   smoke:
     runs-on: ubuntu-latest

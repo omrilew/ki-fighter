@@ -1,7 +1,8 @@
 name: Browser gameplay regression
 on:
+  pull_request:
   push:
-    branches: [feature/forest-trial-vertical-slice]
+    branches: [main, feature/story-campaign]
   workflow_dispatch:
 jobs:
   browser:
