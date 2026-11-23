@@ -2810,7 +2810,9 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // It is used only for SSJ idle/walk; attack, beam and transformation remain
 // on their dedicated action atlases. All frames share the feet anchor.
 function drawSsjMovement(o,referencePose){
-  if(!o.hero||!o.surge||!atlasReady(ssjMovementAtlas)||referencePose)return false;
+  if(!o.hero||referencePose)return false;
+  const art=o.surge?ssjMovementAtlas:normalMovementAtlas;
+  if(!atlasReady(art))return false;
   const state=fighterAnimationState(o);
   if(state!=='idle'&&state!=='walk')return false;
   const rear=Math.sin(o.faceAngle)<-.82;
@@ -2824,7 +2826,7 @@ function drawSsjMovement(o,referencePose){
   c.save();
   c.scale(flip,1);
   c.imageSmoothingEnabled=false;
-  c.drawImage(ssjMovementAtlas,cycle*64,row*96,64,96,-width/2,-size+4,width,size);
+  c.drawImage(art,cycle*64,row*96,64,96,-width/2,-size+4,width,size);
   c.restore();
   return true;
 }
@@ -3257,6 +3259,7 @@ const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
 const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=graphics-pack-1';
+const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=graphics-pack-1';
 const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
