@@ -32,20 +32,20 @@ assert(gameSource.includes("return pose(directionRow,1+frameInClip(gait,5),1)"),
 assert(gameSource.includes("assets/ssj-movement-4x4.png"),
   'SSJ movement must load the newly extracted movement atlas');
 assert(gameSource.includes("assets/normal-movement-4x4.png")&&
-  gameSource.includes("if(!o.surge)return false;")&&gameSource.includes("const art=ssjMovementAtlas"),
+  gameSource.includes("!o.surge||!atlasReady(ssjMovementAtlas)")&&gameSource.includes("let art=ssjMovementAtlas"),
   'Normal must bypass the SSJ-shaped movement atlas and use dedicated hero art');
 assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
   'SSJ movement must render as a single character layer');
 assert(gameSource.includes("moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0"),
   'Standing idle must hold a stable pose instead of playing walking frames');
-assert(gameSource.includes("const row=rear?2:front?(moving?1:0):3"),
+assert(gameSource.includes("row=rear?2:front?(moving?1:0):3"),
   'Stationary fighter must preserve front, rear and side facing direction');
 assert(gameSource.includes("if(!p.surge&&(held.has('charge')||p.rechargeVisual>.015)){drawChargingAura(p);return}"),
   'Charging aura must not persist just because Hyper meter has energy');
 assert(!gameSource.includes("o.rechargeVisual>.015||o.surge||o.hyper>0"),
   'A partially filled Hyper meter must not trigger permanent character effects');
-assert(gameSource.includes("if(state==='transform')return false")&&gameSource.includes("const action=state==='attack'||state==='ki'||state==='hurt'||state==='charge'"),
-  'SSJ actions must retain the new SSJ sprite while transformation uses its cinematic atlas');
+assert(gameSource.includes("if(state==='transform'||state==='ko')return false")&&gameSource.includes("const action=state==='attack'||state==='ki'||state==='charge'")&&gameSource.includes("art=ssjCombatAtlas"),
+  'SSJ actions must draw dedicated combat sprites, not movement frames');
 assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
   gameSource.includes("if(impact>.6)c.filter='brightness(1.6) saturate(.7)'"),
   'Approved combat sprites must show impact recoil and flash');
@@ -137,6 +137,11 @@ const ssjBeforeMove=await page.evaluate(()=>window.__spriteDraws['ssj-movement-4
 await page.keyboard.down('KeyD');await page.waitForTimeout(350);await page.keyboard.up('KeyD');
 const ssjAfterMove=await page.evaluate(()=>window.__spriteDraws['ssj-movement-4x4.png']||0);
 assert(ssjAfterMove>ssjBeforeMove,'New SSJ directional movement atlas must animate after transformation');
+const combatBefore=await page.evaluate(()=>window.__spriteDraws['ssj-combat-actions-4x4.png']||0);
+await page.keyboard.down('KeyJ');await page.waitForTimeout(100);await page.keyboard.up('KeyJ');
+const combatAfter=await page.evaluate(()=>window.__spriteDraws['ssj-combat-actions-4x4.png']||0);
+assert(combatAfter>combatBefore,'SSJ Strike must draw new combat atlas');
+
 await page.screenshot({path:'/tmp/desktop-super-saiyan.png'});
 }
 if(name==='desktop'){
