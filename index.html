@@ -3156,9 +3156,8 @@ function character(o,type,referencePose){
     c.restore();
     return;
   }
-  if(o.hero&&fighterAnimationState(o)==='charge'&&drawChargeSprite(o)){
-    c.restore();return;
-  }
+  // Charge sprite sheets are currently a different character model and scale.
+  // Keep the approved in-game character atlas in every state until matched art exists.
   if(drawSsjMovement(o,referencePose)){
     c.restore();
     return;
