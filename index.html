@@ -111,6 +111,71 @@
 #kfg .modal p{font-size:14px;line-height:1.5;max-width:360px;margin:0}
 #kfg .modal button{font-size:16px;padding:10px 20px;background:#ffd06b;color:#2c2212;border:2px solid #fff8af}
 </style>
+<style>
+/* Ki Fighter pixel-RPG interface — reference pack 2026-11-23.
+   Compact Buu's Fury HUD + CrossCode information layout; no screenshot slicing. */
+#kfg{--rpg-bg:#111c32;--rpg-edge:#94a7c8;--rpg-ink:#f0f4fa;--rpg-muted:#c0cbe0;--rpg-select:#f6cf6a;--rpg-shadow:#080e1b;font-family:Verdana,system-ui,sans-serif!important}
+#kfg button{border-radius:2px;background:#1d2c49;border:1px solid #8197bb;color:var(--rpg-ink);box-shadow:inset 0 1px #ffffff16,0 2px 0 #081121;font:700 13px Verdana,system-ui,sans-serif}
+#kfg button:hover{background:#2b4267;border-color:#c5d6f1}
+#kfg button:focus-visible{outline:2px solid var(--rpg-select);outline-offset:2px}
+#kfg button:disabled{opacity:.45;cursor:not-allowed}
+#kfg .modal{background:linear-gradient(180deg,#0d1933ec,#101c35f2);gap:11px}
+#kfg .modal:before{content:"";position:absolute;inset:12px;pointer-events:none;border:2px solid #a9badd;box-shadow:inset 0 0 0 3px #0a152a}
+#kfg .modal>*{position:relative}
+#kfg .modal h2{font:900 clamp(36px,7vw,76px) Verdana,system-ui,sans-serif;font-style:italic;letter-spacing:-.065em;color:#f9d76d;text-shadow:3px 3px #8c3f27,6px 6px #071328;line-height:1}
+#kfg .modal p{color:#d8e4f5;font-size:12px;max-width:440px}
+#kfg .title-subtitle{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9d6eb}
+#kfg .title-actions{display:grid;gap:3px;width:min(255px,86vw);padding:5px;background:#0c182fe8;border:2px solid #a0b3d3}
+#kfg .title-actions button{width:100%;min-height:43px;padding:9px 12px;text-align:left;border:0;border-bottom:1px solid #60739355;background:transparent;box-shadow:none}
+#kfg .title-actions button:hover,#kfg .title-actions button:focus-visible{background:var(--rpg-select);color:#111c31}
+#kfg .title-actions button:before{content:"▸";display:inline-block;width:21px;color:#e9c76e}
+#kfg .title-actions button:hover:before,#kfg .title-actions button:focus-visible:before{color:#182744}
+#kfg .hud{inset:max(8px,env(safe-area-inset-top)) 8px auto;gap:5px;font-size:11px}
+#kfg .vitals,#kfg .counters,#kfg .notice{background:#101c33df;border:1px solid #a5b7d3;border-radius:2px;box-shadow:0 2px 0 #091021a8}
+#kfg .vitals{gap:3px;padding:6px 8px;border-left:3px solid #d7c18c}
+#kfg .counters{padding:5px 7px}
+#kfg .meter{height:7px;border:1px solid #7b8cab;border-radius:1px;background:#24304b}
+#kfg .meter i{border-radius:0}
+#kfg .top{top:76px;right:8px}
+#kfg .top button{min-height:44px;padding:7px 10px}
+#kfg .world-objective{border-radius:2px;background:#101c33df;border-color:#8a9bb7;border-left:3px solid #e9c76e;color:#f1f3f8}
+#kfg .minimap{border-radius:2px;background:#101c33e9;border-color:#a5b7d3}
+#kfg .controls{bottom:max(8px,env(safe-area-inset-bottom));width:calc(100% - 20px)}
+#kfg .stick{--size:clamp(108px,24vw,136px);border:2px solid #d4e0f1a3;background:#15243b7d;box-shadow:inset 0 0 0 5px #c9d8ed1c,0 3px 8px #0006}
+#kfg .stick:before{content:"▲";position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:10px;color:#e7efffc7}
+#kfg .stick-knob{background:#a5b3c6b9;border:2px solid #edf2fc}
+#kfg .acts{border:0;background:transparent;box-shadow:none;gap:7px;padding:2px}
+#kfg .acts button{width:clamp(54px,13vw,75px);min-height:54px;aspect-ratio:1/1;border:2px solid #c1d0e4;border-radius:50%;background:#15243bbf;box-shadow:inset 0 0 0 3px #2c4161a6,0 2px 5px #0008;font-size:12px}
+#kfg .acts button small{font-size:8px}
+#kfg .acts [data-a=hit]{background:#473526d9;border-color:#f2cb87}
+#kfg .acts [data-a=ki]{background:#153958d9;border-color:#92c8f1}
+#kfg #kfmenu,#kfg #kfcharacter,#kfg #kfstory{color:var(--rpg-ink);background:#121e35;border:2px solid #a3b6d5;border-radius:3px;box-shadow:inset 0 0 0 3px #1c3050,0 18px 50px #000a}
+#kfg #kfmenu::backdrop,#kfg #kfcharacter::backdrop,#kfg #kfstory::backdrop{background:#050b18c9}
+#kfg #kfmenu{width:min(830px,calc(100% - 16px));max-height:calc(100dvh - 18px);padding:0;overflow:auto;touch-action:pan-y}
+#kfg #kfmenu .menu-head,#kfg #kfcharacter .character-head{background:#243657;border-bottom:2px solid #8fa4c6;border-radius:0;padding:9px 14px}
+#kfg #kfmenu h2,#kfg #kfcharacter h2{font:800 clamp(19px,3vw,25px) Verdana,system-ui,sans-serif;color:#f4f6fc;letter-spacing:.025em}
+#kfg #kfmenu .menu-tabs{display:flex;flex-wrap:wrap;gap:3px;padding:9px 12px;background:#101b30}
+#kfg #kfmenu .menu-tabs button{min-height:44px;padding:9px 13px;border-radius:2px}
+#kfg #kfmenu .menu-tabs button[aria-pressed=true]{background:var(--rpg-select);border-color:#fff0bc;color:#182238}
+#kfg #kfmenu .menu-panel{padding:14px;min-height:170px}
+#kfg #kfmenu .menu-panel[hidden]{display:none}
+#kfg #kfmenu .menu-panel h3{color:#f7d574}
+#kfg #kfmenu .menu-panel li{margin:6px 0}
+#kfg #kfmenu .menu-panel li[data-state=current]{color:#f7d574}
+#kfg #kfmenu .menu-panel label{display:block;padding:10px 5px}
+#kfg #kfmenu .discipline-list button{border-radius:2px}
+#kfg #kfcharacter{border-radius:3px;background:#121e35}
+#kfg #kfcharacter .character-preview{background:#1d304f;border:1px solid #647c9e;border-radius:2px}
+#kfg #kfcharacter .character-preview canvas{image-rendering:pixelated}
+#kfg #kfcharacter .stat-row{border-radius:2px;background:#172741;border-color:#526989}
+#kfg #kfcharacter .points-total{border-radius:2px;background:#26395a;color:#f6d678}
+#kfg #kfstory{width:min(680px,calc(100% - 20px));max-height:calc(100dvh - 24px);border-radius:2px;background:#121f38}
+#kfg #kfstory h2{color:#f7d574}
+#kfg #kfstory p{line-height:1.6}
+#kfg #kfstory button{min-height:44px}
+@media(max-width:460px){#kfg .modal:before{inset:6px}#kfg .modal h2{font-size:40px}#kfg .modal p{font-size:11px}#kfg .top{top:71px}#kfg .top button{font-size:11px;padding:7px}#kfg #kfmenu .menu-tabs button{font-size:11px;padding:8px}#kfg .vitals{padding:5px}#kfg .acts{gap:4px}}
+@media(max-height:420px) and (min-width:500px){#kfg .stick{--size:90px}#kfg .acts button{width:55px;min-height:55px}#kfg #kfmenu .menu-panel{min-height:90px;padding:8px}}
+</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
@@ -149,7 +214,7 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
+<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><div class="title-subtitle">Cedar Village · Action RPG</div><div class="title-actions"><button id="kfnew" type="button">New Game</button><button id="kfplay" type="button">Continue</button><button id="kftitle-options" type="button">Options</button></div><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
   <header class="character-head">
     <h2 id="kfcharacter-title">Character</h2>
     <button id="kfcharacter-close" type="button" autofocus>Back</button>
