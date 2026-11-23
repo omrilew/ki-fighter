@@ -36,6 +36,10 @@ assert(gameSource.includes("assets/normal-movement-4x4.png")&&
   'Both forms must use separate, matching movement atlases');
 assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
   'SSJ movement must render as a single character layer');
+assert(gameSource.includes("const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0"),
+  'Standing idle must hold a stable pose instead of playing walking frames');
+assert(gameSource.includes("if(state!=='idle'&&state!=='walk')return false"),
+  'Attack, dash, charge, hit and KO must fall through to their dedicated action atlases');
 assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
   'Dojo building must load the high-detail architectural atlas');
 assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
