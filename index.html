@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -3040,9 +3040,10 @@ function drawSsjMovement(o,referencePose){
   const beamAction=state==='ki'&&(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now);
   const action=state==='attack'||(beamAction&&productionCombat);
   const kiAction=state==='ki';
-  let art=ssjMovementAtlas,row=0,frame=0;
+  let art=ssjMovementAtlas,row=0,frame=0,section='movement';
   if(action&&combat){
     art=productionCombat?ssjProductionAtlas:ssjCombatAtlas;
+    section=productionCombat?'production':'combat';
     if(state==='attack'){
       const kick=o.strike==='sidekick'||o.strike==='roundhouse';
       const progress=Math.max(0,Math.min(.999,1-o.attack/Math.max(.001,o.attackDuration)));
@@ -3073,7 +3074,9 @@ function drawSsjMovement(o,referencePose){
   }
   c.scale(flip,1);
   c.imageSmoothingEnabled=false;
-  c.drawImage(art,frame*64,row*96,64,96,-width/2,-size+4,width,size);
+  const source=window.KiSsjUnifiedLayout[section];
+  c.drawImage(art,source.x+frame*source.cellWidth,source.y+row*source.cellHeight,
+    source.cellWidth,source.cellHeight,-width/2,-size+4,width,size);
   c.restore();
   return true;
 }
@@ -3160,7 +3163,8 @@ function detailedSsjFrame(o){
 }
 function drawDetailedSsj(o){
   const art=ssjTransformationAtlas,frame=detailedSsjFrame(o);
-  const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
+  const source=window.KiSsjUnifiedLayout.transformation;
+  const cellW=source.cellWidth,cellH=source.cellHeight;
   const ignite=o.surge&&o.surgeFlare>0;
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
   const charging=!ignite&&o.surge&&held.has('charge');
@@ -3177,7 +3181,7 @@ function drawDetailedSsj(o){
   // contains extra aura padding; keep the character anchor fixed at the feet.
   const size=approvedCell*approvedScale*pulse;
   c.imageSmoothingEnabled=false;
-  c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
+  c.drawImage(art,source.x+(frame%4)*cellW,source.y+Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 function character(o,type,referencePose){
   c.save();
@@ -3508,12 +3512,14 @@ const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architectur
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
-const ssjProductionAtlas=new Image();
-ssjProductionAtlas.src='assets/ssj-production-actions-4x4.png?v=hands-source-1';
-const ssjCombatAtlas=new Image();ssjCombatAtlas.src='assets/ssj-combat-actions-4x4.png?v=hands-source-1';
-const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=hands-source-20261123';
+// One canonical SSJ image for movement, combat, and transformation.
+const ssjUnifiedAtlas=new Image();
+ssjUnifiedAtlas.src='assets/ssj-unified-production.png?v=unified-20261123';
+const ssjProductionAtlas=ssjUnifiedAtlas;
+const ssjCombatAtlas=ssjUnifiedAtlas;
+const ssjMovementAtlas=ssjUnifiedAtlas;
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
-const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
+const ssjTransformationAtlas=ssjUnifiedAtlas;
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-production-'+i+'.svg?v=1';return img});
 const mentorArt=new Image();
