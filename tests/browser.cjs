@@ -36,7 +36,7 @@ assert(gameSource.includes("assets/normal-movement-4x4.png")&&
   'Normal must bypass the SSJ-shaped movement atlas and use dedicated hero art');
 assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
   'SSJ movement must render as a single character layer');
-assert(gameSource.includes("const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0"),
+assert(gameSource.includes("moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0"),
   'Standing idle must hold a stable pose instead of playing walking frames');
 assert(gameSource.includes("const row=rear?2:front?(moving?1:0):3"),
   'Stationary fighter must preserve front, rear and side facing direction');
@@ -44,8 +44,8 @@ assert(gameSource.includes("if(!p.surge&&(held.has('charge')||p.rechargeVisual>.
   'Charging aura must not persist just because Hyper meter has energy');
 assert(!gameSource.includes("o.rechargeVisual>.015||o.surge||o.hyper>0"),
   'A partially filled Hyper meter must not trigger permanent character effects');
-assert(gameSource.includes("if(state!=='idle'&&state!=='walk')return false"),
-  'Attack, dash, charge, hit and KO must fall through to their dedicated action atlases');
+assert(gameSource.includes("if(state==='transform')return false")&&gameSource.includes("const action=state==='attack'||state==='ki'||state==='hurt'||state==='charge'"),
+  'SSJ actions must retain the new SSJ sprite while transformation uses its cinematic atlas');
 assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
   gameSource.includes("if(impact>.6)c.filter='brightness(1.6) saturate(.7)'"),
   'Approved combat sprites must show impact recoil and flash');
