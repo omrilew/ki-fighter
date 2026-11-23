@@ -1416,49 +1416,50 @@ function renderBeam(p){
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
-  const opacity=animationEase(remaining)*animationEase(f.age/beamEmergenceTime)*.83;
-  if(atlasReady(beamPlasma)){
-    const {body,tip,wide}=beamShape(f.age);
-    const length=body+tip;
-    c.save();
-    c.translate(f.x,f.y);
-    c.rotate(f.angle);
-    c.globalAlpha=opacity;
-    drawBeamPlasma(remaining>.5?6:7,length*(1-remaining)*.55,-wide*.54,length*.76,wide*1.08);
-    c.restore();
-  }else drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
+  const opacity=animationEase(remaining)*animationEase(f.age/beamEmergenceTime)*.78;
+  // Fade the same cinematic geometry instead of snapping to old plasma art.
+  drawCinematicKamehameha(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,
+    opacity,.28+remaining*.72,f.age);
+  const shape=beamShape(f.age);
+  const length=shape.body+shape.tip;
+  c.save();c.translate(f.x,f.y);c.rotate(f.angle);
+  c.globalAlpha=opacity*(1-remaining);
+  c.fillStyle='#a6f4ff';
+  for(let i=0;i<9;i++){
+    const phase=(i*.618+f.age*3)%1;
+    const px=length*(.3+.7*phase);
+    const py=Math.sin(i*2.4+f.age*12)*shape.wide*.65;
+    c.fillRect(Math.round(px),Math.round(py),i%3===0?2:1,1);
+  }
+  c.restore();
 }
 function renderBeamCharge(p){
   const {x,y}=beamCastOrigin(p);
   const load=lim(p.beamCharge/beam.chargeTime,0,1);
-  c.save();
-  c.translate(x,y);
-  c.rotate(Math.atan2(p.fy,p.fx));
   const strength=animationEase(load);
-  if(atlasReady(beamPlasma)){
-    const stage=load<.25?0:load<.68?1:2;
-    const size=5+9*strength;
-    c.save();
-    c.rotate(p.beamCharge*4);
-    drawBeamPlasma(stage,-size/2,-size/2,size,size);
-    c.restore();
-  }else if(atlasReady(approvedEffects)){
-    const size=5+8*strength;
-    c.save();
-    c.rotate(p.beamCharge*5);
-    drawApprovedEffect(0,-size/2,-size/2,size,size);
-    c.restore();
-  }else renderKiOrb(0,0,1.7+2.6*strength);
-  c.strokeStyle='#adf2ff';
-  c.lineCap='round';
-  for(let i=0;i<5;i++){
-    const phase=(p.beamCharge*5+i/5)%1;
-    const angle=i*2.399+p.beamCharge*2;
-    const distance=4+(1-phase)*11;
-    c.globalAlpha=Math.sin(phase*Math.PI)*(.25+strength*.65);
+  const radius=2.2+3.6*strength;
+  c.save();c.translate(x,y);
+  // Compact layered energy orb grows between the fighter's hands.
+  c.fillStyle='#0757bb';c.beginPath();c.arc(0,0,radius*1.4,0,Math.PI*2);c.fill();
+  c.fillStyle='#24b9ff';c.beginPath();c.arc(0,0,radius,0,Math.PI*2);c.fill();
+  c.fillStyle='#eaffff';c.beginPath();c.arc(0,0,radius*.57,0,Math.PI*2);c.fill();
+  c.strokeStyle='#9feeff';c.lineWidth=.75;
+  for(let i=0;i<6;i++){
+    const phase=(p.beamCharge*3.2+i/6)%1;
+    const angle=i*2.399+p.beamCharge*1.5;
+    const distance=radius+2+(1-phase)*9;
+    c.globalAlpha=Math.sin(phase*Math.PI)*(.25+strength*.7);
     c.beginPath();
     c.moveTo(Math.cos(angle)*distance,Math.sin(angle)*distance);
-    c.lineTo(Math.cos(angle)*(distance-3),Math.sin(angle)*(distance-3));
+    c.lineTo(Math.cos(angle)*(distance-2.5),Math.sin(angle)*(distance-2.5));
+    c.stroke();
+  }
+  // Rotating containment arcs are unique to cinematic Kamehameha.
+  c.globalAlpha=strength*.75;
+  for(let i=0;i<2;i++){
+    c.beginPath();
+    c.ellipse(0,0,radius*1.65,radius*2.2,p.beamCharge*(i? -2:2),
+      i*Math.PI, i*Math.PI+Math.PI*.68);
     c.stroke();
   }
   c.restore();
