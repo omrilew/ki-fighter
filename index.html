@@ -2824,9 +2824,9 @@ function drawApprovedHero(o,referencePose){
 // Render the newly approved fighter atlas in normal idle, charge and SSJ.
 // Combat/movement retain their directional action sprites.
 function detailedSsjIdle(o,referencePose){
-  // Always use the new approved artwork for the player while it is loaded.
-  // Previous state gates silently reverted to the old sprite on mobile.
-  return o===player&&atlasReady(ssjTransformationAtlas);
+  // Render uses {...player,hero:true}, so identity comparison to player
+  // ALWAYS failed. The explicit hero flag survives the render clone.
+  return !!o.hero&&atlasReady(ssjTransformationAtlas);
 }
 function detailedSsjFrame(o){
   if(!o.surge){
