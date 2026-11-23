@@ -2806,8 +2806,8 @@ function drawHeroAtlasFrame(image,row,frame,side){
   c.drawImage(image,frame*approvedCell,row*approvedCell,approvedCell,approvedCell,
     -approvedAnchor[0]*approvedScale,-approvedAnchor[1]*approvedScale,size,size);
 }
-// The new movement atlas is 4 columns × 4 rows, 64×96 per frame.
-// It is used only for SSJ idle/walk; attack, beam and transformation remain
+// Both form-matched movement atlases are 4 columns × 4 rows, 64×96 per frame.
+// They are used only for idle/walk; attack, beam and transformation remain
 // on their dedicated action atlases. All frames share the feet anchor.
 function drawSsjMovement(o,referencePose){
   if(!o.hero||referencePose)return false;
@@ -2818,7 +2818,8 @@ function drawSsjMovement(o,referencePose){
   const rear=Math.sin(o.faceAngle)<-.82;
   const front=Math.sin(o.faceAngle)>.82;
   const moving=state==='walk';
-  const cycle=moving?frameInClip((o.gait/(Math.PI*2))%1,4):frameInClip((storyClock*.8)%1,4);
+  // Idle holds the approved standing frame; walking alone advances the gait.
+  const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
   const row=!moving?0:rear?2:front?1:3;
   const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
   const size=approvedCell*approvedScale;
