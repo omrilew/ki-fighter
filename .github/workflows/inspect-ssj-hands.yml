@@ -1,0 +1,23 @@
+name: Inspect SSJ transformation hands
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [.github/workflows/inspect-ssj-hands.yml, scripts/inspect_ssj_hands.py]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install Pillow
+      - run: python scripts/inspect_ssj_hands.py
+      - name: Commit diagnostic contact sheet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ssj-hand-diagnostic.png
+          git commit -m "Add SSJ source-frame hand diagnostic" || exit 0
+          git pull --rebase origin feature/forest-trial-vertical-slice
+          git push origin HEAD:feature/forest-trial-vertical-slice
