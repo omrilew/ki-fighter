@@ -2812,7 +2812,7 @@ function drawApprovedHero(o,referencePose){
     ? Math.max(.001,1-(o.beamRecoveryUntil-now)/beamRecoveryTime):0;
   const casting=o.beam||o.beamCharge!==null;
   const body=o.hp>0&&!o.hurt&&(casting||recovery)?beamBodyPose(o,recovery):null;
-  if(body){
+  if(body&&atlasReady(beamBodyArt)){
     drawHeroAtlasFrame(beamBodyArt,body.row+(o.surge?6:0),body.frame,body.side);
     return;
   }
@@ -2827,18 +2827,17 @@ function drawApprovedHero(o,referencePose){
   drawHeroAtlasFrame(approvedHero,pose.row+(o.surge?20:0),pose.frame,pose.side);
 }
 
-// Detailed atlas combines the fighter and aura in each frame.
-// Render the newly approved fighter atlas in normal idle, charge and SSJ.
-// Combat/movement retain their directional action sprites.
-// Production animation priority: combat > movement > transformation > idle.
-// The 12-frame cinematic is never used as a replacement for directional art.
+// Animation renderer: the cinematic atlas is used only for transformation.
+// Directional movement, combat, beam and charge use the approved/matching
+// atlases for both forms; never layer the cinematic over an action sprite.
+// Priority: KO > hurt > transformation > ki > attack > dash > walk > charge > idle.
 function fighterAnimationState(o){
   if(o.hp<=0)return 'ko';
   if(o.hurt>0)return 'hurt';
   // The transformation must win over every other pose while its cinematic
   // timer is active, including movement, beam and combat input.
   if(o.surge&&o.surgeFlare>0)return 'transform';
-  if(o.beam||o.beamCharge!==null||o.blastPose>0)return 'ki';
+  if(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now||o.blastPose>0)return 'ki';
   if(o.attack>0)return 'attack';
   if(o.dash>0)return 'dash';
   if(o.walking||o.stride>.18)return 'walk';
