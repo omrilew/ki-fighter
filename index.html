@@ -1305,33 +1305,92 @@ function cinematicBeamDirection(p){
 function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   const shape=beamShape(shapeAge);
   const length=shape.body+shape.tip;
-  const width=Math.max(7,shape.wide*thin*.9);
-  if(!atlasReady(cinematicBeamAtlas))return drawBeamEffect(x,y,angle,age,opacity,thin,shapeAge);
+  if(length<=.5)return;
+  // Cinematic energy has a narrow white-hot core, breathing cyan plasma,
+  // dark blue irregular silhouette, a traveling head and impact sparks.
+  // All layers are rendered in beam-local coordinates so 4-way firing matches.
+  const width=Math.max(5.5,shape.wide*thin*.72);
+  const phase=age*19;
+  const head=Math.min(length,Math.max(4,width*.9));
   c.save();c.translate(x,y);c.rotate(angle);
   c.globalAlpha=opacity;c.imageSmoothingEnabled=false;
-  // A single continuous authored beam layer: no repeated diamond tiles.
-  // Crop the source by visible length, so the leading edge really travels.
-  if(atlasReady(cinematicContinuousBeam)&&length>0){
-    const sourceWidth=Math.max(1,Math.min(512,length/190*512));
-    c.drawImage(cinematicContinuousBeam,0,0,sourceWidth,64,
-      0,-width*.8,length,width*1.6);
-  }else if(length>0){
-    c.fillStyle='#0a76db';c.fillRect(0,-width*.75,length,width*1.5);
-    c.fillStyle='#d8faff';c.fillRect(0,-width*.28,length,width*.56);
+  const edge=(u,side,scale)=>{
+    const taper=.77+.23*Math.sin(Math.PI*u);
+    const wobble=(Math.sin(u*47-phase+side)*.10+
+      Math.sin(u*91+phase*1.5+side*2)*.055)*width;
+    return side*(width*scale*taper+wobble);
+  };
+  const plasma=(color,scale)=>{
+    c.fillStyle=color;c.beginPath();
+    c.moveTo(0,edge(0,-1,scale));
+    const count=Math.max(4,Math.ceil(length/3));
+    for(let i=1;i<=count;i++){
+      const u=i/count;
+      c.lineTo(length*u,edge(u,-1,scale));
+    }
+    c.lineTo(length,0);
+    for(let i=count;i>=0;i--){
+      const u=i/count;
+      c.lineTo(length*u,edge(u,1,scale));
+    }
+    c.closePath();c.fill();
+  };
+  plasma('#07338c',1.15);
+  plasma('#096fe1',.96);
+  plasma('#17baff',.73);
+  plasma('#8eefff',.52);
+  plasma('#f6ffff',.31);
+  // Authored sprite energy, blended as a subtle moving texture, not repeated
+  // as chunky diamond tiles. The core remains continuous and never stretches
+  // one tiny frame over the whole screen.
+  if(atlasReady(cinematicContinuousBeam)){
+    c.globalAlpha=opacity*.16;
+    const src=Math.max(1,Math.min(512,length/190*512));
+    c.drawImage(cinematicContinuousBeam,0,0,src,64,0,-width*.52,length,width*1.04);
+    c.globalAlpha=opacity;
   }
-  // A small muzzle glow stays centered on the fighter's actual hands.
-  // The impact head grows only as the beam reaches outward.
-  const endFrame=Math.min(3,Math.floor(age*14)%4);
-  const muzzleSize=Math.min(13,width*.68);
-  c.drawImage(cinematicBeamAtlas,64,0,64,64,
-    -muzzleSize*.45,-muzzleSize*.5,muzzleSize,muzzleSize);
-  if(length>3)c.drawImage(cinematicBeamAtlas,endFrame*64,0,64,64,
-    length-width*.75,-width*.75,width*1.5,width*1.5);
-  if(age<.18){
-    const pulse=1-animationEase(age/.18);
-    c.globalAlpha=opacity*pulse;
-    c.drawImage(cinematicBeamAtlas,192,0,64,64,-width*1.15,-width*1.15,
-      width*2.3,width*2.3);
+  // Moving current filaments run toward the advancing head.
+  for(let i=0;i<9;i++){
+    const u=(age*(1.2+i*.045)+i*.137)%1;
+    const px=u*length;
+    const side=i%2?-1:1;
+    const py=side*width*(.42+.17*Math.sin(phase+i));
+    c.strokeStyle=i%3===0?'#ffffff':'#7cecff';
+    c.lineWidth=i%3===0?1.25:.8;
+    c.globalAlpha=opacity*Math.sin(Math.PI*u)*.85;
+    c.beginPath();c.moveTo(px,py);
+    c.lineTo(Math.max(0,px-Math.max(3,length*.07)),py+side*.8);
+    c.stroke();
+  }
+  c.globalAlpha=opacity;
+  // Hand-sized emission orb and brief shockwave, never a giant muzzle ring.
+  const muzzle=Math.min(7,width*.65);
+  if(atlasReady(cinematicBeamAtlas)){
+    c.drawImage(cinematicBeamAtlas,(Math.floor(age*12)%4)*64,0,64,64,
+      -muzzle*.65,-muzzle,muzzle*2,muzzle*2);
+  }else{
+    c.fillStyle='#eaffff';c.beginPath();c.arc(0,0,muzzle*.6,0,Math.PI*2);c.fill();
+  }
+  const release=1-animationEase(age/.22);
+  if(release>0){
+    c.strokeStyle='#85e9ff';c.lineWidth=1.2;
+    c.globalAlpha=opacity*release;
+    c.beginPath();c.ellipse(1,0,4+8*(1-release),6+12*(1-release),0,0,Math.PI*2);c.stroke();
+  }
+  c.globalAlpha=opacity;
+  // The beam head moves with beamShape, instead of appearing at max range.
+  if(atlasReady(cinematicBeamAtlas)){
+    const frame=Math.floor(age*12)%4;
+    c.drawImage(cinematicBeamAtlas,frame*64,0,64,64,
+      length-head*.8,-head,head*2,head*2);
+  }
+  // Pixel sparks peel away from the moving tip.
+  for(let i=0;i<7;i++){
+    const a=i*2.399+phase*.4;
+    const d=2+(i%3)*2;
+    c.globalAlpha=opacity*(.35+.5*Math.abs(Math.sin(phase+i)));
+    c.fillStyle=i%2?'#79e8ff':'#168aff';
+    c.fillRect(Math.round(length+Math.cos(a)*d),Math.round(Math.sin(a)*width*.55),i%3===0?2:1,1);
   }
   c.restore();
 }
