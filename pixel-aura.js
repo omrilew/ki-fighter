@@ -5,7 +5,7 @@
 (function(root){
 "use strict";
 const names=["start","mid","strong","full"],colors=["blue","gold"];
-const dimensions=[[46,56],[61,77],[70,95],[83,112]];
+const dimensions=[[62,75],[84,108],[106,140],[130,174]];
 const images=new Map();let ready=false,error=null;
 async function init(){
  try{
