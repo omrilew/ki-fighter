@@ -5,7 +5,7 @@
 - Both subsequently reach King Kai's planet and train there together. Raditz gradually reforms, becomes good-aligned, and ultimately joins the Z Fighters.
 - Preserve the tension: Raditz starts ruthless and proud; he does **not** become good instantly. Goku's compassion and shared hardship make his redemption earned.
 - Do not rewrite the death scene into an early sacrifice or spare either character.
-- The mechanism for Raditz being allowed to travel Snake Way, and the eventual revival/return, are not yet decided; develop options without treating them as canon.
+- Raditz is allowed to train with Goku on King Kai's planet, and **both Goku and Raditz return to Earth together to fight Nappa and Vegeta**. The precise revival mechanism remains to be developed without contradicting this outcome.
 
 
 ## Provisional chapter structure
@@ -17,7 +17,7 @@
 6. Majin Buu: the cost of redemption, power and responsibility; ending flags.
 
 ## Major decisions requiring player-author approval
-- Why Raditz is permitted to travel Snake Way and how/when Raditz is revived (death scene itself is locked).
+- Why Raditz is permitted to travel Snake Way and the exact revival mechanism; both brothers returning together for the Saiyan invasion is locked.
 - Vegeta's redemption pace, Nappa's fate, Piccolo's role, Gohan's growth.
 - Namek/Frieza outcomes and transformations.
 - Android 17/18, Future Trunks and Cell outcomes.
@@ -39,7 +39,18 @@ Branching event graph, episode quests, companion unlocks, boss states, dialogue 
 - Early encounters emphasize mistrust and resentment: Raditz initially views compassion as weakness.
 - Training trials demand cooperation rather than brute force; Raditz repeatedly fails before beginning to change.
 - Their shared training builds an uneasy brotherhood. Goku chooses to give Raditz a chance; Raditz must choose to earn it.
-- The chapter ends with Raditz making a meaningful selfless choice without expecting reward, but his route back to the living world remains unresolved.
+- The chapter ends with Raditz making a meaningful selfless choice without expecting reward; both brothers are restored to life in time to confront the arriving Saiyans.
 
 ### Story flags
 `raditz_death_original=true`, `goku_raditz_king_kai_training=true`, `raditz_redemption_arc=true`. Future event flags remain undecided.
+
+## Chapter 3: Two Brothers Return — approved direction
+
+- Goku and Raditz return to Earth **together** when Nappa and Vegeta invade.
+- Raditz stands with Goku and the Earth defenders against his former Saiyan allies. This is his first public test of loyalty and redemption.
+- Vegeta and Nappa recognize Raditz as a former subordinate and challenge his change of allegiance; he must prove his choice through action, not just words.
+- The exact battle choreography, whether Nappa survives, Vegeta's fate, and which defenders survive remain **open major-event decisions** for the user.
+- Maintain continuity: original double death by Piccolo's attack → shared King Kai training → earned redemption → joint return against Nappa and Vegeta.
+
+### Locked flags
+`raditz_returns_with_goku=true`, `raditz_fights_for_earth=true`, `saiyan_invasion_two_brothers=true`.
