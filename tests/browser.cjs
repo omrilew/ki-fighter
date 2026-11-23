@@ -40,6 +40,10 @@ assert(gameSource.includes("const cycle=moving?frameInClip(((o.gait/(Math.PI*2))
   'Standing idle must hold a stable pose instead of playing walking frames');
 assert(gameSource.includes("const row=rear?2:front?(moving?1:0):3"),
   'Stationary fighter must preserve front, rear and side facing direction');
+assert(gameSource.includes("if(!p.surge&&(held.has('charge')||p.rechargeVisual>.015)){drawChargingAura(p);return}"),
+  'Charging aura must not persist just because Hyper meter has energy');
+assert(!gameSource.includes("o.rechargeVisual>.015||o.surge||o.hyper>0"),
+  'A partially filled Hyper meter must not trigger permanent character effects');
 assert(gameSource.includes("if(state!=='idle'&&state!=='walk')return false"),
   'Attack, dash, charge, hit and KO must fall through to their dedicated action atlases');
 assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
