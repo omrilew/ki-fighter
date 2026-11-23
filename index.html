@@ -1157,7 +1157,7 @@ function beamCastOrigin(p){
     const side=Math.sign(a.x)||1;
     // The action atlas thrust pose reaches toward the outer edge of the body.
     // Both charging and release share this origin so the orb cannot jump.
-    if(a.x)return {x:p.x+side*width*.48,y:p.y-size*.37};
+    if(a.x)return {x:p.x+side*width*.63,y:p.y-size*.37};
     if(a.y<0)return {x:p.x,y:p.y-size*.74};
     return {x:p.x,y:p.y-size*.22};
   }
@@ -1370,30 +1370,33 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   // Cinematic energy has a narrow white-hot core, breathing cyan plasma,
   // dark blue irregular silhouette, a traveling head and impact sparks.
   // All layers are rendered in beam-local coordinates so 4-way firing matches.
-  const width=Math.max(5.5,shape.wide*thin*.72);
+  const width=Math.max(5.5,shape.wide*thin*.9);
   const phase=age*19;
   const head=Math.min(length,Math.max(4,width*.9));
   c.save();c.translate(x,y);c.rotate(angle);
   c.globalAlpha=opacity;c.imageSmoothingEnabled=false;
+  // Narrow hand emission expands continuously into a broad, animated beam.
+  // The original constant-width ribbon hid the source and looked detached.
+  const envelope=u=>{
+    const distance=u*length;
+    const opening=Math.min(1,Math.max(0,distance)/(width*2.6+7));
+    const smooth=opening*opening*(3-2*opening);
+    const headTaper=Math.min(1,Math.max(0,(length-distance)/(Math.max(8,width*.7))));
+    return (.115+.885*smooth)*(.48+.52*Math.sqrt(headTaper));
+  };
   const edge=(u,side,scale)=>{
-    const taper=.77+.23*Math.sin(Math.PI*u);
-    const wobble=(Math.sin(u*47-phase+side)*.10+
-      Math.sin(u*91+phase*1.5+side*2)*.055)*width;
-    return side*(width*scale*taper+wobble);
+    const amp=width*scale*envelope(u);
+    const wobble=(Math.sin(u*43-phase+side)*.09+
+      Math.sin(u*83+phase*1.4+side*2)*.045)*amp;
+    return side*(amp+wobble);
   };
   const plasma=(color,scale)=>{
     c.fillStyle=color;c.beginPath();
     c.moveTo(0,edge(0,-1,scale));
-    const count=Math.max(4,Math.ceil(length/3));
-    for(let i=1;i<=count;i++){
-      const u=i/count;
-      c.lineTo(length*u,edge(u,-1,scale));
-    }
+    const count=Math.max(8,Math.ceil(length/2));
+    for(let i=1;i<=count;i++){const u=i/count;c.lineTo(length*u,edge(u,-1,scale))}
     c.lineTo(length,0);
-    for(let i=count;i>=0;i--){
-      const u=i/count;
-      c.lineTo(length*u,edge(u,1,scale));
-    }
+    for(let i=count;i>=0;i--){const u=i/count;c.lineTo(length*u,edge(u,1,scale))}
     c.closePath();c.fill();
   };
   plasma('#07338c',1.15);
@@ -1405,9 +1408,9 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   // as chunky diamond tiles. The core remains continuous and never stretches
   // one tiny frame over the whole screen.
   if(atlasReady(cinematicContinuousBeam)){
-    c.globalAlpha=opacity*.16;
+    c.globalAlpha=opacity*.08;
     const src=Math.max(1,Math.min(512,length/190*512));
-    c.drawImage(cinematicContinuousBeam,0,0,src,64,0,-width*.52,length,width*1.04);
+    // Texture is omitted: its constant-width rectangle conceals the tapered emission.
     c.globalAlpha=opacity;
   }
   // Moving current filaments run toward the advancing head.
@@ -1425,7 +1428,7 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   }
   c.globalAlpha=opacity;
   // Hand-sized emission orb and brief shockwave, never a giant muzzle ring.
-  const muzzle=Math.min(7,width*.65);
+  const muzzle=Math.min(5,width*.24);
   if(atlasReady(cinematicBeamAtlas)){
     c.drawImage(cinematicBeamAtlas,(Math.floor(age*12)%4)*64,0,64,64,
       -muzzle*.65,-muzzle,muzzle*2,muzzle*2);
