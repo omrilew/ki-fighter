@@ -3035,46 +3035,7 @@ function drawSurgeAura(p){
   }
 }
 function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
-function drawHyperChargeAura(p){
-  const charging=held.has('charge')&&!p.surge&&p.ki>=p.mki-.01;
-  const progress=p.surge?1:Math.min(.98,p.hyper||0);
-  const stage=p.surge?7:Math.min(6,Math.floor(progress*7));
-  const t=storyClock;
-  const pulse=1+.055*Math.sin(t*18)+.035*Math.sin(t*31);
-  const height=(42+progress*25)*pulse;
-  const width=(34+progress*15)*pulse;
-  c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
-  c.globalAlpha=p.surge?.83:(charging?.77:.55);
-  c.drawImage(hyperAuraArt,stage*96,0,96,112,-width/2,4-height,width,height);
-  c.globalAlpha=.7;
-  c.strokeStyle=p.surge||progress>.52?'#ffe18a':'#b1ecff';
-  c.lineWidth=1+progress;
-  c.beginPath();c.ellipse(0,2,11+progress*15,3+progress*3,0,0,Math.PI*2);c.stroke();
-  if(charging||p.surge){
-    const count=4+Math.floor(progress*9);
-    for(let i=0;i<count;i++){
-      const phase=(t*(.7+i*.07)+i*.618)%1;
-      const side=i%2?1:-1;
-      const sx=side*(9+phase*(11+progress*9));
-      const sy=1-phase*(36+progress*25);
-      c.globalAlpha=(.28+.4*progress)*Math.sin(phase*Math.PI);
-      c.fillStyle=p.surge||progress>.55?'#ffe49c':'#d8f7ff';
-      c.fillRect(Math.round(sx),Math.round(sy),i%3===0?3:2,3);
-    }
-    if(progress>.3){
-      const stones=Math.floor(progress*8);
-      c.fillStyle='#a68e73';
-      for(let j=0;j<stones;j++){
-        const a=j*2.4+t*.3,dist=12+j*2;
-        c.globalAlpha=.7;
-        c.fillRect(Math.round(Math.cos(a)*dist),Math.round(-6-Math.sin(a*1.7)*5-progress*10),3+j%3,3+j%2);
-      }
-    }
-  }
-  c.restore();
-}
 function energyAura(p){
-  if((p.hyper>0||p.surge)&&atlasReady(hyperAuraArt)){drawHyperChargeAura(p);return}
   if(!storyReady())return;
   c.save();
   c.translate(p.x,p.y);
@@ -3130,7 +3091,6 @@ worldProps.src='assets/world-props.webp';
 const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
-const hyperAuraArt=new Image();hyperAuraArt.src='assets/hyper-aura-frames.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
 const mentorArt=new Image();
 mentorArt.src='assets/mentor.webp';
@@ -3350,7 +3310,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);if(atlasReady(dojoCourtArt)){c.save();c.imageSmoothingEnabled=false;c.drawImage(dojoCourtArt,1105,139,316,308);c.restore()}drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||o.hyper>0)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);if(atlasReady(dojoCourtArt)){c.save();c.imageSmoothingEnabled=false;c.drawImage(dojoCourtArt,1105,139,316,308);c.restore()}drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
