@@ -33,6 +33,8 @@ def frame(row,n):
   rect((10,75,53,86),'orange')
   poly([(4,71),(10,62),(21,66),(27,77),(21,85),(9,83)],'hair')
   rect((40,78,58,88),'boot')
+  # Settling motion and impact recoil distinguish the four knockdown frames.
+  d.line([(10+n*2,74-n),(16+n*2,74-n)],fill=C['skin'],width=2)
   return im
  kick=action=='kick'
  lean=4 if action in ('punch','ki') else 0
