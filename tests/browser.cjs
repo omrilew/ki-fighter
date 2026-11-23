@@ -31,6 +31,9 @@ assert(gameSource.includes("return pose(directionRow,1+frameInClip(gait,5),1)"),
   'Front and rear walking must animate through five moving frames');
 assert(gameSource.includes("assets/ssj-movement-4x4.png"),
   'SSJ movement must load the newly extracted movement atlas');
+assert(gameSource.includes("assets/normal-movement-4x4.png")&&
+  gameSource.includes("o.surge?ssjMovementAtlas:normalMovementAtlas"),
+  'Both forms must use separate, matching movement atlases');
 assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
   'SSJ movement must render as a single character layer');
 assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
@@ -42,14 +45,14 @@ assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();"),
 assert(gameSource.includes("function drawDojoCourtyard()")&&gameSource.includes("Tatami sparring mat"),
   'Dojo must render a textured wood and tatami training courtyard');
 const newArt=await page.evaluate(async()=>{
-  const paths=['assets/dojo-architecture-4x2.png','assets/ssj-movement-4x4.png'];
+  const paths=['assets/dojo-architecture-4x2.png','assets/ssj-movement-4x4.png','assets/normal-movement-4x4.png'];
   return Promise.all(paths.map(src=>new Promise(resolve=>{
     const img=new Image();img.onload=()=>resolve([src,img.naturalWidth,img.naturalHeight]);
     img.onerror=()=>resolve([src,0,0]);img.src=src;
   })));
 });
-assert.deepEqual(newArt.map(x=>x.slice(1)),[[512,288],[256,384]],
-  'Uploaded dojo and SSJ atlases must load with their production cell dimensions');
+assert.deepEqual(newArt.map(x=>x.slice(1)),[[512,288],[256,384],[256,384]],
+  'Dojo, SSJ and normal atlases must load with their production cell dimensions');
 
 assert(gameSource.includes("case 14:return [4,pose.frame]")&&
   gameSource.includes("case 17:return [5,pose.frame]"),
