@@ -2810,48 +2810,48 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // They are used only for idle/walk; attack, beam and transformation remain
 // on their dedicated action atlases. All frames share the feet anchor.
 function drawSsjMovement(o,referencePose){
-  if(!o.hero||referencePose)return false;
-  // Normal must never reuse the SSJ silhouette: the recolored SSJ sheet
-  // retains its tall golden-hair outline and looks like a half-transformed hero.
-  // The dedicated Normal rows in approvedHero handle idle/walk instead.
-  if(!o.surge)return false;
-  const art=ssjMovementAtlas;
-  if(!atlasReady(art))return false;
+  if(!o.hero||referencePose||!o.surge||!atlasReady(ssjMovementAtlas))return false;
   const state=fighterAnimationState(o);
-  // Keep the approved SSJ silhouette for combat instead of switching to
-  // older, visually incompatible action sheets. Action-specific movement
-  // and impact effects remain handled by the existing combat renderer.
-  if(state==='transform')return false;
+  if(state==='transform'||state==='ko')return false;
   const rear=Math.sin(o.faceAngle)<-.82;
   const front=Math.sin(o.faceAngle)>.82;
-  const moving=state==='walk'||state==='dash';
-  const action=state==='attack'||state==='ki'||state==='hurt'||state==='charge';
-  const actionPhaseTime=state==='attack'?1-o.attack/Math.max(.001,o.attackDuration):
-    state==='hurt'?1-o.hurt/Math.max(.001,hitStagger):storyClock*2;
-  // Action poses stay on the SSJ sprite sheet: no legacy body swap.
-  const cycle=action?Math.max(0,Math.min(3,Math.floor(actionPhaseTime*4)%4)):
-    moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
-  // Preserve facing direction while stationary: never snap to front on idle.
-  // The movement sheet provides a dedicated rear and lateral row.
-  const row=rear?2:front?(moving?1:0):3;
   const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
   const size=approvedCell*approvedScale;
   const width=size*64/96;
+  const combat=atlasReady(ssjCombatAtlas);
+  const action=state==='attack'||state==='ki'||state==='charge';
+  let art=ssjMovementAtlas,row=0,frame=0;
+  if(action&&combat){
+    art=ssjCombatAtlas;
+    if(state==='attack'){
+      const kick=o.strike==='sidekick'||o.strike==='roundhouse';
+      const progress=Math.max(0,Math.min(.999,1-o.attack/Math.max(.001,o.attackDuration)));
+      row=kick?1:0;
+      frame=kick?[0,1,2,3][Math.floor(progress*4)]:[0,1,2,3][Math.floor(progress*4)];
+    }else if(state==='ki'){
+      row=2;
+      frame=o.beam||o.blastPose>0?2:o.beamCharge!==null?1:o.beamRecoveryUntil>now?3:0;
+    }else{
+      row=3;
+      frame=held.has('charge')?2+(Math.floor(storyClock*7)%2):1;
+    }
+  }else{
+    const moving=state==='walk'||state==='dash';
+    row=rear?2:front?(moving?1:0):3;
+    frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+  }
   c.save();
   if(state==='attack'){
-    const strikeProgress=1-o.attack/Math.max(.001,o.attackDuration);
-    const thrust=Math.sin(Math.PI*Math.max(0,Math.min(1,strikeProgress)))*3;
+    const progress=1-o.attack/Math.max(.001,o.attackDuration);
+    const thrust=Math.sin(Math.PI*Math.max(0,Math.min(1,progress)))*2;
     c.translate(Math.cos(o.faceAngle)*thrust,Math.sin(o.faceAngle)*thrust);
-    c.rotate(Math.sin(Math.PI*strikeProgress)*.045*flip);
   }else if(state==='hurt'){
     c.translate((o.hurtX||0)*Math.min(1,o.hurt/hitStagger)*2,
       (o.hurtY||0)*Math.min(1,o.hurt/hitStagger)*2);
-  }else if(state==='charge'){
-    c.translate(0,Math.sin(storyClock*13)*.4);
   }
   c.scale(flip,1);
   c.imageSmoothingEnabled=false;
-  c.drawImage(art,cycle*64,row*96,64,96,-width/2,-size+4,width,size);
+  c.drawImage(art,frame*64,row*96,64,96,-width/2,-size+4,width,size);
   c.restore();
   return true;
 }
@@ -3295,6 +3295,7 @@ const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architectur
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
+const ssjCombatAtlas=new Image();ssjCombatAtlas.src='assets/ssj-combat-actions-4x4.png?v=combat-1';
 const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=clean-body-3';
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
 const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
