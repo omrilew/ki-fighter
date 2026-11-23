@@ -946,8 +946,10 @@ function fire(){
 // both consume beamShape(), so they always agree on the beam's actual reach.
 const beam={start:3,wide:19,body:Math.ceil(Math.hypot(W,H)*1.5),tip:32,chargeTime:.55,damage:56,drain:7};
 function beamShape(age){
-  const expand=animationEase((age-.035)/.09);
-  const settle=animationEase((age-.135)/.105);
+  // Let the beam visibly travel outward rather than reaching full range
+  // almost instantly. This shape is shared by visuals and hit detection.
+  const expand=animationEase((age-.05)/.38);
+  const settle=animationEase((age-.32)/.48);
   const length=.25+.35*expand+.40*settle;
   const width=.35+.35*expand+.30*settle;
   return {body:beam.body*length,tip:beam.tip*length,wide:beam.wide*width};
@@ -1120,7 +1122,7 @@ function fireChargedBeam(p){
 }
 const beamTraceTime=.17;
 const beamRecoveryTime=.19;
-const beamEmergenceTime=.065;
+const beamEmergenceTime=.18;
 function finishBeam(p){
   const fired=p.beam;
   if(fired){
@@ -1295,7 +1297,7 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   const segment=34;
   for(let pos=0;pos<length;pos+=segment){
     const part=Math.min(segment,length-pos);
-    const frame=(Math.floor(pos/segment)+Math.floor(age*12))%4;
+    const frame=(Math.floor(pos/segment)+Math.floor(age*7))%4;
     c.drawImage(cinematicBeamAtlas,frame*64,64,64,64,pos,-width*.8,part+.5,width*1.6);
   }
   // Authored energy orb masks the emitter and the far beam tip.
