@@ -20,7 +20,7 @@ assert(html.includes('ssj-cohesive-4x9.png?v=cohesive-1')&&html.includes('normal
   'Current canonical gameplay atlases must bypass stale browser caches');
 assert(html.includes('const ssjTransformationAtlas=ssjUnifiedAtlas;'),'Cinematic SSJ transformation must remain untouched');
 assert(html.includes('c.drawImage(ssjCohesiveAtlas,frame*64,row*96'),'SSJ gameplay must use the single cohesive atlas');
-console.log('Ki Fighter syntax and integration smoke checks passed');
+console.log('Ki Fighter syntax, 36-frame SSJ atlas, and integration smoke checks passed');
 
 const cohesive=fs.readFileSync('assets/ssj-cohesive-4x9.png');
 assert.equal(cohesive.readUInt32BE(16),256,'SSJ atlas width');
