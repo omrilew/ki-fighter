@@ -2992,23 +2992,22 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // Charge animation timing: brace -> clench -> sustained power-up -> release.
 // Keep feet anchored; shake upper body subtly instead of scaling the whole sprite.
 // Dedicated sixteen-frame charging sheets: no body scaling or artificial shaking.
+// All charge frames are derived from the same approved 64x96 character art.
 const chargeAtlases={normal:new Image(),ssj:new Image()};
-chargeAtlases.normal.src='assets/charge-normal-16.png?v=charge16-extracted';
-chargeAtlases.ssj.src='assets/charge-ssj-16.png?v=charge16-extracted';
+chargeAtlases.normal.src='assets/charge-normal-matched-24.png?v=matched24a';
+chargeAtlases.ssj.src='assets/charge-ssj-matched-24.png?v=matched24a';
 function chargeFrame(o){
  const age=Math.max(0,storyClock-(o._auraChargeSince??storyClock));
- // 0-7 anticipation and power-up, 8-12 sustained high-energy loop.
- if(age<.72)return Math.min(7,Math.floor(age/.09));
- return 8+Math.floor((age-.72)*12)%5;
+ if(age<.54)return Math.min(5,Math.floor(age/.09));
+ return 6+Math.floor((age-.54)*15)%18;
 }
 function drawChargeSprite(o){
  const art=chargeAtlases[o.surge?'ssj':'normal'];
  if(!atlasReady(art))return false;
  const frame=chargeFrame(o),col=frame%8,row=Math.floor(frame/8);
- // Fixed feet anchor; do not squash, stretch or interpolate pixel-art anatomy.
- const width=approvedCell*approvedScale*1.18,height=approvedCell*approvedScale*1.32;
+ const size=approvedCell*approvedScale,width=size*64/96;
  c.save();c.imageSmoothingEnabled=false;
- c.drawImage(art,col*128,row*160,128,160,-width/2,4-height,width,height);
+ c.drawImage(art,col*64,row*96,64,96,-width/2,-size+4,width,size);
  c.restore();return true;
 }
 function drawSsjMovement(o,referencePose){
@@ -3156,8 +3155,9 @@ function character(o,type,referencePose){
     c.restore();
     return;
   }
-  // Charge sprite sheets are currently a different character model and scale.
-  // Keep the approved in-game character atlas in every state until matched art exists.
+  if(o.hero&&fighterAnimationState(o)==='charge'&&drawChargeSprite(o)){
+    c.restore();return;
+  }
   if(drawSsjMovement(o,referencePose)){
     c.restore();
     return;
