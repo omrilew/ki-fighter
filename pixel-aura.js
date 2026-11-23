@@ -70,7 +70,7 @@ function draw(ctx,x,y,mode,stage,time,alpha=1){
  const atlas=frame(mode,Math.max(0,Math.min(3,stage|0)),index);
  ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=alpha;
  // Fixed feet anchor, no sprite duplication or scaling of character hitbox.
- ctx.drawImage(atlas,Math.round(x-W/2),Math.round(y-H+10));ctx.restore();
+ const scale=.58;ctx.drawImage(atlas,Math.round(x-W*scale/2),Math.round(y-(H-10)*scale),Math.round(W*scale),Math.round(H*scale));ctx.restore();
 }
 root.KFPixelAura=Object.freeze({draw,frame,frameCount:N});
 })(typeof window!=='undefined'?window:globalThis);
