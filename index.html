@@ -1086,6 +1086,20 @@ function beamBodyPose(p,recovery=0){
 }
 function recoverDiagonalFrame(progress){return progress<.26?4:5}
 function beamCastOrigin(p){
+  // SSJ is drawn from a 64x96 atlas at 46.08px tall. Legacy beam-body
+  // anchors belong to a DIFFERENT character and place the muzzle off-hand.
+  if(p.hero&&p.surge&&atlasReady(ssjMovementAtlas)){
+    const size=approvedCell*approvedScale;
+    const width=size*64/96;
+    const a=cinematicBeamDirection(p);
+    const firing=!!p.beam;
+    const side=Math.sign(a.x)||1;
+    // The action atlas thrust pose reaches toward the outer edge of the body.
+    // Both charging and release share this origin so the orb cannot jump.
+    if(a.x)return {x:p.x+side*width*.48,y:p.y-size*.37};
+    if(a.y<0)return {x:p.x,y:p.y-size*.74};
+    return {x:p.x,y:p.y-size*.22};
+  }
   const body=beamBodyPose(p);
   if(body){
     const [x,y]=beamBodyAnchors[body.row][body.frame];
@@ -1305,10 +1319,14 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
     c.fillStyle='#0a76db';c.fillRect(0,-width*.75,length,width*1.5);
     c.fillStyle='#d8faff';c.fillRect(0,-width*.28,length,width*.56);
   }
-  // Authored energy orb masks the emitter and the far beam tip.
+  // A small muzzle glow stays centered on the fighter's actual hands.
+  // The impact head grows only as the beam reaches outward.
   const endFrame=Math.min(3,Math.floor(age*14)%4);
-  c.drawImage(cinematicBeamAtlas,endFrame*64,0,64,64,
-    length-width*.85,-width*.85,width*1.7,width*1.7);
+  const muzzleSize=Math.min(13,width*.68);
+  c.drawImage(cinematicBeamAtlas,64,0,64,64,
+    -muzzleSize*.45,-muzzleSize*.5,muzzleSize,muzzleSize);
+  if(length>3)c.drawImage(cinematicBeamAtlas,endFrame*64,0,64,64,
+    length-width*.75,-width*.75,width*1.5,width*1.5);
   if(age<.18){
     const pulse=1-animationEase(age/.18);
     c.globalAlpha=opacity*pulse;
