@@ -64,8 +64,14 @@ assert(gameSource.includes("if(!p.surge&&(held.has('charge')||p.rechargeVisual>.
   'Charging aura must not persist just because Hyper meter has energy');
 assert(!gameSource.includes("o.rechargeVisual>.015||o.surge||o.hyper>0"),
   'A partially filled Hyper meter must not trigger permanent character effects');
-assert(gameSource.includes("if(state==='transform'||state==='ko')return false")&&gameSource.includes("const action=state==='attack'||state==='charge'")&&gameSource.includes("const kiAction=state==='ki'")&&gameSource.includes("frame=kiAction?0:moving?")&&gameSource.includes("art=ssjCombatAtlas"),
-  'SSJ Ki must keep the approved silhouette while melee uses combat frames');
+assert(gameSource.includes("const beamAction=state==='ki'&&(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now)")&&
+  gameSource.includes("const action=state==='attack'||state==='charge'||(beamAction&&productionCombat)")&&
+  gameSource.includes("frame=kiAction?0:moving?"),
+  'Ordinary SSJ Ki blasts must not trigger Kamehameha poses');
+assert(gameSource.includes("cinematic-kamehameha-continuous.svg")&&
+  gameSource.includes("const sourceWidth=Math.max(1,Math.min(512,length/190*512))")&&
+  !gameSource.includes("const segment=34;"),
+  'Kamehameha must use a continuous progressive layer, not tiled diamonds');
 assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
   gameSource.includes("if(impact>.6)c.filter='brightness(1.6) saturate(.7)'"),
   'Approved combat sprites must show impact recoil and flash');
