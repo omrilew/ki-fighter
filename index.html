@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="animation.js?v=172a878"></script><script src="pixel-aura.js?v=2076ee5"></script>
+<script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=81e9de2"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -3350,13 +3350,13 @@ function drawSsjAura(p){
   const transforming=p.surgeFlare>0;
   if(!charging&&!transforming){window.KFPixelAura?.draw(c,p.x,p.y,'gold',0,storyClock,.5);return}
   const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
-  const stage=transforming?3:elapsed<.35?1:elapsed<1.15?2:3;
+  const stage=transforming?3:elapsed<.3?0:elapsed<.9?1:elapsed<1.6?2:3;
   window.KFPixelAura?.draw(c,p.x,p.y,'gold',stage,storyClock,1);
 }
 function drawChargingAura(p){
   const charging=held.has('charge')&&!p.surge;
   const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
-  const stage=elapsed<.35?1:elapsed<1.15?2:3;
+  const stage=elapsed<.3?0:elapsed<.9?1:elapsed<1.6?2:3;
   window.KFPixelAura?.draw(c,p.x,p.y,'blue',stage,storyClock,Math.min(1,.65+elapsed*.4));
 }
 function energyAura(p){
