@@ -3039,12 +3039,16 @@ function drawSsjAura(p){
   const hyper=p.hyper||0,charging=held.has('charge')&&p.ki>=p.mki-.01&&!p.surge;
   const progress=p.surge?1:hyper;
   // Hyper buildup advances through frames 0-6; transformed mode loops the steady aura.
-  const phase=(storyClock*5.5)%1;
-  const frame=p.surge?(phase<.5?6:7):Math.min(6,Math.floor(progress*7));
-  const next=p.surge?(frame===6?7:6):Math.min(7,frame+1);
-  const blend=p.surge?(phase<.5?phase*2:(phase-.5)*2):progress*7-frame;
+  const phase=(storyClock*4.5)%1;
+  const ignitionAge=surgeIgnitionTime-(p.surgeFlare||0);
+  const ignition=p.surge&&p.surgeFlare>0?Math.min(1,Math.max(0,ignitionAge/surgeIgnitionTime)):1;
+  // Play eight consecutive frames on ignition, then loop final two.
+  const sequence=p.surge&&p.surgeFlare>0?ignition:p.surge?1:progress;
+  const frame=p.surge&&p.surgeFlare<=0?(phase<.5?6:7):Math.min(7,Math.floor(sequence*7.999));
+  const next=p.surge&&p.surgeFlare<=0?(frame===6?7:6):Math.min(7,frame+1);
+  const blend=p.surge&&p.surgeFlare<=0?(phase<.5?phase*2:(phase-.5)*2):sequence*7.999-frame;
   const pulse=1+.035*Math.sin(storyClock*13);
-  const width=(37+progress*12)*pulse,height=(42+progress*19)*pulse;
+  const width=(37+sequence*12)*pulse,height=(42+sequence*19)*pulse;
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
   c.globalAlpha=.64+.12*Math.sin(storyClock*16);
   c.drawImage(ssjAuraAtlas,frame*96,0,96,112,-width/2,4-height,width,height);
