@@ -1,0 +1,25 @@
+name: Build cohesive SSJ character atlas
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [scripts/build_ssj_cohesive.py, .github/workflows/build-ssj-cohesive.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sprites:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install Pillow
+      - run: python scripts/build_ssj_cohesive.py
+      - name: Commit cohesive atlas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ssj-cohesive-4x9.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate cohesive 36-frame SSJ gameplay atlas"
+            git pull --rebase origin feature/forest-trial-vertical-slice
+            git push origin HEAD:feature/forest-trial-vertical-slice
+          fi

@@ -1,0 +1,21 @@
+// Run: node tests/world-content-kit.test.cjs
+const assert=require("node:assert/strict");
+const kit=require("../world-content-kit.js");
+const a=kit.makeVillage("cedar-v1"),b=kit.makeVillage("cedar-v1"),c=kit.makeVillage("other");
+assert.deepEqual(a,b,"same seed should reproduce the same village");
+assert.notDeepEqual(a,c,"different seed should change the village");
+assert.equal(a.npcs.length,10);
+assert.equal(new Set(a.npcs.map(n=>n.id)).size,10);
+assert.ok(a.npcs.every(kit.validateNpc));
+assert.equal(a.buildings.length,4);
+assert.equal(kit.buildings.length,3);
+assert.equal(kit.interiors.length,2);
+const q=kit.quests[0];let s={stage:0,count:0,complete:false};
+s=kit.questProgress(q,s,{type:"defeat",targetTag:"forest-scout"});assert.equal(s.stage,0);
+s=kit.questProgress(q,s,{type:"talk",targetRole:"trainer"});assert.equal(s.stage,1);
+for(let i=0;i<3;i++)s=kit.questProgress(q,s,{type:"defeat",targetTag:"forest-scout"});
+assert.equal(s.stage,2);
+s=kit.questProgress(q,s,{type:"talk",targetRole:"trainer"});
+assert.equal(s.complete,true);
+assert.deepEqual(kit.questProgress(q,s,{type:"talk",targetRole:"trainer"}),s);
+console.log("World content kit tests passed");

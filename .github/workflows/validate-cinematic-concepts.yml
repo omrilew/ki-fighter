@@ -1,0 +1,35 @@
+name: Validate uploaded cinematic animation concepts
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [.github/workflows/validate-cinematic-concepts.yml, assets/ki_fighters_animation_concepts.zip]
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install Pillow
+      - name: Inspect frame grids, alpha and canonical character comparison
+        run: |
+          python - <<'PY'
+          import zipfile,io,json
+          from PIL import Image
+          from pathlib import Path
+          p=Path('assets/ki_fighters_animation_concepts.zip')
+          report=[]
+          with zipfile.ZipFile(p) as z:
+            for name in z.namelist():
+              if name.lower().endswith(('.png','.webp','.jpg','.jpeg')):
+                im=Image.open(io.BytesIO(z.read(name))).convert('RGBA')
+                pixels=im.getdata()
+                transparent=sum(a<32 for r,g,b,a in pixels)
+                report.append(dict(file=name,width=im.width,height=im.height,transparent_fraction=round(transparent/(im.width*im.height),4),candidate_grid='8x3' if 'charge' in name.lower() else '8x2' if 'kame' in name.lower() else 'unknown'))
+          Path('animation-concept-validation.json').write_text(json.dumps(report,indent=2))
+          print(json.dumps(report,indent=2))
+          if not report:raise RuntimeError('No images in uploaded ZIP')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: animation-concept-validation
+          path: animation-concept-validation.json

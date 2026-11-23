@@ -1,0 +1,24 @@
+name: Repair SSJ source PNG hands
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [.github/workflows/repair-ssj-source-hands.yml, scripts/repair_ssj_movement_hands.py]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install Pillow
+      - run: python scripts/repair_ssj_movement_hands.py
+      - run: python scripts/zoom_ssj_hands.py
+      - name: Commit corrected source PNG and review
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ssj-movement-4x4.png assets/ssj-hand-zoom.png
+          git commit -m "Restore shaded fists inside all 16 SSJ movement sprite frames"
+          git pull --rebase origin feature/forest-trial-vertical-slice
+          git push origin HEAD:feature/forest-trial-vertical-slice

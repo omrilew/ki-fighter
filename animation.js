@@ -72,5 +72,53 @@
     },
   };
 
-  root.KiAnimation={ease,damp,sample,framesAt,actionPhase,clips};
+
+  // Canonical animation inventory. Sprite atlases must be validated against
+  // these contracts before the runtime is switched away from legacy rendering.
+  const frameSize=Object.freeze({width:64,height:96});
+  const clipFrames=Object.freeze({
+    idle:8,walkDown:8,walkUp:8,walkLeft:8,walkRight:8,
+    lightAttack:6,heavyAttack:8,airAttack:6,dash:8,dashAttack:8,
+    kiBlast:10,charge:12,jump:4,land:4,crouch:4,hurt:4,ko:6
+  });
+  const effectFrames=Object.freeze({
+    aura:8,energyRing:6,shockwave:8,kiProjectile:6,impact:6,
+    lightning:8,energyParticles:8,debris:8,dashTrail:6
+  });
+  const transformationFrames=12;
+  const animationCatalog=Object.freeze({
+    frameSize,forms:Object.freeze(['normal','ssj']),clips:clipFrames,
+    transformationFrames,effects:effectFrames
+  });
+  function validateAtlasManifest(manifest){
+    const errors=[];
+    if(!manifest||typeof manifest!=='object')return {valid:false,errors:['Missing manifest']};
+    for(const form of animationCatalog.forms){
+      const clips=manifest.forms?.[form];
+      if(!clips){errors.push('Missing form '+form);continue}
+      for(const [name,count] of Object.entries(clipFrames)){
+        const entry=clips[name];
+        if(!entry||!Array.isArray(entry.frames)||entry.frames.length!==count)
+          errors.push(form+'.'+name+': expected '+count+' frames');
+      }
+    }
+    if(!Array.isArray(manifest.transformation?.frames)||
+       manifest.transformation.frames.length!==transformationFrames)
+      errors.push('transformation: expected '+transformationFrames+' frames');
+    for(const [name,count] of Object.entries(effectFrames)){
+      if(!Array.isArray(manifest.effects?.[name]?.frames)||
+         manifest.effects[name].frames.length!==count)
+        errors.push('effects.'+name+': expected '+count+' frames');
+    }
+    return {valid:errors.length===0,errors};
+  }
+  function resolveClip(form,action,direction){
+    const suffix=({up:'Up',down:'Down',left:'Left',right:'Right'})[direction];
+    const directional=action==='walk'&&suffix?'walk'+suffix:action;
+    if(!animationCatalog.forms.includes(form)||!(directional in clipFrames))
+      return null;
+    return {form,clip:directional,frames:clipFrames[directional]};
+  }
+
+  root.KiAnimation={ease,damp,sample,framesAt,actionPhase,clips,animationCatalog,validateAtlasManifest,resolveClip};
 })(globalThis);

@@ -1,0 +1,24 @@
+name: Build unified SSJ production atlas
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [.github/workflows/build-ssj-unified.yml, scripts/build_ssj_unified.py, assets/ssj-movement-4x4.png, assets/ssj-production-actions-4x4.png, assets/ssj-combat-actions-4x4.png, assets/ssj-transformation-12.png]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install Pillow
+      - run: python scripts/build_ssj_unified.py
+      - name: Commit unified SSJ PNG and atlas coordinates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ssj-unified-production.png ssj-unified-layout.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish one unified SSJ character and transformation atlas"
+          git pull --rebase origin feature/forest-trial-vertical-slice
+          git push origin HEAD:feature/forest-trial-vertical-slice
