@@ -267,7 +267,7 @@
   function drawPoint(point, time) {
     const sprite = point.actor && window.KFCampaignCast?.getSprite(point.actor);
     const frame = sprite && window.KFCampaignCast.resolveFrame(sprite, 'down', dialog.open && nearby === point ? 'talk' : 'idle', time);
-    const shown = sprite && drawSprite(castArt.get(sprite.src), frame, point.x, point.y, .48);
+    const shown = sprite && drawSprite(castArt.get(sprite.src), frame, point.x, point.y, sprite.scale);
     const active = isAvailable(point);
     if ((!shown || active) && !(point.stage && stages.indexOf(currentStage) > stages.indexOf(point.stage))) {
       const x = point.x, y = point.y - (shown ? 40 : 9);
@@ -350,7 +350,8 @@
       if (distance(player, point) <= 23 && (!nearby || distance(player, point) < distance(player, nearby))) nearby = point;
     }
     interactButton.disabled = !nearby;
-    notice.textContent = nearby ? nearby.name : (stageMessages[currentStage] || '');
+    const message = nearby ? nearby.name : (stageMessages[currentStage] || '');
+    if (notice.textContent !== message) notice.textContent = message;
   }
 
   function save() {
