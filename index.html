@@ -2811,7 +2811,11 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // on their dedicated action atlases. All frames share the feet anchor.
 function drawSsjMovement(o,referencePose){
   if(!o.hero||referencePose)return false;
-  const art=o.surge?ssjMovementAtlas:normalMovementAtlas;
+  // Normal must never reuse the SSJ silhouette: the recolored SSJ sheet
+  // retains its tall golden-hair outline and looks like a half-transformed hero.
+  // The dedicated Normal rows in approvedHero handle idle/walk instead.
+  if(!o.surge)return false;
+  const art=ssjMovementAtlas;
   if(!atlasReady(art))return false;
   const state=fighterAnimationState(o);
   if(state!=='idle'&&state!=='walk')return false;
