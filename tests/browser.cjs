@@ -72,8 +72,13 @@ assert(gameSource.includes("const beamAction=state==='ki'&&(o.beam||o.beamCharge
   gameSource.includes("const action=state==='attack'||state==='charge'||(beamAction&&productionCombat)")&&
   gameSource.includes("frame=kiAction?0:moving?"),
   'Ordinary SSJ Ki blasts must not trigger Kamehameha poses');
+assert(gameSource.includes("plasma('#07338c',1.15)")&&
+  gameSource.includes("plasma('#f6ffff',.31)")&&
+  gameSource.includes("const release=1-animationEase(age/.22)")&&
+  gameSource.includes("length-head*.8,-head,head*2,head*2"),
+  'Cinematic beam must render layered plasma, a release shockwave and traveling head');
 assert(gameSource.includes("cinematic-kamehameha-continuous.svg")&&
-  gameSource.includes("const sourceWidth=Math.max(1,Math.min(512,length/190*512))")&&
+  gameSource.includes("const src=Math.max(1,Math.min(512,length/190*512))")&&
   !gameSource.includes("const segment=34;"),
   'Kamehameha must use a continuous progressive layer, not tiled diamonds');
 assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
