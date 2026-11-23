@@ -3354,6 +3354,51 @@ function drawHyperWave(p){
   else{c.strokeStyle='#ffdd72';c.lineWidth=4;c.beginPath();c.ellipse(0,0,size/2,size*.22,0,0,Math.PI*2);c.stroke()}
   c.restore();
 }
+// Tile the training courtyard from the same high-resolution material palette
+// as the hall, replacing the old flat vector courtyard and its cartoon props.
+function drawDojoCourtyard(){
+  const x=1105,y=139,w=316,h=308;
+  if(!atlasReady(dojoArchitecture)){
+    if(atlasReady(dojoCourtArt)){
+      c.save();c.imageSmoothingEnabled=false;
+      c.drawImage(dojoCourtArt,x,y,w,h);c.restore();
+    }
+    return;
+  }
+  c.save();c.imageSmoothingEnabled=false;
+  c.fillStyle='#263b2e';c.fillRect(x-8,y-8,w+16,h+16);
+  c.fillStyle='#8b6541';c.fillRect(x-5,y-5,w+10,h+10);
+  c.fillStyle='#382d27';c.fillRect(x-2,y-2,w+4,h+4);
+  c.beginPath();c.rect(x,y,w,h);c.clip();
+  // Two repeating wood grain tiles with offset seams, drawn at native
+  // pixel-art resolution. This is the ground layer, behind all actors.
+  const tileW=64,tileH=72;
+  for(let row=0;row<Math.ceil(h/tileH);row++){
+    for(let col=0;col<Math.ceil(w/tileW);col++){
+      const variant=(row+col)%2;
+      c.drawImage(dojoArchitecture,variant*128,0,128,144,
+        x+col*tileW,y+row*tileH,tileW,tileH);
+    }
+  }
+  // Tatami sparring mat, with individual green-edged woven panels.
+  const mx=x+56,my=y+78,mw=204,mh=152;
+  c.fillStyle='#342f24';c.fillRect(mx-5,my-5,mw+10,mh+10);
+  for(let row=0;row<2;row++)for(let col=0;col<3;col++){
+    c.drawImage(dojoArchitecture,(2+(row+col)%2)*128,0,128,144,
+      mx+col*68,my+row*76,68,76);
+  }
+  c.strokeStyle='#a98250';c.lineWidth=2;
+  c.strokeRect(x+8,y+8,w-16,h-16);
+  c.strokeStyle='#33271e';c.lineWidth=1;
+  c.strokeRect(mx-4,my-4,mw+8,mh+8);
+  // Architectural corner bases and lantern-like warm pools of light.
+  for(const [px,py] of [[x+14,y+14],[x+w-14,y+14],[x+14,y+h-14],[x+w-14,y+h-14]]){
+    c.fillStyle='#3e3027';c.fillRect(px-7,py-7,14,14);
+    c.fillStyle='#b8884a';c.fillRect(px-5,py-5,10,10);
+    c.fillStyle='#f2d28a';c.fillRect(px-3,py-3,6,6);
+  }
+  c.restore();
+}
 function drawDojoBuilding(){
  c.save();c.imageSmoothingEnabled=false;
  if(atlasReady(dojoArchitecture)){
@@ -3490,7 +3535,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);if(atlasReady(dojoCourtArt)){c.save();c.imageSmoothingEnabled=false;c.drawImage(dojoCourtArt,1105,139,316,308);c.restore()}drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||o.hyper>0)&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||o.hyper>0)&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
