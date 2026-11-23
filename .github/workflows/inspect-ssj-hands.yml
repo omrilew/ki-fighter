@@ -13,11 +13,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: python -m pip install Pillow
       - run: python scripts/inspect_ssj_hands.py
+      - run: python scripts/zoom_ssj_hands.py
       - name: Commit diagnostic contact sheet
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/ssj-hand-diagnostic.png
+          git add assets/ssj-hand-diagnostic.png assets/ssj-hand-zoom.png
           git commit -m "Add SSJ source-frame hand diagnostic" || exit 0
           git pull --rebase origin feature/forest-trial-vertical-slice
           git push origin HEAD:feature/forest-trial-vertical-slice
