@@ -3139,8 +3139,23 @@ function detailedSsjFrame(o){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
     return Math.min(11,Math.floor(progress*12));
   }
-  // Hold SSJ charge on the actual cinematic transformation's energized frames.
-  if(held.has('charge'))return 7+(Math.floor(storyClock*9)%5);
+  // Preserve the actual transformation art, but use several staggered
+  // animation phrases rather than repeating frames 7-11 every half second.
+  // Every phrase returns through neighboring poses to avoid visual jumps.
+  if(held.has('charge')){
+    const elapsed=Math.max(0,storyClock-(o._auraChargeSince??storyClock));
+    const phrases=[
+      [7,8,9,10,11,10,9,8,9,10,9,8],
+      [8,9,10,11,10,9,10,11,10,9,8,9],
+      [9,10,11,10,9,8,7,8,9,10,11,10],
+      [10,9,8,9,10,11,10,9,8,7,8,9]
+    ];
+    const step=Math.floor(elapsed*9.5);
+    const phraseIndex=Math.floor(step/12);
+    // Vary the order of phrases without changing the actual illustrated art.
+    const order=[0,2,1,3,2,0,3,1];
+    return phrases[order[phraseIndex%order.length]][step%12];
+  }
   return 9+(Math.floor(storyClock/.24)%3);
 }
 function drawDetailedSsj(o){
@@ -3148,8 +3163,15 @@ function drawDetailedSsj(o){
   const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
   const ignite=o.surge&&o.surgeFlare>0;
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
-  const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress)):1;
-  const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5:Math.sin(storyClock*5)*.4;
+  const charging=!ignite&&o.surge&&held.has('charge');
+  const elapsed=charging?Math.max(0,storyClock-(o._auraChargeSince??storyClock)):0;
+  const strength=charging?Math.min(1,elapsed/1.8):0;
+  // Slow, offset breathing cycles vary the energy silhouette without
+  // stretching or replacing the character and without extra aura overlays.
+  const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress))
+    :charging?1+strength*(.018*Math.sin(storyClock*3.7)+.009*Math.sin(storyClock*6.1)):1;
+  const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5
+    :charging?.4*Math.sin(storyClock*4.3):Math.sin(storyClock*5)*.4;
   // The transformation sheet includes a wide aura; use a smaller footprint.
   // Match the approved fighter's 46px source footprint. The cinematic atlas
   // contains extra aura padding; keep the character anchor fixed at the feet.
