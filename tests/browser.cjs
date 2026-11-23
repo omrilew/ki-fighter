@@ -38,6 +38,8 @@ assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
   'SSJ movement must render as a single character layer');
 assert(gameSource.includes("const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0"),
   'Standing idle must hold a stable pose instead of playing walking frames');
+assert(gameSource.includes("const row=rear?2:front?(moving?1:0):3"),
+  'Stationary fighter must preserve front, rear and side facing direction');
 assert(gameSource.includes("if(state!=='idle'&&state!=='walk')return false"),
   'Attack, dash, charge, hit and KO must fall through to their dedicated action atlases');
 assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
