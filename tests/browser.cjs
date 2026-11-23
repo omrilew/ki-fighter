@@ -29,6 +29,11 @@ assert(gameSource.includes("return pose(1,frameInClip(gait,6),side)"),
   'Horizontal walking must cycle through six directional atlas frames');
 assert(gameSource.includes("return pose(directionRow,1+frameInClip(gait,5),1)"),
   'Front and rear walking must animate through five moving frames');
+assert(gameSource.includes("const kamehamehaVisualTiers=Object.freeze({base:'cinematic',upgrade:'aura-burst'})"),
+  'Cinematic Kamehameha must reserve Aura Burst for future skill progression');
+assert(gameSource.includes("function drawCinematicKamehameha(")&&
+  gameSource.includes("drawCinematicKamehameha(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence)"),
+  'Active Kamehameha must use the cinematic beam renderer');
 assert(gameSource.includes("assets/ssj-movement-4x4.png"),
   'SSJ movement must load the newly extracted movement atlas');
 assert(gameSource.includes("assets/normal-movement-4x4.png")&&
