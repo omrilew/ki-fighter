@@ -94,6 +94,20 @@ if(name==='iphone'){
   assert.equal(delta('hero-approved.webp'),0,'iPhone idle must not overlay the legacy hero atlas');
   assert.equal(delta('matching-actions.webp'),0,'iPhone idle must not overlay combat frames');
   assert.equal(delta('ssj-movement-4x4.png'),0,'Normal form must not draw SSJ hair sprites');
+  // Exercise a real touch control. The action atlas should replace the
+  // movement sprite while attacking, then return to the idle atlas.
+  const actionBefore=await page.evaluate(()=>({...window.__spriteDraws}));
+  await page.locator('[data-a="hit"]').click();
+  await page.waitForTimeout(90);
+  const actionAfter=await page.evaluate(()=>({...window.__spriteDraws}));
+  const actionDraws=['matching-actions.webp','hero-approved.webp'].reduce((sum,key)=>
+    sum+(actionAfter[key]||0)-(actionBefore[key]||0),0);
+  assert(actionDraws>0,'iPhone Strike must draw an action atlas rather than the idle sprite');
+  await page.waitForTimeout(400);
+  const idleBefore=await page.evaluate(()=>window.__spriteDraws['normal-movement-4x4.png']||0);
+  await page.waitForTimeout(130);
+  const idleAfter=await page.evaluate(()=>window.__spriteDraws['normal-movement-4x4.png']||0);
+  assert(idleAfter>idleBefore,'iPhone fighter must return to normal idle after Strike');
 }
 await page.screenshot({path:'/tmp/'+name+'-game.png'});if(name==='desktop'){
 assert(await page.locator('#kfhyper-meter').count(),'Missing yellow hyper gauge');
