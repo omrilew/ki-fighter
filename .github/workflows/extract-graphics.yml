@@ -1,0 +1,32 @@
+name: Extract approved graphics atlas
+on:
+  push:
+    branches:
+      - feature/forest-trial-vertical-slice
+    paths:
+      - .github/workflows/extract-graphics.yml
+      - assets/ki-fighter-graphics-pack.zip
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract the approved SSJ atlas from uploaded ZIP
+        run: |
+          unzip -p assets/ki-fighter-graphics-pack.zip ssj-movement-4x4.png > assets/ssj-movement-4x4.png
+          test -s assets/ssj-movement-4x4.png
+          file assets/ssj-movement-4x4.png
+      - name: Commit extracted atlas on feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ssj-movement-4x4.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract SSJ movement atlas from uploaded graphics pack"
+            git push origin HEAD:feature/forest-trial-vertical-slice
+          fi
