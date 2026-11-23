@@ -2821,35 +2821,38 @@ function drawApprovedHero(o,referencePose){
 }
 
 // Detailed atlas combines the fighter and aura in each frame.
+// Render the newly approved fighter atlas in normal idle, charge and SSJ.
+// Combat/movement retain their directional action sprites.
 function detailedSsjIdle(o,referencePose){
-  return o===player&&(o.surge||(o.hyper>0&&held.has('charge')))&&
-    (atlasReady(ssjTransformationAtlas)||atlasReady(ssjDetailedAtlas))&&
-    !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!o.beam&&
-    o.beamCharge===null&&!(o.beamRecoveryUntil>now);
+  return o===player&&atlasReady(ssjTransformationAtlas)&&
+    !o.walking&&o.stride<.18&&!o.hurt&&!o.attack&&!o.dash&&
+    !o.blastPose&&!o.beam&&o.beamCharge===null&&
+    !(o.beamRecoveryUntil>now);
 }
 function detailedSsjFrame(o){
-  const useNew=atlasReady(ssjTransformationAtlas);
-  // Hyper charging is the visible buildup: play the first six poses before
-  // ignition. The transformation then plays the full 12-frame sequence.
-  if(!o.surge&&o.hyper>0)return Math.min(useNew?5:3,Math.floor(o.hyper*(useNew?6:4)));
+  if(!o.surge){
+    if(o.hyper>0)return Math.min(5,Math.floor(o.hyper*6));
+    if(held.has('charge'))return 1+Math.floor((storyClock*5)%2);
+    return 0;
+  }
   if(o.surgeFlare>0){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
-    return Math.min(useNew?11:7,Math.floor(progress*(useNew?12:8)));
+    return Math.min(11,Math.floor(progress*12));
   }
-  // New 12-frame art ends with three calm golden-haired idle poses.
-  return useNew?9+(Math.floor(storyClock/.24)%3):6+(Math.floor(storyClock/.22)%2);
+  return 9+(Math.floor(storyClock/.24)%3);
 }
 function drawDetailedSsj(o){
-  const useNew=atlasReady(ssjTransformationAtlas);
-  const art=useNew?ssjTransformationAtlas:ssjDetailedAtlas;
-  const cols=4,cellW=useNew?art.naturalWidth/4:443,cellH=useNew?art.naturalHeight/3:443;
-  const frame=detailedSsjFrame(o);
-  const ignite=o.surgeFlare>0;
+  const art=ssjTransformationAtlas,frame=detailedSsjFrame(o);
+  const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
+  const ignite=o.surge&&o.surgeFlare>0;
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
-  const pulse=ignite?1+.08*Math.sin(Math.PI*Math.max(0,progress)):1;
-  const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*2:Math.sin(storyClock*5)*.65;
+  const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress)):1;
+  const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5:Math.sin(storyClock*5)*.4;
+  // Original 68px was too small to see the new art on a phone.
+  // Align the sprite's boots with the existing world-space foot position.
+  const size=94*pulse;
   c.imageSmoothingEnabled=false;
-  c.drawImage(art,(frame%cols)*cellW,Math.floor(frame/cols)*cellH,cellW,cellH,-34*pulse,-63*pulse-bob,68*pulse,68*pulse);
+  c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 function character(o,type,referencePose){
   c.save();
