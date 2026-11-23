@@ -3424,6 +3424,40 @@ function drawDojoCourtyard(){
   }
   c.restore();
 }
+// Courtyard furniture is rendered after the floor and before actors, so
+// fighters can stand in front of it without the props covering their sprites.
+function drawDojoTrainingProps(){
+  if(!atlasReady(dojoArchitecture))return;
+  c.save();c.imageSmoothingEnabled=false;
+  // Low wooden equipment racks at both sides of the sparring mat.
+  for(const px of [1122,1387]){
+    const py=314;
+    c.fillStyle='#251d1a';c.fillRect(px-13,py-7,26,14);
+    c.fillStyle='#7b5034';c.fillRect(px-12,py-9,24,11);
+    c.fillStyle='#c49a60';c.fillRect(px-10,py-8,20,2);
+    c.fillStyle='#48372a';c.fillRect(px-9,py+2,4,9);c.fillRect(px+5,py+2,4,9);
+    // Practice staffs rest on the rack at a diagonal.
+    c.strokeStyle='#b99867';c.lineWidth=2;
+    for(let i=0;i<3;i++){
+      c.beginPath();c.moveTo(px-11+i*8,py-12);c.lineTo(px-7+i*8,py+2);c.stroke();
+    }
+  }
+  // Paired training dummies at the upper courtyard edges.
+  for(const px of [1143,1379]){
+    const py=230;
+    c.fillStyle='#19231e88';c.beginPath();c.ellipse(px,py+3,12,4,0,0,Math.PI*2);c.fill();
+    c.fillStyle='#473124';c.fillRect(px-2,py-29,4,32);
+    c.fillStyle='#ad7950';c.fillRect(px-7,py-29,14,18);
+    c.fillStyle='#d2a16a';c.fillRect(px-5,py-27,10,2);
+    c.fillStyle='#59402d';c.fillRect(px-14,py-23,28,3);
+    c.fillStyle='#d0a06a';c.fillRect(px-13,py-23,26,1);
+    c.fillStyle='#35271f';c.fillRect(px-6,py-10,12,3);
+  }
+  // Small framed banner at the center of the hall's entrance.
+  c.fillStyle='#241d1b';c.fillRect(1250,178,26,6);
+  c.fillStyle='#ba8754';c.fillRect(1252,179,22,3);
+  c.restore();
+}
 function drawDojoBuilding(){
  c.save();c.imageSmoothingEnabled=false;
  if(atlasReady(dojoArchitecture)){
@@ -3560,7 +3594,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||o.hyper>0)&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||o.hyper>0)&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
