@@ -29,6 +29,14 @@ assert(gameSource.includes("return pose(1,frameInClip(gait,6),side)"),
   'Horizontal walking must cycle through six directional atlas frames');
 assert(gameSource.includes("return pose(directionRow,1+frameInClip(gait,5),1)"),
   'Front and rear walking must animate through five moving frames');
+assert(gameSource.includes("assets/ssj-movement-4x4.png"),
+  'SSJ movement must load the newly extracted movement atlas');
+assert(gameSource.includes("if(drawSsjMovement(o,referencePose))"),
+  'SSJ movement must render as a single character layer');
+assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
+  'Dojo building must load the high-detail architectural atlas');
+assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
+  'Dojo must render the new modular facade when its atlas is ready');
 assert(gameSource.includes("case 14:return [4,pose.frame]")&&
   gameSource.includes("case 17:return [5,pose.frame]"),
   'Front and rear directions must use separate sprite atlas rows');
