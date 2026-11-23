@@ -2993,8 +2993,8 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // Keep feet anchored; shake upper body subtly instead of scaling the whole sprite.
 // Dedicated sixteen-frame charging sheets: no body scaling or artificial shaking.
 const chargeAtlases={normal:new Image(),ssj:new Image()};
-chargeAtlases.normal.src='assets/charge-normal-16.png?v=charge16';
-chargeAtlases.ssj.src='assets/charge-ssj-16.png?v=charge16';
+chargeAtlases.normal.src='assets/charge-normal-16.png?v=charge16-extracted';
+chargeAtlases.ssj.src='assets/charge-ssj-16.png?v=charge16-extracted';
 function chargeFrame(o){
  const age=Math.max(0,storyClock-(o._auraChargeSince??storyClock));
  // 0-7 anticipation and power-up, 8-12 sustained high-energy loop.
@@ -3520,9 +3520,9 @@ const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
 const ssjProductionAtlas=new Image();
-ssjProductionAtlas.src='assets/ssj-production-actions-4x4.png?v=production-1';
-const ssjCombatAtlas=new Image();ssjCombatAtlas.src='assets/ssj-combat-actions-4x4.png?v=combat-1';
-const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=clean-body-3';
+ssjProductionAtlas.src='assets/ssj-production-actions-4x4.png?v=hands-source-1';
+const ssjCombatAtlas=new Image();ssjCombatAtlas.src='assets/ssj-combat-actions-4x4.png?v=hands-source-1';
+const ssjMovementAtlas=new Image();ssjMovementAtlas.src='assets/ssj-movement-4x4.png?v=hands-source-1';
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
 const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
