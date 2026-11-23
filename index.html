@@ -2824,12 +2824,12 @@ function drawApprovedHero(o,referencePose){
 // Render the newly approved fighter atlas in normal idle, charge and SSJ.
 // Combat/movement retain their directional action sprites.
 function detailedSsjIdle(o,referencePose){
-  // The 12-frame sheet contains transformation poses, not locomotion or
-  // combat. Preserve the approved directional/action atlas for those states.
-  const busy=o.walking||Math.abs(o.stride||0)>.18||o.attack>0||
-    o.dash>0||o.hurt>0||o.blastPose>0||!!o.beam||
-    o.beamCharge!==null||o.beamRecoveryUntil>now;
-  return !!o.hero&&o.surge&&atlasReady(ssjTransformationAtlas)&&!busy;
+  // This atlas is a transformation CINEMATIC, not a walk/attack sheet.
+  // All gameplay states use the complete approved directional animation set.
+  return !!o.hero&&o.surge&&o.surgeFlare>0&&
+    atlasReady(ssjTransformationAtlas)&&
+    !o.walking&&!o.attack&&!o.dash&&!o.hurt&&!o.blastPose&&
+    !o.beam&&o.beamCharge===null;
 }
 function detailedSsjFrame(o){
   if(!o.surge){
@@ -2851,8 +2851,8 @@ function drawDetailedSsj(o){
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
   const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress)):1;
   const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5:Math.sin(storyClock*5)*.4;
-  // Match the existing 68px world-space sprite footprint and foot baseline.
-  const size=68*pulse;
+  // The transformation sheet includes a wide aura; use a smaller footprint.
+  const size=48*pulse;
   c.imageSmoothingEnabled=false;
   c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
@@ -3089,7 +3089,7 @@ function drawSsjAura(p){
   const next=p.surge&&p.surgeFlare<=0?(frame===6?7:6):Math.min(7,frame+1);
   const blend=p.surge&&p.surgeFlare<=0?(phase<.5?phase*2:(phase-.5)*2):sequence*7.999-frame;
   const pulse=1+.035*Math.sin(storyClock*13);
-  const width=(37+sequence*12)*pulse,height=(42+sequence*19)*pulse;
+  const width=(29+sequence*8)*pulse,height=(33+sequence*12)*pulse;
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
   c.globalAlpha=.64+.12*Math.sin(storyClock*16);
   c.drawImage(ssjAuraAtlas,frame*96,0,96,112,-width/2,4-height,width,height);
@@ -3110,6 +3110,7 @@ function drawSsjAura(p){
 // Animated charging effect: concentric ground rings, ascending energy and
 // a breathing flame silhouette. Keep it behind the original fighter sprite.
 function drawChargingAura(p){
+  // Keep the aura within the character's gameplay silhouette.
   const charging=held.has('charge')&&!p.surge;
   const intensity=Math.max(p.hyper||0,charging?.45:0);
   const t=storyClock;
@@ -3118,7 +3119,7 @@ function drawChargingAura(p){
   // Ground energy rings shrink and expand independently.
   for(let j=0;j<3;j++){
     const phase=(t*(.75+j*.13)+j/3)%1;
-    const radius=9+phase*(17+intensity*11);
+    const radius=6+phase*(10+intensity*6);
     c.globalAlpha=(1-phase)*(.22+.25*power);
     c.strokeStyle=j===1?'#fff7bf':'#f6bc45';
     c.lineWidth=j===1?1.7:1.1;
@@ -3130,9 +3131,9 @@ function drawChargingAura(p){
     const side=i%2?-1:1;
     const seed=i*2.39996;
     const flicker=Math.sin(t*(8+i*.41)+seed);
-    const x=side*(8+(i%4)*3+flicker*1.8);
+    const x=side*(5+(i%4)*2+flicker*1.1);
     const base=1-(i%3)*3;
-    const height=(19+intensity*21+(i%5)*3)*(1+.15*flicker)*beat;
+    const height=(12+intensity*12+(i%5)*2)*(1+.12*flicker)*beat;
     c.globalAlpha=(.16+.18*(.5+.5*Math.sin(t*9+seed)))*power;
     c.fillStyle=i%3===0?'#fff5bd':i%3===1?'#fbd357':'#ff9d36';
     c.beginPath();c.moveTo(x-4,base);c.quadraticCurveTo(x-side*5,base-height*.45,x+side*2,base-height);
@@ -3142,8 +3143,8 @@ function drawChargingAura(p){
   for(let i=0;i<18;i++){
     const rise=(t*(.68+i*.035)+i*.6180339)%1;
     const side=i%2?-1:1;
-    const x=side*(7+(i%5)*3+rise*(8+intensity*9))+Math.sin(t*3+i)*2;
-    const y=1-rise*(31+intensity*27);
+    const x=side*(5+(i%5)*2+rise*(5+intensity*5))+Math.sin(t*3+i)*1.5;
+    const y=1-rise*(20+intensity*17);
     c.globalAlpha=Math.sin(rise*Math.PI)*(.38+.5*power);
     c.fillStyle=i%4===0?'#ffffff':i%3===0?'#fff2ad':'#ffca50';
     c.fillRect(Math.round(x),Math.round(y),i%6===0?2:1,i%4===0?3:2);
