@@ -8,6 +8,14 @@ const campaignUrl=new URL('campaign.html',url).href;
     const page = await browser.newPage({viewport: {width: 920, height: 690}});
     const errors = [], maps = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(() => {
+      window.npcAtlasDraws = 0;
+      const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+      CanvasRenderingContext2D.prototype.drawImage = function(image, ...args) {
+        if (this.canvas.id === 'world' && image.src?.endsWith('/npc-atlas.png')) window.npcAtlasDraws++;
+        return drawImage.call(this, image, ...args);
+      };
+    });
     page.on('request', request => {
       const map = request.url().match(/\/areas\/([^/]+)\.json$/);
       if (map) maps.push(map[1]);
@@ -28,6 +36,7 @@ const campaignUrl=new URL('campaign.html',url).href;
     await page.goto(campaignUrl);
     await page.waitForFunction(() => document.querySelector('#area-name').textContent === 'Kame Coast');
     assert.deepEqual(maps, ['kame-coast']);
+    await page.waitForFunction(() => window.npcAtlasDraws > 0);
     await page.screenshot({path:'/tmp/ki-campaign-coast.png'});
     await walk('w', 190);
     await activate('Bulma');
@@ -47,12 +56,14 @@ const campaignUrl=new URL('campaign.html',url).href;
     assert.match(await page.locator('#objective').textContent(), /Piccolo/);
     await walk('d', 1680);
     await walk('w', 270);
+    await page.evaluate(() => {window.npcAtlasDraws = 0});
     await activate('Ridge ascent');
     await page.waitForFunction(() => document.querySelector('#area-name').textContent === 'Standoff Ridge');
     assert.deepEqual(maps, ['kame-coast', 'landing-ravine', 'landing-ravine', 'standoff-ridge']);
     await walk('d', 1740);
     await walk('w', 395);
     await activate('Piccolo');
+    await page.waitForFunction(() => window.npcAtlasDraws > 0);
     await close('Piccolo');
     await walk('d', 1500);
     await activate('Raditz');

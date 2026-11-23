@@ -4,7 +4,7 @@ The cast manifest holds stable IDs for 44 named characters across the Earth open
 
 Four original civilian appearances support incidental NPCs. `makeExtra(areaSeed, index)` returns a stable ID, name, role, appearance, and facing. Area files own coordinates, dialogue, and encounter setup.
 
-The atlas contains transparent 64 × 96 cells. Load `campaign-cast.js`, use `KFCampaignCast.getSprite(id)`, and call `resolveFrame(sprite, direction, action, elapsedMs)` to get the crop rectangle and foot, center, hand, and effect attachment points. The source rectangles already encode facing. The preview sheet shows the available idle designs.
+The atlases use transparent 64 × 96 cells. Bulma, Piccolo, and the civilian variants use the illustrated NPC atlas. The atlas generator still builds the original Raditz encounter sheet and refreshes the combined preview. Load `campaign-cast.js`, use `KFCampaignCast.getSprite(id)`, and call `resolveFrame(sprite, direction, action, elapsedMs)` to get the crop rectangle and foot, center, hand, and effect attachment points. The source rectangles already encode facing. The preview sheet shows the available idle designs.
 
 ## Art workflow
 

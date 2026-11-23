@@ -80,6 +80,9 @@
   const byId=new Map(roster.map(character=>[character.id,character]));
   const allowedNpc=Object.freeze(["idle","walk","talk"]);
   const allowedEncounter=Object.freeze(Object.keys(layout));
+  const detailedSource="assets/campaign-cast/npc-atlas.png";
+  const detailedGrid=Object.freeze({columns:8,rows:24});
+  const detailedIds=artOrder.filter(id=>id!=="raditz");
   const sprites=new Map(artOrder.map((id,index)=>[id,Object.freeze({
     id,src:source,cell,grid,scale:.55,block:index*block+(index>2?40:0),
     role:id==="raditz"?"encounter":"npc",
@@ -87,7 +90,11 @@
   })]));
 
   function getCharacter(id){return byId.get(id)||null}
-  function getSprite(id){return sprites.get(id)||null}
+  function getSprite(id){
+    const sprite=sprites.get(id);
+    const index=detailedIds.indexOf(id);
+    return index<0?sprite||null:{...sprite,src:detailedSource,grid:detailedGrid,block:index*block};
+  }
 
   function resolveFrame(sprite,direction,action,elapsedMs){
     if(!sprite||!sprite.clips.includes(action))return null;
@@ -121,7 +128,7 @@
     const leftHand=direction==="left"?frontHand:left;
     const rightHand=direction==="left"?[63-left[0],left[1]]:right;
     return {
-      rect:[index%grid.columns*cell[0],Math.floor(index/grid.columns)*cell[1],...cell],
+      rect:[index%sprite.grid.columns*cell[0],Math.floor(index/sprite.grid.columns)*cell[1],...cell],
       feet:[32,88],center,leftHand,rightHand,
       muzzle:frontHand,
       flip:false,durationMs:clip.durationMs,loop:clip.loop

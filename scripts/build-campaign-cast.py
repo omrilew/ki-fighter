@@ -255,7 +255,7 @@ def render(id_: str, direction: str, action: str, frame: int) -> Image.Image:
 def main() -> None:
     cmd = """const c=require('./campaign-cast.js');
     console.log(JSON.stringify({directions:c.directions,layout:c.layout,cell:c.cell,grid:c.grid,
-      sprites:c.artOrder.map(c.getSprite)}));"""
+      sprites:c.artOrder.map((id,index)=>{const s=c.getSprite(id);return {...s,draftBlock:index*c.block+(index>2?40:0)}})}));"""
     spec = json.loads(subprocess.check_output(["node", "-e", cmd], cwd=ROOT, text=True))
     width,height=spec["cell"]
     columns,rows=spec["grid"]["columns"],spec["grid"]["rows"]
@@ -276,10 +276,16 @@ def main() -> None:
                     pixels=frame.tobytes()
                     assert pixels!=previous,label
                     previous=pixels
-                    slot=entry["block"]+clip["start"]+d*clip["count"]+step
+                    slot=entry["draftBlock"]+clip["start"]+d*clip["count"]+step
                     sheet.alpha_composite(frame,(slot%columns*width,slot//columns*height))
                     if action=="idle" and step==0 and direction in ("down","right","up"):
                         row=("down","right","up").index(direction)
+                        if entry["src"].endswith("npc-atlas.png"):
+                            detailed = Image.open(ROOT / entry["src"]).convert("RGBA")
+                            detailed_slot = entry["block"]+clip["start"]+d*clip["count"]+step
+                            detail_cols = entry["grid"]["columns"]
+                            left,top = (detailed_slot%detail_cols)*width,(detailed_slot//detail_cols)*height
+                            frame = detailed.crop((left,top,left+width,top+height))
                         preview.paste(frame,(actor*132+34,36+row*130),frame)
         preview_ink.text((actor*132+9,13),entry["id"],fill="#f9edd8")
     sheet.save(DEST/"opening-atlas.png",optimize=True)

@@ -22,7 +22,9 @@ test("the opening atlas cells, timing and anchors match the renderer contract",(
   for(const id of cast.artOrder){
     const sprite=cast.getSprite(id);
     const png=readFileSync(join(__dirname,"..",sprite.src));
-    assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[768,2112]);
+    const width=sprite.grid.columns*sprite.cell[0],height=sprite.grid.rows*sprite.cell[1];
+    assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[width,height]);
+    assert.equal(sprite.src,id==="raditz"?"assets/campaign-cast/opening-atlas.png":"assets/campaign-cast/npc-atlas.png");
     for(const action of sprite.clips){
       const clip=cast.layout[action];
       for(const direction of cast.directions){
@@ -31,9 +33,10 @@ test("the opening atlas cells, timing and anchors match the renderer contract",(
         for(const frame of sequence){
           const [x,y,w,h]=frame.rect;
           assert.ok(Number.isInteger(x/w)&&Number.isInteger(y/h));
-          assert.ok(x>=0&&x+w<=768&&y>=0&&y+h<=2112);
-          assert.ok(!cells.has(frame.rect.join(",")));
-          cells.add(frame.rect.join(","));
+          assert.ok(x>=0&&x+w<=width&&y>=0&&y+h<=height);
+          const slot=sprite.src+":"+frame.rect.join(",");
+          assert.ok(!cells.has(slot));
+          cells.add(slot);
           assert.equal(frame.flip,false);
           assert.deepEqual(frame.feet,[32,88]);
           for(const anchor of [frame.center,frame.leftHand,frame.rightHand,frame.muzzle]){
