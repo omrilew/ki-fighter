@@ -1106,6 +1106,10 @@ function beginBeam(p,source){
 }
 function fireChargedBeam(p){
   if(p.ki<2){resetBeam(p);return}
+  // Lock the shot to the actual visible pose when the beam releases.
+  const facing=cinematicBeamDirection(p);
+  p.fx=facing.x;p.fy=facing.y;
+  p.faceAngle=Math.atan2(p.fy,p.fx);
   p.beamCharge=null;
   spendKi(p,2);
   p.beam=1;
@@ -1269,50 +1273,41 @@ const kiActionClips={
 // deliberately reserved for a future upgrade; classic/retro remain available
 // to other attacks rather than being silently reused here.
 const kamehamehaVisualTiers=Object.freeze({base:'cinematic',upgrade:'aura-burst'});
+const cinematicBeamAtlas=new Image();
+cinematicBeamAtlas.src='assets/cinematic-kamehameha-layer.svg?v=2';
+function cinematicBeamDirection(p){
+  // The visible character has front/back/side poses, not a diagonal pose.
+  // Snap the beam to the direction that the displayed sprite actually faces.
+  const a=Number.isFinite(p.faceAngle)?p.faceAngle:Math.atan2(p.fy,p.fx);
+  const x=Math.cos(a),y=Math.sin(a);
+  if(Math.abs(y)>.82)return {x:0,y:Math.sign(y)};
+  return {x:Math.sign(x)||1,y:0};
+}
 function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   const shape=beamShape(shapeAge);
   const length=shape.body+shape.tip;
-  const width=Math.max(2,shape.wide*thin*.56);
-  const emergence=animationEase(age/.13);
-  const time=age*35;
-  c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha=opacity;
-  // Controlled, torso-sized layered core: avoid the huge oval plasma plume.
-  const layers=[['#0757bb',1.55],['#009de8',1.18],['#8ceaff',.82],['#f5ffff',.43]];
-  for(const [color,scale] of layers){
-    const h=width*scale;
-    c.fillStyle=color;
-    c.beginPath();c.moveTo(0,-h*.55);
-    for(let i=1;i<=18;i++){
-      const u=i/18;
-      const ripple=(Math.sin(u*38-time)*.06+Math.sin(u*67+time*.8)*.035)*h;
-      c.lineTo(length*u,-h*(.58+.12*Math.sin(Math.PI*u))+ripple);
-    }
-    c.lineTo(length+width*.38,0);
-    for(let i=18;i>=0;i--){
-      const u=i/18;
-      const ripple=(Math.sin(u*38-time+1.8)*.06+Math.sin(u*67+time*.8)*.035)*h;
-      c.lineTo(length*u,h*(.58+.12*Math.sin(Math.PI*u))+ripple);
-    }
-    c.closePath();c.fill();
+  const width=Math.max(7,shape.wide*thin*.9);
+  if(!atlasReady(cinematicBeamAtlas))return drawBeamEffect(x,y,angle,age,opacity,thin,shapeAge);
+  c.save();c.translate(x,y);c.rotate(angle);
+  c.globalAlpha=opacity;c.imageSmoothingEnabled=false;
+  // Each 64x64 frame is real authored artwork, not a canvas gradient.
+  // Repeating the seamless segment preserves pixel edges at any range.
+  const segment=34;
+  for(let pos=0;pos<length;pos+=segment){
+    const part=Math.min(segment,length-pos);
+    const frame=(Math.floor(pos/segment)+Math.floor(age*12))%4;
+    c.drawImage(cinematicBeamAtlas,frame*64,64,64,64,pos,-width*.8,part+.5,width*1.6);
   }
-  // Release ring appears only at the start of the beam.
-  const ring=1-animationEase((age-.045)/.23);
-  if(ring>0){
-    c.globalAlpha=opacity*ring*.9;c.strokeStyle='#8fefff';
-    c.lineWidth=Math.max(.7,width*.11);
-    c.beginPath();c.ellipse(width*(.8-ring*.5),0,width*(1.1-ring*.5),width*(1.8-ring*.8),0,0,Math.PI*2);c.stroke();
+  // Authored energy orb masks the emitter and the far beam tip.
+  const endFrame=Math.min(3,Math.floor(age*14)%4);
+  c.drawImage(cinematicBeamAtlas,endFrame*64,0,64,64,
+    length-width*.85,-width*.85,width*1.7,width*1.7);
+  if(age<.18){
+    const pulse=1-animationEase(age/.18);
+    c.globalAlpha=opacity*pulse;
+    c.drawImage(cinematicBeamAtlas,192,0,64,64,-width*1.15,-width*1.15,
+      width*2.3,width*2.3);
   }
-  // Fast cyan streaks move down both edges, without changing the hitbox.
-  c.lineWidth=Math.max(.5,width*.1);
-  for(let i=0;i<6;i++){
-    const u=(age*(2.7+i*.11)+i*.23)%1;
-    c.globalAlpha=opacity*Math.sin(Math.PI*u)*.8;
-    c.strokeStyle=i%2?'#b8f7ff':'#218eff';
-    const ySide=(i%2?1:-1)*width*(.8+.3*Math.sin(time+i));
-    c.beginPath();c.moveTo(length*u,ySide);c.lineTo(length*Math.max(0,u-.07),ySide);c.stroke();
-  }
-  c.globalAlpha=opacity*emergence;
-  c.fillStyle='#eaffff';c.beginPath();c.arc(length,0,Math.max(1,width*.45),0,Math.PI*2);c.fill();
   c.restore();
 }
 function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
@@ -1436,33 +1431,14 @@ function renderBeamTrace(f){
 function renderBeamCharge(p){
   const {x,y}=beamCastOrigin(p);
   const load=lim(p.beamCharge/beam.chargeTime,0,1);
-  const strength=animationEase(load);
-  const radius=2.2+3.6*strength;
-  c.save();c.translate(x,y);
-  // Compact layered energy orb grows between the fighter's hands.
-  c.fillStyle='#0757bb';c.beginPath();c.arc(0,0,radius*1.4,0,Math.PI*2);c.fill();
-  c.fillStyle='#24b9ff';c.beginPath();c.arc(0,0,radius,0,Math.PI*2);c.fill();
-  c.fillStyle='#eaffff';c.beginPath();c.arc(0,0,radius*.57,0,Math.PI*2);c.fill();
-  c.strokeStyle='#9feeff';c.lineWidth=.75;
-  for(let i=0;i<6;i++){
-    const phase=(p.beamCharge*3.2+i/6)%1;
-    const angle=i*2.399+p.beamCharge*1.5;
-    const distance=radius+2+(1-phase)*9;
-    c.globalAlpha=Math.sin(phase*Math.PI)*(.25+strength*.7);
-    c.beginPath();
-    c.moveTo(Math.cos(angle)*distance,Math.sin(angle)*distance);
-    c.lineTo(Math.cos(angle)*(distance-2.5),Math.sin(angle)*(distance-2.5));
-    c.stroke();
-  }
-  // Rotating containment arcs are unique to cinematic Kamehameha.
-  c.globalAlpha=strength*.75;
-  for(let i=0;i<2;i++){
-    c.beginPath();
-    c.ellipse(0,0,radius*1.65,radius*2.2,p.beamCharge*(i? -2:2),
-      i*Math.PI, i*Math.PI+Math.PI*.68);
-    c.stroke();
-  }
-  c.restore();
+  const frame=Math.min(3,Math.floor(load*4));
+  const size=10+12*animationEase(load);
+  if(atlasReady(cinematicBeamAtlas)){
+    c.save();c.imageSmoothingEnabled=false;
+    c.drawImage(cinematicBeamAtlas,frame*64,0,64,64,
+      x-size/2,y-size/2,size,size);
+    c.restore();
+  }else renderKiOrb(x,y,2+3*load);
 }
 function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;p.hyper=0;notice('SUPER SAIYAN OFF')}else notice('HOLD CHARGE AT FULL KI TO TRANSFORM')}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
