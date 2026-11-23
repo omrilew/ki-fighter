@@ -10,7 +10,7 @@ function createAreaLoader({load,dispose=()=>{},maxCached=3}={}){
  async function ensure(id){if(!id)throw Error("area id required");
   if(cache.has(id)){const value=cache.get(id);cache.delete(id);cache.set(id,value);return value}
   if(pending.has(id))return pending.get(id);
-  const promise=Promise.resolve().then(()=>load(id)).then(value=>{pending.delete(id);if(value==null)throw Error("area not found: "+id);cache.set(id,value);evict();return value},error=>{pending.delete(id);throw error});
+  const promise=Promise.resolve().then(()=>load(id)).then(value=>{pending.delete(id);if(value==null)throw Error("area not found: "+id);cache.set(id,value);return value},error=>{pending.delete(id);throw error});
   pending.set(id,promise);return promise;
  }
  function evict(){for(const [id,value] of cache){if(cache.size<=maxCached)break;if(id===active)continue;cache.delete(id);dispose(id,value)}}
