@@ -2822,13 +2822,16 @@ function drawApprovedHero(o,referencePose){
 
 // Detailed atlas combines the fighter and aura in each frame.
 function detailedSsjIdle(o,referencePose){
-  return o===player&&o.surge&&
+  return o===player&&(o.surge||(o.hyper>0&&held.has('charge')))&&
     (atlasReady(ssjTransformationAtlas)||atlasReady(ssjDetailedAtlas))&&
     !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!o.beam&&
     o.beamCharge===null&&!(o.beamRecoveryUntil>now);
 }
 function detailedSsjFrame(o){
   const useNew=atlasReady(ssjTransformationAtlas);
+  // Hyper charging is the visible buildup: play the first six poses before
+  // ignition. The transformation then plays the full 12-frame sequence.
+  if(!o.surge&&o.hyper>0)return Math.min(useNew?5:3,Math.floor(o.hyper*(useNew?6:4)));
   if(o.surgeFlare>0){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
     return Math.min(useNew?11:7,Math.floor(progress*(useNew?12:8)));
