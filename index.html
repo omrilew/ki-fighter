@@ -3370,14 +3370,28 @@ function drawUnifiedChargeAura(p,gold){
   const w=46+ease*29,h=57+ease*41;
   const t=storyClock;
   c.save();c.translate(p.x,p.y);
-  c.globalAlpha=.76+.17*ease;
+  c.globalAlpha=.63+.18*ease; // reduce overlap over the SSJ hands
   // Approved transformation art, same proportions and placement as SSJ ignition.
   drawApprovedEffect(gold?6:4,-w/2,5-h,w,h);
-  // Secondary energy flashes animate independently rather than stretching artwork.
-  const flare=.12+.14*ease+.10*(.5+.5*Math.sin(t*13));
-  c.globalAlpha=flare;
-  const fw=w*(.65+.12*ease),fh=h*(.83+.1*ease);
-  drawApprovedEffect(gold?6:4,-fw/2,5-fh,fw,fh);
+  // Moving flame tongues: cropped columns of the SAME approved artwork rise
+  // at different speeds, preserving the core silhouette and fighter clarity.
+  // The central body stays clear; tongues travel along the outer silhouette.
+  c.save();c.beginPath();c.rect(-w*.57,-h-9,w*1.14,h+15);c.clip();
+  const sourceFrame=gold?6:4;
+  const sourceSize=approvedEffectSizes[sourceFrame];
+  for(let i=0;i<8;i++){
+    const phase=(t*(.47+i*.071)+i*.181)%1;
+    const side=i%2?-1:1;
+    const stripW=5+(i%3)*2,stripH=21+ease*25+(i%3)*6;
+    const bx=side*(w*(.28+.045*(i%3)))+Math.sin(t*(3+i*.2)+i)*2;
+    const by=4-phase*h*.69;
+    const sx=sourceFrame*288+Math.floor(sourceSize[0]*(side<0?.12:.73));
+    const sy=Math.floor(sourceSize[1]*.13);
+    c.globalAlpha=(.18+.35*ease)*Math.sin(Math.PI*phase);
+    c.drawImage(approvedEffects,sx,sy,Math.min(22,sourceSize[0]-Math.floor(sourceSize[0]*(side<0?.12:.73))),Math.floor(sourceSize[1]*.65),
+      bx-stripW/2,by-stripH,stripW,stripH);
+  }
+  c.restore();
   // Traveling sparks, biased to the outside so Goku stays readable.
   for(let i=0;i<11;i++){
     const rise=(t*(.67+i*.043)+i*.173)%1;
