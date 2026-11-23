@@ -4,7 +4,7 @@ await page.locator('[data-menu="map"]').click();
 assert(await page.locator('.map-destination-note').isVisible(),'Continuous-world dojo guidance missing');
 assert.equal(await page.locator('#kfmap-travel-dojo').count(),0,'Teleport button must be removed');
 await page.screenshot({path:'/tmp/desktop-world-map.png'});
-await page.locator('#kfresume').click();
+await page.getByRole('button',{name:'Resume',exact:true}).click();
 await page.keyboard.down('KeyD');await page.waitForTimeout(10000);await page.keyboard.up('KeyD');
 await page.waitForTimeout(300);
 console.log('walking east',await page.locator('#kfregion').textContent());
