@@ -28,14 +28,14 @@ async function init(){
   ready=true;
  }catch(e){error=e;console.warn("Illustrated aura unavailable",e)}
 }
-function draw(ctx,x,y,color,stage,time,alpha=1){
+function draw(ctx,x,y,color,stage,time,alpha=1,growth=1){
  if(!ready||!colors.includes(color))return;
  const index=Math.max(0,Math.min(3,stage|0)),img=images.get(color+"_"+names[index]);
  if(!img)return;
  const [baseW,baseH]=dimensions[index];
  // Hand-illustrated frames remain intact, but breathe continuously rather than freeze.
  const breathe=1+.045*Math.sin(time*11)+.018*Math.sin(time*19);
- const w=baseW*breathe,h=baseH*(1+.065*Math.sin(time*9)+.022*Math.sin(time*17));
+ const w=baseW*breathe*growth,h=baseH*growth*(1+.065*Math.sin(time*9)+.022*Math.sin(time*17));
  const shimmer=.91+.09*Math.sin(time*14);
  ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=alpha*shimmer;
  ctx.drawImage(img,Math.round(x-w/2),Math.round(y-h+6),Math.round(w),Math.round(h));
