@@ -264,6 +264,48 @@
  #kfg #kfmenu .menu-panel canvas{max-height:42dvh}
 }
 </style>
+<style id="kf-approved-dojo-ui">
+/* Approved compact action-RPG UI: small gold-trimmed navy buttons, not floating desktop controls */
+#kfg .top{top:12px;right:12px;gap:5px;align-items:center;z-index:5}
+#kfg .top>button,#kfg .top>.powers>button{min-height:34px;padding:6px 9px;font-size:11px;font-weight:800;letter-spacing:.02em;color:#f5e5b9;background:linear-gradient(#1b3555,#0e1c35);border:2px solid #d4aa61;border-radius:3px;box-shadow:inset 0 0 0 2px #172947,2px 3px #09101a}
+#kfg .top #kfdojo-shortcut{background:#ac813c;color:#15223b}
+#kfg .top #kfdojo-shortcut[hidden]{display:none!important}
+#kfg .top #kfcharacter-open{max-width:116px}
+#kfg .top #kfpause{min-width:48px}
+#kfg .controls .acts{padding:0;border:0;background:transparent;gap:7px}
+#kfg .controls .acts button{border-radius:50%;width:clamp(56px,14vw,78px);height:clamp(56px,14vw,78px);min-height:0;box-shadow:inset 0 0 0 3px #11213b,inset 0 0 0 5px #9da9c0,0 3px 0 #091321;font-size:11px;font-weight:900;color:#f2f3f9;text-shadow:1px 1px #091323;background:radial-gradient(circle at 35% 25%,#395575,#0c1a30)}
+#kfg .controls .acts [data-a=hit]{background:radial-gradient(circle at 35% 25%,#ad7732,#3a251a);border-color:#f7cf77}
+#kfg .controls .acts [data-a=ki]{background:radial-gradient(circle at 35% 25%,#297ba4,#142740);border-color:#9dd9ff}
+#kfg .controls .acts button small{font-size:8px;line-height:1}
+#kfg #kfmenu .menu-head{padding:11px 14px;gap:8px}
+#kfg #kfmenu .menu-head h2{font-size:18px;letter-spacing:.03em}
+#kfg #kfmenu .menu-actions button{font-size:11px;min-height:34px;padding:7px 9px}
+#kfg #kfmenu .menu-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:9px 10px;background:#101d32}
+#kfg #kfmenu .menu-tabs button{font-size:10px;min-height:43px;padding:7px 2px;white-space:normal;line-height:1.15}
+#kfg #kfmenu .menu-panel{padding:10px;min-height:0}
+#kfg #kfmenu #kfmenu-map-view{width:100%;height:auto;display:block}
+#kfg #kfmenu .map-destination{padding:9px!important;gap:6px!important;margin-top:7px!important}
+#kfg #kfmenu #kfmap-travel-dojo{padding:9px!important;font-size:11px}
+@media(max-width:650px){
+ #kfg .top{top:63px;right:8px;gap:4px}
+ #kfg .top>button,#kfg .top>.powers>button{min-height:30px;padding:5px 7px;font-size:10px}
+ #kfg .top #kfcharacter-open{max-width:83px}
+ #kfg .top #kfdojo-shortcut{max-width:67px;font-size:9px}
+ #kfg .controls{bottom:12px;width:calc(100% - 16px);left:8px;transform:none}
+ #kfg .controls .stick{--size:clamp(86px,24vw,116px)}
+ #kfg .controls .acts{gap:5px}
+ #kfg .controls .acts button{width:clamp(53px,14vw,69px);height:clamp(53px,14vw,69px)}
+ #kfg #kfmenu{width:calc(100vw - 20px);max-height:calc(100dvh - 44px)}
+ #kfg #kfmenu .menu-head{flex-direction:row;align-items:center;flex-wrap:wrap;padding:9px 10px}
+ #kfg #kfmenu .menu-actions{width:auto;margin-left:auto}
+ #kfg #kfmenu .menu-actions button{font-size:10px;padding:7px 6px;min-width:0}
+ #kfg #kfmenu .menu-tabs{grid-template-columns:repeat(5,minmax(0,1fr));padding:7px 5px;gap:3px}
+ #kfg #kfmenu .menu-tabs button{font-size:9px;min-height:39px;padding:6px 1px}
+ #kfg #kfmenu .menu-panel{padding:7px}
+ #kfg #kfmenu .map-destination{display:block!important}
+ #kfg #kfmenu #kfmap-travel-dojo{margin-top:8px;width:100%}
+}
+</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
@@ -384,7 +426,7 @@
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
-const dojoMaster={x:1170,y:212,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
+const dojoMaster={x:1255,y:197,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
 const dojoGate={x:948,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
 const encounters=[
   {id:'crossing',kind:'bandit',x:434,y:246,radius:57},
@@ -540,17 +582,33 @@ bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
 // Walkable eastern dojo court, connected by the existing eastward trail.
 bg.fillStyle='#182b3b';bg.fillRect(1090,130,340,324);
-bg.fillStyle='#bba87f';bg.fillRect(1102,142,316,300);
-bg.fillStyle='#273f52';bg.fillRect(1116,160,288,265);
-bg.fillStyle='#536c78';bg.fillRect(1123,168,274,249);
-bg.strokeStyle='#b7c1bd';bg.lineWidth=1.5;
-for(let i=0;i<8;i++){bg.beginPath();bg.moveTo(1123+i*39,168);bg.lineTo(1123+i*39,417);bg.stroke()}
-for(let i=0;i<7;i++){bg.beginPath();bg.moveTo(1123,168+i*40);bg.lineTo(1397,168+i*40);bg.stroke()}
-bg.strokeStyle='#f0d387';bg.lineWidth=3;bg.strokeRect(1138,183,245,218);
-bg.fillStyle='#f2dfa9';bg.font='bold 13px sans-serif';bg.fillText('CEDAR DOJO',1172,151);
-bg.fillStyle='#c9ae80';bg.fillRect(986,261,148,28);
+// Cedar Dojo: warm stone courtyard, timber training hall, gardens and lanterns.
+const courtyard=bg.createLinearGradient(0,148,0,448);
+courtyard.addColorStop(0,'#bba78b');courtyard.addColorStop(1,'#d5bfa0');
+bg.fillStyle='#263d35';bg.fillRect(1088,120,354,342);
+bg.fillStyle='#8c7454';bg.fillRect(1103,145,322,300);
+bg.fillStyle=courtyard;bg.fillRect(1110,156,308,282);
+bg.strokeStyle='#a18d73';bg.lineWidth=.65;
+for(let y=165;y<440;y+=21){bg.beginPath();bg.moveTo(1110,y);bg.lineTo(1418,y);bg.stroke()}
+for(let y=165,j=0;y<440;y+=21,j++){for(let x=1110+(j%2)*13;x<1418;x+=26){bg.beginPath();bg.moveTo(x,y);bg.lineTo(x,y+21);bg.stroke()}}
+for(let i=0;i<190;i++){const x=1113+terrainRandom()*300,y=158+terrainRandom()*276;bg.fillStyle=i%3?'#eed9b325':'#75664d24';bg.fillRect(x,y,terrainBetween(1,6),terrainBetween(1,3))}
+bg.fillStyle='#a98250';bg.fillRect(1112,145,304,9);
+bg.fillStyle='#4d2e2b';bg.fillRect(1125,96,278,59);
+bg.fillStyle='#70422e';bg.fillRect(1132,108,264,44);
+bg.fillStyle='#d6b78b';bg.fillRect(1140,119,248,33);
+for(let x=1148;x<1390;x+=27){bg.fillStyle='#3a2d2d';bg.fillRect(x,120,4,31);bg.fillStyle='#f4d59b';bg.fillRect(x+5,124,17,21);bg.strokeStyle='#5b473b';bg.lineWidth=1;bg.strokeRect(x+5,124,17,21)}
+bg.fillStyle='#283448';bg.beginPath();bg.moveTo(1114,110);bg.lineTo(1259,78);bg.lineTo(1413,110);bg.closePath();bg.fill();
+bg.strokeStyle='#b89c68';bg.lineWidth=3;bg.beginPath();bg.moveTo(1114,110);bg.lineTo(1259,78);bg.lineTo(1413,110);bg.stroke();
+for(let x=1128;x<1405;x+=12){bg.strokeStyle='#526175';bg.lineWidth=1;bg.beginPath();bg.moveTo(x,108);bg.lineTo(x+7,112);bg.stroke()}
+bg.fillStyle='#4d3028';bg.fillRect(1240,120,38,32);
+bg.fillStyle='#e7c079';bg.fillRect(1246,124,26,25);
+bg.fillStyle='#8d512f';bg.fillRect(1257,125,3,24);
+for(const lx of [1136,1388]){bg.fillStyle='#412e2c';bg.fillRect(lx,139,5,23);bg.fillStyle='#e4a855';bg.fillRect(lx-5,145,15,12);bg.fillStyle='#ffe6a6';bg.fillRect(lx-2,147,9,7)}
+for(const lx of [1121,1407]){bg.fillStyle='#435147';bg.fillRect(lx-11,168,22,13);bg.fillStyle='#dfc18c';bg.fillRect(lx-6,173,12,13);bg.fillStyle='#394b51';bg.fillRect(lx-10,169,20,4);bg.fillStyle='#f7db99';bg.fillRect(lx-3,175,6,7)}
+for(const x of [1123,1403])for(const y of [211,350,410]){bg.fillStyle='#284936';bg.beginPath();bg.arc(x,y,terrainBetween(9,15),0,Math.PI*2);bg.fill();bg.fillStyle='#64834b';bg.fillRect(x-5,y-5,7,4)}
+bg.fillStyle='#a77e4c';bg.fillRect(987,262,136,26);
 bg.fillStyle='#f3d98b';bg.font='bold 13px sans-serif';bg.fillText('DOJO →',950,244);
-bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);bg.fillStyle='#ffffff';bg.fillRect(957,255,22,1);
+bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
   if(x>937&&x<1150&&Math.abs(y-276)<33)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
@@ -2985,7 +3043,23 @@ function drawWorldObject(o){
   if(o===dojoMaster||o===dojoGate){
     c.fillStyle='#101e32';c.fillRect(-12,-3,24,5);
     if(o===dojoGate){c.fillStyle='#e3c27e';c.fillRect(-13,-43,5,42);c.fillRect(8,-43,5,42);c.fillRect(-16,-48,32,8);drawWorldLabel('EAST DOJO',0,-52)}
-    else{c.fillStyle='#e2c18e';c.fillRect(-7,-24,14,19);c.fillStyle='#25466b';c.fillRect(-8,-20,16,12);c.fillStyle='#eac9a1';c.fillRect(-5,-34,10,11);c.fillStyle='#242d40';c.fillRect(-6,-36,12,5);drawWorldLabel('Dojo Master',0,-40)}
+    else{
+      const t=storyClock,gesture=Math.floor(t/3.4)%4;
+      const bob=Math.sin(t*4)*.6;
+      c.fillStyle='#111e24a8';c.beginPath();c.ellipse(0,2,10,3,0,0,Math.PI*2);c.fill();
+      if(atlasReady(mentorArt)){
+        const frame=gesture===1?2:gesture===2?3:Math.sin(t*2)>0?0:1;
+        c.drawImage(mentorArt,frame*192,0,192,192,-23,-45+bob,46,46);
+      }else{
+        c.fillStyle='#293c55';c.fillRect(-9,-22+bob,18,20);
+        c.fillStyle='#e5b98d';c.fillRect(-7,-35+bob,14,13);
+        c.fillStyle='#e5e5d8';c.fillRect(-8,-38+bob,16,6);
+        c.fillStyle='#e5b98d';c.fillRect(-13+(gesture===1?3:0),-18+bob,5,11);
+        c.fillRect(8,-18+bob,5,11);
+      }
+      if(gesture===2){c.strokeStyle='#ffdd87';c.lineWidth=1;c.beginPath();c.arc(0,-26,17+Math.sin(t*8)*2,-1.3,-.5);c.stroke()}
+      drawWorldLabel('DOJO MASTER',0,-47);
+    }
     c.restore();return;
   }
   if(o===mentor){
