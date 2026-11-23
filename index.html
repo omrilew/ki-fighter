@@ -347,8 +347,12 @@
     <p id="kfmenu-watch"></p>
   </section>
   <section id="kfmenu-map" class="menu-panel" hidden>
-    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map with Cedar Village in the west and Stone Shrine in the east. White is your position, gold marks objectives, and orange marks enemy camps."></canvas>
+    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map showing Cedar Village, Stone Shrine, and Cedar Dojo. Select Cedar Dojo to travel there."></canvas>
     <p class="map-legend"><span>You</span><span>Objective</span><span>Camp</span></p>
+    <div class="map-destination" style="margin-top:14px;padding:15px;border:1px solid #8ca4c2;background:#1a304b;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <div><strong style="display:block;color:#ffe0a0;font-size:16px">CEDAR DOJO · EASTERN TRAINING GROUNDS</strong><small style="display:block;color:#c9d9ed;margin-top:5px">Tap the destination on the map, or use the travel button. The dojo trial unlocks after the Forest Guardian.</small></div>
+      <button id="kfmap-travel-dojo" type="button" style="padding:13px 19px;background:#ad8646;color:#102037;border:2px solid #f6d88d;font-weight:900">TRAVEL TO CEDAR DOJO →</button>
+    </div>
   </section>
   <section id="kfmenu-training" class="menu-panel" hidden>
     <p id="kfmenu-training-location"></p>
@@ -1519,7 +1523,22 @@ const journeyMenu=root.querySelector('#kfmenu');
 const journeyMenuClose=root.querySelector('#kfmenu-close');
 const menuSections=Array.from(journeyMenu.querySelectorAll('[data-menu]'));
 const disciplineButtons=Array.from(journeyMenu.querySelectorAll('[data-discipline]'));
-const menuMap=root.querySelector('#kfmenu-map-view').getContext('2d');
+const menuMapCanvas=root.querySelector('#kfmenu-map-view');
+const menuMap=menuMapCanvas.getContext('2d');
+const mapTravelDojo=root.querySelector('#kfmap-travel-dojo');
+mapTravelDojo.addEventListener('click',()=>{
+  if(mode!=='paused')return;
+  closeJourneyMenu();
+  enterDojo();
+});
+menuMapCanvas.style.cursor='pointer';
+menuMapCanvas.title='Select the eastern Cedar Dojo to travel there';
+menuMapCanvas.addEventListener('click',e=>{
+  if(mode!=='paused')return;
+  const rect=menuMapCanvas.getBoundingClientRect();
+  const x=(e.clientX-rect.left)/rect.width;
+  if(x>.69){closeJourneyMenu();enterDojo();}
+});
 const settingsKey='ki-fighter-settings-v1';
 const settings={screenShake:true,minimap:true};
 try{
@@ -3113,6 +3132,12 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   ink.fill();
   ink.restore();
   if(expanded){
+    // Persistent world-map destination, even before the dojo quest is unlocked.
+    const dx=1250*mapRatio,dy=273*mapRatio;
+    ink.fillStyle='#f5cf76';ink.strokeStyle='#26324b';ink.lineWidth=2;
+    ink.fillRect(dx-7,dy-7,14,14);ink.strokeRect(dx-7,dy-7,14,14);
+    ink.fillStyle='#18263c';ink.font='bold 8px system-ui';ink.textAlign='center';
+    ink.fillText('D',dx,dy+3);
     ink.font='bold 8px system-ui';
     ink.textAlign='center';
     ink.strokeStyle='#1a2824';
