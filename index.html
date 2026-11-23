@@ -3434,24 +3434,27 @@ function drawCinematicChargeEnergy(p,elapsed,ease){
 const transformationChargeAuras={gold:new Image(),blue:new Image()};
 transformationChargeAuras.gold.src='assets/transformation-aura-gold-12.png?v=transform12';
 transformationChargeAuras.blue.src='assets/transformation-aura-blue-12.png?v=transform12';
+// Fighter-free illustrated aura art. Do NOT use the transformation-sheet
+// extraction here: it contains SSJ hair pixels and contaminates base Goku.
 function drawUnifiedChargeAura(p,gold){
  const charging=held.has('charge'),transforming=gold&&p.surgeFlare>0;
  if(!charging&&!transforming)return;
- const art=transformationChargeAuras[gold?'gold':'blue'];
- if(!atlasReady(art))return;
+ if(!atlasReady(approvedEffects))return;
  const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
- const intensity=transforming?1:lim(elapsed/1.7,0,1);
- const ease=intensity*intensity*(3-2*intensity);
- const frame=transforming
-  ?Math.min(11,Math.floor(lim(1-p.surgeFlare/surgeIgnitionTime,0,1)*12))
-  :Math.floor(storyClock*13)%12;
- const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
- const size=approvedCell*approvedScale*(1.04+.27*ease);
- const pulse=1+.025*Math.sin(storyClock*9);
+ const growth=transforming?1:lim(elapsed/1.7,0,1);
+ const ease=growth*growth*(3-2*growth),t=storyClock;
+ const w=(gold?49:52)+ease*22,h=(gold?67:69)+ease*25;
+ const pulse=1+.035*Math.sin(t*11);
  c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
- c.globalAlpha=.76+.22*ease;
- c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,
-   -size*pulse/2,4-size*pulse,size*pulse,size*pulse);
+ // Main full illustrated flame silhouette (no character pixels).
+ c.globalAlpha=.86+.1*ease;
+ drawApprovedEffect(gold?6:4,-w*pulse/2,5-h*pulse,w*pulse,h*pulse);
+ // Independent moving flame energy, sourced from the SAME illustrated art.
+ // The subtle secondary layer shifts vertically instead of drawing triangles.
+ const phase=(t*2.4)%1;
+ c.globalAlpha=(.13+.13*ease)*Math.sin(Math.PI*phase);
+ const innerW=w*.76,innerH=h*(.76+.12*phase);
+ drawApprovedEffect(gold?6:4,-innerW/2,5-innerH-phase*5,innerW,innerH);
  c.restore();
 }
 function drawSsjAura(p){drawUnifiedChargeAura(p,true)}
