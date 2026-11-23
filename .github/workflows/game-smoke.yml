@@ -13,3 +13,5 @@ jobs:
           node-version: '22'
       - name: Check HTML script syntax and integration invariants
         run: node tests/smoke.cjs
+      - name: Check character and area data contracts
+        run: node --test tests/area-loader.test.cjs tests/campaign-cast.test.cjs tests/hero-atlas.test.cjs tests/animation-contract.test.js tests/world-content-kit.test.cjs
