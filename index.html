@@ -1,63 +1,43 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}
-/* DBZ campaign menu system — crisp, readable and touch-friendly */
-#kfg{--ui-ink:#0b1427;--ui-panel:#111d36;--ui-gold:#ffd36b;--ui-line:#b9c9ec;letter-spacing:.015em}
-#kfg button{border-radius:5px;border:2px solid #637ba5;background:linear-gradient(180deg,#344b77 0%,#1b2d52 46%,#101c35 100%);color:#f9f6e9;text-shadow:0 1px #0009;box-shadow:inset 0 2px #ffffff2b,inset 0 -3px #071020,0 3px 0 #080e1b;font-weight:850;transition:filter .1s,transform .1s}
-#kfg button:hover{filter:brightness(1.16)}
-#kfg button:active{transform:translateY(2px);box-shadow:inset 0 2px 4px #0008}
-#kfg button:disabled{opacity:.5;cursor:not-allowed}
-#kfg .vitals,#kfg .counters,#kfg .notice{border:2px solid #a6b9df;border-radius:6px;background:linear-gradient(180deg,#1c3055ed,#0b172dec);box-shadow:inset 0 1px #ffffff2b,0 3px 0 #070d1dbb,0 7px 22px #0006}
-#kfg .meter{height:8px;border:1px solid #8d9bbb;border-radius:2px;background:#10182a}
-#kfg .meter i{border-radius:0}
-#kfg .top{top:82px}
-#kfg .top button{min-height:40px}
-#kfg .power-menu{flex-direction:column;min-width:115px}
-#kfg .power-menu button{width:100%}
-#kfg .modal{background:radial-gradient(ellipse at center,#263e70ed 0%,#101c39f7 60%,#060b1afc 100%);gap:13px}
-#kfg .modal::before{content:"";position:absolute;inset:12px;border:2px solid #a5b9e670;pointer-events:none;box-shadow:inset 0 0 0 5px #060d2066}
-#kfg .modal h2{font:1000 clamp(30px,6vw,62px) system-ui;letter-spacing:.065em;text-transform:uppercase;color:#ffdf72;-webkit-text-stroke:1px #77421e;text-shadow:0 3px #8e4c21,0 6px #1a2347,0 9px 20px #000c}
-#kfg .modal p{font-size:clamp(12px,1.5vw,15px);line-height:1.65;max-width:440px;color:#e1eafc;background:#0c1932bb;border:1px solid #6d83b5;padding:12px 18px;border-radius:4px}
-#kfg .modal button{position:relative;min-width:190px;min-height:49px;padding:11px 24px;background:linear-gradient(180deg,#ffe58d,#e6a839);color:#292032;text-shadow:none;border:2px solid #fff4b4;box-shadow:inset 0 2px #fff9d8,0 4px #9c5829,0 8px 20px #0008;text-transform:uppercase;letter-spacing:.06em}
-#kfg .modal #kfresume{background:linear-gradient(#5475a7,#263e6b);color:white;border-color:#a9c7f3}
-#kfg #kfcharacter{width:min(720px,calc(100% - 20px));max-height:calc(100dvh - 20px);border:3px solid #c1d0ef;border-radius:7px;background:repeating-linear-gradient(135deg,#172847,#172847 8px,#192b4c 8px,#192b4c 16px);box-shadow:inset 0 0 0 4px #08152c,0 14px 0 #080f20,0 24px 70px #000d}
-#kfg #kfcharacter::backdrop{background:#020817d9;backdrop-filter:blur(3px)}
-#kfg .character-head{background:linear-gradient(90deg,#243f6c,#122343);border-bottom:3px solid #d7ae5e;padding:13px 18px}
-#kfg .character-head h2{font-size:clamp(20px,4vw,30px);text-transform:uppercase;letter-spacing:.07em;color:#ffdc77;text-shadow:2px 3px #07152e}
-#kfg .character-preview{border:2px solid #657fac;border-radius:4px;background:radial-gradient(ellipse at center,#42608d,#152744 78%);box-shadow:inset 0 0 0 3px #0c1b35}
-#kfg .character-preview strong{font-size:16px;color:#ffdf86}
-#kfg .points-total{border:1px solid #a88a52;border-radius:3px;background:#3b3350;color:#ffde8b}
-#kfg .stat-row{border:2px solid #607ca9;border-radius:4px;background:#122340e8}
-#kfg .stat-row button{background:linear-gradient(#eac477,#a66e2f);color:#221c24;text-shadow:none;border-color:#ffecb2}
-#kfg .acts{border-radius:6px;border-width:2px;background:#0a1734d9}
-#kfg .acts button{border-radius:5px}
-#kfg .notice{z-index:1}
-#kfg .keyboard{border:1px solid #829bcc;border-radius:4px}
-#kfg .menu-kicker{color:#d1e2ff;text-transform:uppercase;letter-spacing:.24em;font-size:11px;font-weight:900;text-shadow:0 2px #000}
-#kfg .menu-footer{font-size:11px;color:#b9cbea;text-transform:uppercase;letter-spacing:.11em}
-#kfg .modal[style*="none"]{pointer-events:none}
-@media(max-width:600px){#kfg .top{top:78px;right:8px;gap:4px}#kfg .top button{padding:7px 8px;font-size:11px}#kfg .hud{inset:8px 8px auto}#kfg .modal::before{inset:7px}#kfg .character-head{padding:10px 12px}#kfg .character-main{padding:10px}}
-@media(max-height:420px){#kfg .modal{gap:6px}#kfg .modal h2{font-size:27px}#kfg .modal p{padding:6px 10px;line-height:1.3}#kfg .modal button{min-height:35px;padding:5px 14px}#kfg .menu-footer{display:none}}
-
-#kfg .rpg-menu{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#030916d9;backdrop-filter:blur(3px);padding:12px;pointer-events:auto}
-#kfg .rpg-menu[hidden]{display:none}
-#kfg .rpg-panel{width:min(760px,100%);max-height:calc(100dvh - 24px);overflow:auto;border:3px solid #d3b471;background:linear-gradient(145deg,#1b345b,#0c1931 75%);box-shadow:inset 0 0 0 4px #0b1427,0 12px 0 #060b16,0 25px 65px #000b;padding:18px;color:#f5f2e8}
-#kfg .rpg-panel h2{margin:0 0 12px;color:#ffda79;text-transform:uppercase;letter-spacing:.08em;font-size:clamp(22px,4vw,34px)}
-#kfg .rpg-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-#kfg .rpg-tabs button{padding:10px 12px;min-height:44px}
-#kfg .rpg-tabs button[aria-selected=true]{border-color:#ffdc7c;background:linear-gradient(#85642e,#443016)}
-#kfg .rpg-body{min-height:155px;padding:12px;border:1px solid #637ca9;background:#0a172cbb;line-height:1.6}
-#kfg .rpg-body h3{color:#ffda79;margin:0 0 8px}
-#kfg .rpg-body p{margin:6px 0 12px}
-#kfg .rpg-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-#kfg .rpg-actions button{min-height:44px;padding:9px 16px}
-#kfg .rpg-list{display:grid;gap:8px}
-#kfg .rpg-row{padding:9px;border:1px solid #536b93;background:#172b4b}
-#kfg .rpg-row strong{color:#ffe09c}
-#kfg .rpg-map{position:relative;width:100%;height:155px;border:3px solid #90a5ce;background:linear-gradient(90deg,#658c52 0 31%,#9f9b6e 31% 37%,#365d3d 37%);overflow:hidden}
-#kfg .rpg-map::before{content:"";position:absolute;top:48%;left:30%;width:70%;height:12px;background:#a58e63;transform:translateY(-50%)}
-#kfg .rpg-map span{position:absolute;font-size:11px;font-weight:900;text-shadow:1px 2px #000;white-space:nowrap}
-#kfg .rpg-panel input[type=range]{width:min(250px,100%);accent-color:#ffcf68}
-#kfg .rpg-panel label{display:block;margin:12px 0}
-@media(max-width:460px){#kfg .rpg-panel{padding:12px}#kfg .rpg-tabs button{font-size:11px;padding:8px}#kfg .rpg-body{padding:8px}}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Ki Fighter</title></head><body><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/><style>body{margin:0}#kfg .world-objective{position:absolute;top:91px;left:12px;z-index:2;margin:0;padding:6px 10px;max-width:min(55%,360px);border:1px solid #c5a27377;border-left:2px solid #e2b875;border-radius:5px;background:#182524e8;color:#f2dfb5;font-size:11px;line-height:1.35;pointer-events:none}
+#kfg .minimap{position:absolute;top:125px;right:12px;width:clamp(112px,23vw,182px);padding:4px;border:1px solid #bba27599;border-radius:8px;background:#172524ec;box-shadow:0 3px 12px #0b14189c;pointer-events:none}
+#kfg .minimap[hidden]{display:none}
+#kfg .minimap canvas{width:100%;height:auto;border-radius:4px;aspect-ratio:13/7}
+@media(max-height:420px){#kfg .minimap{width:106px}}
+@media(max-width:640px){#kfg .world-objective{top:125px;max-width:calc(100% - 150px)}}
+#kfg .world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
+#kfg .world-interact[hidden],#kfg .world-objective[hidden]{display:none}
+#kfstory{max-width:min(410px,calc(100% - 32px));box-sizing:border-box;padding:22px;border:1px solid #a38a58;border-radius:12px;color:#f7e6ca;background:#202d2b;box-shadow:0 14px 50px #000b}
+#kfstory::backdrop{background:#0c1616ad}
+#kfstory h2{margin:0;color:#ffe1a3;font-size:20px}
+#kfstory p{line-height:1.55;margin:10px 0 20px}
+#kfstory .story-actions{display:flex;justify-content:flex-end;gap:8px}
+#kfstory button{padding:8px 12px;border:1px solid #96794c;border-radius:6px;background:#33453d;color:#fff0d1;cursor:pointer}
+#kfstory button[hidden]{display:none}
+#kfmenu{width:min(570px,calc(100% - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:18px;border:1px solid #ae9564;border-radius:13px;color:#f3e7ce;background:#202d2b;box-shadow:0 16px 55px #000b}
+#kfmenu::backdrop{background:#0b1717bd}
+#kfmenu .menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+#kfmenu h2,#kfmenu h3{margin:0;color:#ffe2a1}
+#kfmenu h3 small{margin-left:5px;font-weight:500;color:#dcc6a1}
+#kfmenu button{min-height:42px;padding:6px 10px;border-radius:7px;background:#2a3b35;color:#f5ebd6;border-color:#a78a5d80;font-size:12px}
+#kfmenu button[aria-pressed=true]{border-color:#dbb977;background:#4c4934;color:#ffdfa0}
+#kfmenu button:disabled{opacity:.67;cursor:default}
+#kfmenu .menu-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#kfmenu .menu-panel{margin-top:16px;padding:13px;border:1px solid #b3945a55;border-radius:9px;background:#111e1d}
+#kfmenu .menu-panel[hidden]{display:none}
+#kfmenu p,#kfmenu li,#kfmenu label{font-size:13px;line-height:1.5}
+#kfmenu ol{padding-left:22px}
+#kfmenu li[data-state=done]{color:#a8c9a4}
+#kfmenu li[aria-current=step]{color:#ffda7e;font-weight:700}
+#kfmenu .menu-panel canvas{width:100%;height:auto;border-radius:6px;aspect-ratio:13/7}
+#kfmenu .map-legend{display:flex;gap:16px;margin-bottom:0}
+#kfmenu .map-legend span::before{display:inline-block;content:"";width:7px;height:7px;margin-right:5px;background:#fff9e9}
+#kfmenu .map-legend span:nth-child(2)::before{background:#ffda7e;transform:rotate(45deg)}
+#kfmenu .map-legend span:nth-child(3)::before{background:#ed8653}
+#kfmenu .discipline-list{display:grid;gap:6px;margin:10px 0 12px}
+#kfmenu .discipline-list button{display:grid;text-align:left;gap:2px}
+#kfmenu .discipline-list small{font-weight:400}
+#kfmenu label{display:flex;align-items:center;gap:9px;min-height:36px}
+#kfmenu input{accent-color:#e5bc74}
 </style><div id="kfg" style="height:100dvh;min-height:270px;position:relative;overflow:hidden;border-radius:12px;background:#183e22;color:white;font-family:system-ui;touch-action:none;user-select:none;-webkit-user-select:none">
 <style>
 #kfg *{box-sizing:border-box}
@@ -130,9 +110,82 @@
 #kfg .modal h2{font:900 clamp(28px,5vw,54px) system-ui;color:#ffe07b;text-shadow:3px 3px #734623;margin:0}
 #kfg .modal p{font-size:14px;line-height:1.5;max-width:360px;margin:0}
 #kfg .modal button{font-size:16px;padding:10px 20px;background:#ffd06b;color:#2c2212;border:2px solid #fff8af}
-#kfg .modal #kfresume{background:#253958;color:#fff;border-color:#a4b9e3}
 </style>
-<canvas id="kfc"></canvas>
+<style>
+/* Ki Fighter pixel-RPG interface — reference pack 2026-11-23.
+   Compact Buu's Fury HUD + CrossCode information layout; no screenshot slicing. */
+#kfg{--rpg-bg:#111c32;--rpg-edge:#94a7c8;--rpg-ink:#f0f4fa;--rpg-muted:#c0cbe0;--rpg-select:#f6cf6a;--rpg-shadow:#080e1b;font-family:Verdana,system-ui,sans-serif!important}
+#kfg button{border-radius:2px;background:#1d2c49;border:1px solid #8197bb;color:var(--rpg-ink);box-shadow:inset 0 1px #ffffff16,0 2px 0 #081121;font:700 13px Verdana,system-ui,sans-serif}
+#kfg button:hover{background:#2b4267;border-color:#c5d6f1}
+#kfg button:focus-visible{outline:2px solid var(--rpg-select);outline-offset:2px}
+#kfg button:disabled{opacity:.45;cursor:not-allowed}
+#kfg .modal{background:linear-gradient(180deg,#0d1933ec,#101c35f2);gap:11px}
+#kfg .modal:before{content:"";position:absolute;inset:12px;pointer-events:none;border:2px solid #a9badd;box-shadow:inset 0 0 0 3px #0a152a}
+#kfg .modal>*{position:relative}
+#kfg .modal h2{font:900 clamp(36px,7vw,76px) Verdana,system-ui,sans-serif;font-style:italic;letter-spacing:-.065em;color:#f9d76d;text-shadow:3px 3px #8c3f27,6px 6px #071328;line-height:1}
+#kfg .modal p{color:#d8e4f5;font-size:12px;max-width:440px}
+#kfg .title-subtitle{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9d6eb}
+#kfg .title-actions{display:grid;gap:3px;width:min(255px,86vw);padding:5px;background:#0c182fe8;border:2px solid #a0b3d3}
+#kfg .title-actions button{width:100%;min-height:43px;padding:9px 12px;text-align:left;border:0;border-bottom:1px solid #60739355;background:transparent;box-shadow:none}
+#kfg .title-actions button:hover,#kfg .title-actions button:focus-visible{background:var(--rpg-select);color:#111c31}
+#kfg .title-actions button:before{content:"▸";display:inline-block;width:21px;color:#e9c76e}
+#kfg .title-actions button:hover:before,#kfg .title-actions button:focus-visible:before{color:#182744}
+#kfg .hud{inset:max(8px,env(safe-area-inset-top)) 8px auto;gap:5px;font-size:11px}
+#kfg .vitals,#kfg .counters,#kfg .notice{background:#101c33df;border:1px solid #a5b7d3;border-radius:2px;box-shadow:0 2px 0 #091021a8}
+#kfg .vitals{gap:3px;padding:6px 8px;border-left:3px solid #d7c18c}
+#kfg .counters{padding:5px 7px}
+#kfg .meter{height:7px;border:1px solid #7b8cab;border-radius:1px;background:#24304b}
+#kfg .meter i{border-radius:0}
+#kfg .top{top:76px;right:8px}
+#kfg .top button{min-height:44px;padding:7px 10px}
+#kfg .world-objective{border-radius:2px;background:#101c33df;border-color:#8a9bb7;border-left:3px solid #e9c76e;color:#f1f3f8}
+#kfg .minimap{border-radius:2px;background:#101c33e9;border-color:#a5b7d3}
+#kfg .controls{bottom:max(8px,env(safe-area-inset-bottom));width:calc(100% - 20px)}
+#kfg .stick{--size:clamp(108px,24vw,136px);border:2px solid #d4e0f1a3;background:#15243b7d;box-shadow:inset 0 0 0 5px #c9d8ed1c,0 3px 8px #0006}
+#kfg .stick:before{content:"▲";position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:10px;color:#e7efffc7}
+#kfg .stick-knob{background:#a5b3c6b9;border:2px solid #edf2fc}
+#kfg .acts{border:0;background:transparent;box-shadow:none;gap:7px;padding:2px}
+#kfg .acts button{width:clamp(54px,13vw,75px);min-height:54px;aspect-ratio:1/1;border:2px solid #c1d0e4;border-radius:50%;background:#15243bbf;box-shadow:inset 0 0 0 3px #2c4161a6,0 2px 5px #0008;font-size:12px}
+#kfg .acts button small{font-size:8px}
+#kfg .acts [data-a=hit]{background:#473526d9;border-color:#f2cb87}
+#kfg .acts [data-a=ki]{background:#153958d9;border-color:#92c8f1}
+#kfg #kfmenu,#kfg #kfcharacter,#kfg #kfstory{color:var(--rpg-ink);background:#121e35;border:2px solid #a3b6d5;border-radius:3px;box-shadow:inset 0 0 0 3px #1c3050,0 18px 50px #000a}
+#kfg #kfmenu::backdrop,#kfg #kfcharacter::backdrop,#kfg #kfstory::backdrop{background:#050b18c9}
+#kfg #kfmenu{width:min(830px,calc(100% - 16px));max-height:calc(100dvh - 18px);padding:0;overflow:auto;touch-action:pan-y}
+#kfg #kfmenu .menu-head,#kfg #kfcharacter .character-head{background:#243657;border-bottom:2px solid #8fa4c6;border-radius:0;padding:9px 14px}
+#kfg #kfmenu h2,#kfg #kfcharacter h2{font:800 clamp(19px,3vw,25px) Verdana,system-ui,sans-serif;color:#f4f6fc;letter-spacing:.025em}
+#kfg #kfmenu .menu-tabs{display:flex;flex-wrap:wrap;gap:3px;padding:9px 12px;background:#101b30}
+#kfg #kfmenu .menu-tabs button{min-height:44px;padding:9px 13px;border-radius:2px}
+#kfg #kfmenu .menu-tabs button[aria-pressed=true]{background:var(--rpg-select);border-color:#fff0bc;color:#182238}
+#kfg #kfmenu .menu-panel{padding:14px;min-height:170px}
+#kfg #kfmenu .menu-panel[hidden]{display:none}
+#kfg #kfmenu .menu-panel h3{color:#f7d574}
+#kfg #kfmenu .menu-panel li{margin:6px 0}
+#kfg #kfmenu .menu-panel li[data-state=current]{color:#f7d574}
+#kfg #kfmenu .menu-panel label{display:block;padding:10px 5px}
+#kfg #kfmenu .discipline-list button{border-radius:2px}
+#kfg #kfcharacter{border-radius:3px;background:#121e35}
+#kfg #kfcharacter .character-preview{background:#1d304f;border:1px solid #647c9e;border-radius:2px}
+#kfg #kfcharacter .character-preview canvas{image-rendering:pixelated}
+#kfg #kfcharacter .stat-row{border-radius:2px;background:#172741;border-color:#526989}
+#kfg #kfcharacter .points-total{border-radius:2px;background:#26395a;color:#f6d678}
+#kfg #kfstory{width:min(680px,calc(100% - 20px));max-height:calc(100dvh - 24px);border-radius:2px;background:#121f38}
+#kfg #kfstory h2{color:#f7d574}
+#kfg #kfstory p{line-height:1.6}
+#kfg #kfstory button{min-height:44px}
+@media(max-width:460px){#kfg .modal:before{inset:6px}#kfg .modal h2{font-size:40px}#kfg .modal p{font-size:11px}#kfg .top{top:71px}#kfg .top button{font-size:11px;padding:7px}#kfg #kfmenu .menu-tabs button{font-size:11px;padding:8px}#kfg .vitals{padding:5px}#kfg .acts{gap:4px}}
+@media(max-height:420px) and (min-width:500px){#kfg .stick{--size:90px}#kfg .acts button{width:55px;min-height:55px}#kfg #kfmenu .menu-panel{min-height:90px;padding:8px}}
+</style>
+<style>
+#kfg #kfmenu .menu-actions{display:flex;gap:5px;flex-wrap:wrap}
+#kfg #kfmenu .menu-actions button{min-height:44px;padding:8px 12px}
+#kfg #kfmenu .technique-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#kfg #kfmenu .technique-list>div{display:grid;gap:5px;padding:10px;background:#1a2c49;border:1px solid #6d83a5}
+#kfg #kfmenu .technique-list strong{color:#f5d36f}
+#kfg #kfmenu .technique-list span{font-size:12px;color:#cbd6e8}
+@media(max-width:530px){#kfg #kfmenu .technique-list{grid-template-columns:1fr}#kfg #kfmenu .menu-head{gap:6px;flex-wrap:wrap}}
+</style>
+<style>#kfg .party-roster{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}#kfg .party-roster button{min-height:44px;padding:8px 10px;border:1px solid #8397b9;background:#233a5c;color:#f6d677}#kfg .party-roster button:disabled{background:#435270;color:#fff;opacity:1}@media(max-width:600px){#kfg .party-roster button{flex:1;font-size:11px}#kfg .top{top:80px}#kfg .top button{font-size:10px}}</style><canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
     <div class="vitals">
@@ -140,9 +193,14 @@
       <div class="vital"><span class="meter"><i id="kfki-meter"></i></span><span id="kfki">100 Ki</span></div>
       <div class="vital"><span class="meter"><i id="kfxp-meter"></i></span><span id="kfxp">0 / 55 XP</span></div>
     </div>
-    <div class="counters"><span id="kfwave">Wave 0 / 3</span><span id="kfko">0 KO</span></div>
+    <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
   </div>
   <div class="notice" id="kfnotice" hidden></div>
+  <div id="kfminimap" class="minimap" hidden>
+    <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
+  </div>
+  <p id="kfobjective" class="world-objective" hidden></p>
+  <button id="kfinteract" class="world-interact" type="button" hidden>Interact</button>
   <div class="top">
     <div class="powers">
       <button id="kfpowers" aria-expanded="false" aria-controls="kfpower-menu">Powers</button>
@@ -152,11 +210,11 @@
       </div>
     </div>
     <button id="kfcharacter-open" type="button" aria-haspopup="dialog">Character<span id="kfpoint-badge" hidden></span></button>
-    <button id="kfpause">Pause</button>
+    <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
   </div>
   <div class="controls">
     <div class="stick" role="img" aria-label="Movement joystick"><span class="stick-knob"></span></div>
-    <p class="keyboard">WASD move · Q switch fighter · C profile · Shift dash · R charge · Mouse strike / Ki · Esc pause</p>
+    <p class="keyboard">Mouse aim · Left strike · Right tap for blast, hold for beam · WASD / Arrows move · Shift dash · R recharge · E interact · M map · C character · Esc menu</p>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
@@ -165,9 +223,9 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><div class="menu-kicker">Dragon Ball Z · Story Mode</div><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Move with the joystick or WASD. Tap Ki to blast, or keep holding to charge and fire the beam. On laptop, aim with the mouse, left-click to strike, and right-click for Ki.</p><button id="kfresume" hidden>Resume</button><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button><button id="kfplay">▶ PLAY</button><div class="menu-footer">Explore · Train · Fight · Transform</div></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
+<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><div class="title-subtitle">Cedar Village · Action RPG</div><div class="title-actions"><button id="kfnew" type="button">New Game</button><button id="kfplay" type="button">Continue</button><button id="kftitle-options" type="button">Options</button></div><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
   <header class="character-head">
-    <h2 id="kfcharacter-title">Fighter Profile</h2>
+    <h2 id="kfcharacter-title">Character</h2>
     <button id="kfcharacter-close" type="button" autofocus>Back</button>
   </header>
   <div class="character-main">
@@ -184,14 +242,93 @@
     </div>
   </div>
 </dialog>
-<section class="rpg-menu" id="kf-rpg-menu" hidden aria-label="Game menu"><div class="rpg-panel" role="dialog" aria-modal="true" aria-labelledby="kf-rpg-title"><h2 id="kf-rpg-title">Adventure Menu</h2><nav class="rpg-tabs" id="kf-rpg-tabs" aria-label="Menu sections"></nav><div class="rpg-body" id="kf-rpg-body"></div><div class="rpg-actions" id="kf-rpg-actions"></div></div></section>
+<dialog id="kfstory" aria-labelledby="kfstory-title">
+  <h2 id="kfstory-title"></h2>
+  <p id="kfstory-text"></p>
+  <div class="story-actions"><button id="kfstory-close" type="button">Close</button><button id="kfstory-continue" type="button">Continue</button></div>
+</dialog>
+<dialog id="kfmenu" aria-labelledby="kfmenu-title">
+  <header class="menu-head">
+    <h2 id="kfmenu-title">Journey</h2>
+    <div class="menu-actions"><button id="kfmenu-save" type="button">Save</button><button id="kfmenu-title" type="button">Title</button><button id="kfmenu-close" type="button" autofocus>Resume</button></div>
+  </header>
+  <nav aria-label="Journey menu" class="menu-tabs">
+    <button type="button" data-menu="journal" aria-pressed="true" aria-controls="kfmenu-journal">Quests</button>
+    <button type="button" data-menu="map" aria-pressed="false" aria-controls="kfmenu-map">World map</button>
+    <button type="button" data-menu="training" aria-pressed="false" aria-controls="kfmenu-training">Training</button><button type="button" data-menu="techniques" aria-pressed="false" aria-controls="kfmenu-techniques">Techniques</button>
+    <button type="button" data-menu="settings" aria-pressed="false" aria-controls="kfmenu-settings">Settings</button>
+  </nav>
+  <section id="kfmenu-journal" class="menu-panel">
+    <h3>The Cedar Seal</h3>
+    <p id="kfmenu-objective"></p>
+    <ol id="kfmenu-steps"></ol>
+    <h3>Northern Watch <small>Optional</small></h3>
+    <p id="kfmenu-watch"></p>
+  </section>
+  <section id="kfmenu-map" class="menu-panel" hidden>
+    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map with Cedar Village in the west and Stone Shrine in the east. White is your position, gold marks objectives, and orange marks enemy camps."></canvas>
+    <p class="map-legend"><span>You</span><span>Objective</span><span>Camp</span></p>
+  </section>
+  <section id="kfmenu-training" class="menu-panel" hidden>
+    <p id="kfmenu-training-location"></p>
+    <div class="discipline-list">
+      <button type="button" data-discipline="balanced" aria-pressed="true"><strong>Balanced</strong><small>Standard melee and Ki damage</small></button>
+      <button type="button" data-discipline="striker" aria-pressed="false"><strong>Striker</strong><small>+20% melee damage · −10% Ki damage</small></button>
+      <button type="button" data-discipline="channeler" aria-pressed="false"><strong>Channeler</strong><small>+20% Ki damage · −10% melee damage</small></button>
+    </div>
+    <button id="kfmenu-character" type="button">Character upgrades</button>
+  </section>
+  <section id="kfmenu-techniques" class="menu-panel" hidden>
+<h3>Combat Techniques</h3>
+<div class="technique-list">
+<div><strong>Strike Combo</strong><span>Left click / Strike · Three-hit melee chain</span></div>
+<div><strong>Ki Blast</strong><span>Right click or tap Ki · Quick ranged attack</span></div>
+<div><strong>Charged Beam</strong><span>Hold and release Ki · Sustained energy attack</span></div>
+<div><strong>Dash</strong><span>Shift / Dash · Short evasive movement</span></div>
+<div><strong>Ki Recharge</strong><span>R / Charge · Restore energy</span></div>
+<div><strong>Flight / Surge</strong><span>Open Powers · Toggle advanced movement or power</span></div>
+</div></section>
+<section id="kfmenu-settings" class="menu-panel" hidden>
+    <label><input id="kfsetting-shake" type="checkbox"> Screen shake</label>
+    <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
+  </section>
+</dialog>
 <script src="animation.js?v=172a878"></script>
 <script>
-(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=960,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],wave=0,kills=0,wait=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
+(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1040,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
-const trees=[],rocks=[];for(let i=0;i<115;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(Math.abs(x-355)<64&&Math.abs(y-280)<87||Math.abs(x-355)<13||Math.abs(y-280)<13||hyp((x-530)*.75,(y-340)*1.3)<80)continue;trees.push({x,y,scale:rnd(.84,1.25),variant:i%4===0?1:0})}for(let i=0;i<28;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);rocks.push({x,y})}const pond={x:528,y:345,rx:75,ry:48};
-// Keep the village and forest trail clear
-for(let i=trees.length-1;i>=0;i--){let t=trees[i];if(t.x<320||Math.abs(t.y-280)<35)trees.splice(i,1)}
+const mentor={x:157,y:251,world:'mentor'};
+const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
+const encounters=[
+  {id:'crossing',kind:'bandit',x:434,y:246,radius:57},
+  {id:'ridge',kind:'thug',x:628,y:216,radius:64},
+  {id:'cedars',kind:'ninja',x:755,y:345,radius:72},
+  {id:'watch',kind:'soldier',x:806,y:192,radius:65},
+  {id:'guardian',kind:'brute',x:873,y:249,radius:76},
+];
+const worldObjects=[
+  {x:97,y:226,world:'cottage',w:64,h:58,solidW:52,solidH:30},
+  {x:211,y:216,world:'hall',w:87,h:73,solidW:68,solidH:36},
+  {x:104,y:371,world:'cottage',w:67,h:61,solidW:54,solidH:30},
+  {x:318,y:253,world:'sign',w:14,h:20,solidW:0,solidH:0},
+  {x:464,y:213,world:'tent',w:44,h:34,solidW:36,solidH:17},
+  {x:647,y:192,world:'tent',w:46,h:36,solidW:38,solidH:19},
+  {x:780,y:368,world:'tent',w:44,h:34,solidW:36,solidH:17},
+  {x:825,y:165,world:'tent',w:40,h:32,solidW:35,solidH:16},
+  {x:458,y:230,world:'fire',w:17,h:16,solidW:0,solidH:0},
+  {x:673,y:223,world:'fire',w:17,h:16,solidW:0,solidH:0},
+  {x:772,y:330,world:'fire',w:17,h:16,solidW:0,solidH:0},
+  shrine,
+];
+function worldClearance(x,y){
+  return (x<280&&y>122&&y<397)||Math.abs(y-273)<23||
+    encounters.some(e=>hyp(x-e.x,y-e.y)<34)||
+    worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
+}
+function solidStructure(x,y){
+  return worldObjects.some(o=>o.solidW&&Math.abs(x-o.x)<o.solidW/2&&y>o.y-o.solidH&&y<o.y+2);
+}
+const trees=[],rocks=[];for(let i=0;i<184;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(worldClearance(x,y)||Math.abs(x-355)<64&&Math.abs(y-280)<87||Math.abs(x-355)<13||Math.abs(y-280)<13||hyp((x-530)*.75,(y-340)*1.3)<80)continue;trees.push({x,y,scale:rnd(.84,1.25),variant:i%4===0?1:0})}for(let i=0;i<44;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(!worldClearance(x,y))rocks.push({x,y})}const pond={x:528,y:345,rx:75,ry:48};
 const mapScale=2.5;
 const map=document.createElement('canvas');
 map.width=MW*mapScale;
@@ -234,13 +371,17 @@ for(let i=0;i<3500;i++){
   const size=terrainBetween(.5,2);
   fill(x,y,size,terrainBetween(.5,1.45),i%3===0?'#c2ad7935':i%2===0?'#17382e4b':'#80905132',bg);
 }
-const mainTrail=new Path2D('M -20 275 C 220 263 390 292 740 267');
+const mainTrail=new Path2D('M -20 279 C 220 267 390 282 540 270 S 826 276 1060 268');
 const northTrail=new Path2D('M 357 -20 C 335 200 376 330 350 580');
+const branchTrails=new Path2D('M 151 278 Q 130 321 113 365 M 157 274 Q 202 259 211 216 M 421 275 Q 436 240 462 219 M 620 272 Q 628 228 645 206 M 758 270 Q 742 313 767 349 M 802 274 Q 815 214 825 175');
+
 bg.lineCap='round';
 for(const [width,color] of [[34,'#22332b'],[30,'#5b5140'],[24,'#806951'],[18,'#a48c69']]){
   bg.strokeStyle=color;
   bg.lineWidth=width*.8;
   bg.stroke(northTrail);
+  bg.lineWidth=width*.55;
+  bg.stroke(branchTrails);
   bg.lineWidth=width;
   bg.stroke(mainTrail);
 }
@@ -307,46 +448,184 @@ ambientShade.addColorStop(.45,'#101e3100');
 ambientShade.addColorStop(1,'#101e314a');
 bg.fillStyle=ambientShade;
 bg.fillRect(0,0,MW,MH);
-// KF_WORLD_SLICE_V1
-let quest='new',questKills=0;
-const trainer={x:137,y:285},SAVE='ki-fighter-forest-v3';
-const roster=[{name:'Goku',role:'Balanced Saiyan',color:'#f9a64e',str:2,kistat:2,dex:2},{name:'Piccolo',role:'Ki specialist',color:'#a6d982',str:1,kistat:3,dex:1},{name:'Gohan',role:'Fast learner',color:'#b7a0e8',str:1,kistat:2,dex:3}];
-let activeFighter=0,rosterStats=[],switchCD=0,savedKills=0;
-function resetRoster(){rosterStats=roster.map(ch=>({level:1,xp:0,points:0,str:ch.str,kistat:ch.kistat,dex:ch.dex}))}
-function captureFighter(){if(player)rosterStats[activeFighter]={level:player.level,xp:player.xp,points:player.points,str:player.str,kistat:player.kistat,dex:player.dex}}
-function canSwitchFighter(){return !!player&&player.hp>0&&switchCD<=0&&player.attack<=0&&!player.beam&&player.beamCharge===null&&player.hurt<=0&&player.dash<=0}
-function selectFighter(index,fromMenu=false){if(!(mode==='play'||fromMenu&&mode==='rpg')||!canSwitchFighter()||index===activeFighter||index<0||index>=roster.length)return false;captureFighter();activeFighter=index;Object.assign(player,rosterStats[index]);player.combo=0;player.link=0;player.surge=false;player.fly=false;player.vx=0;player.vy=0;switchCD=.7;burst(player.x,player.y-12,roster[index].color,12);notice(roster[index].name+' · '+roster[index].role);saveWorld();return true}
-function switchFighter(){return selectFighter((activeFighter+1)%roster.length)}
-const switchButton=document.createElement('button');switchButton.textContent='Switch [Q]';switchButton.style.cssText='position:absolute;top:111px;right:12px;z-index:2;padding:8px 11px';root.appendChild(switchButton);switchButton.onclick=switchFighter;
-window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='q'&&!e.repeat&&mode==='play'){e.preventDefault();switchFighter()}});
-resetRoster();
+function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
+function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
+function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';playButton.textContent='↻ RETRY JOURNEY';playButton.disabled=false;modal.style.display='flex'}const playButton=root.querySelector('#kfplay'),newButton=root.querySelector('#kfnew'),titleOptions=root.querySelector('#kftitle-options');
+function hasJourneySave(){try{const data=JSON.parse(localStorage.getItem(journeyKey));return !!data&&journeySteps.includes(data.step)}catch{return false}}
+function refreshTitleActions(){playButton.disabled=!hasJourneySave();playButton.textContent=hasJourneySave()?'Continue':'Continue — No Save'}
+function startNewJourney(){if(hasJourneySave()&&!window.confirm('Start a new adventure? This will erase your existing Cedar Village progress.'))return;try{localStorage.removeItem(journeyKey)}catch{}start()}
+playButton.onclick=()=>{if(mode==='end'||hasJourneySave())start()};
+newButton.onclick=startNewJourney;
+titleOptions.onclick=()=>openTitleOptions();
 
-const SAVE_VERSION=3;
-function saveWorld(){if(player)try{captureFighter();localStorage.setItem(SAVE,JSON.stringify({version:SAVE_VERSION,quest,questKills,activeFighter,rosterStats,position:{x:player.x,y:player.y},hp:player.hp,ki:player.ki}))}catch(e){console.warn('Save failed',e)}}
-function loadWorld(){try{
- let d=null;for(const key of [SAVE,'ki-fighter-forest-v2','ki-fighter-forest-v1']){const raw=localStorage.getItem(key);if(!raw)continue;const parsed=JSON.parse(raw);if(parsed&&typeof parsed==='object'){d=parsed;break}}
- if(!d)return;
- quest=['new','active','return','done'].includes(d.quest)?d.quest:'new';questKills=Math.max(0,Math.min(3,Number(d.questKills)||0));
- if(quest==='active'&&questKills===3)quest='return';
- if(Array.isArray(d.rosterStats)&&d.rosterStats.length===roster.length)rosterStats=d.rosterStats.map((v,i)=>{let p={...rosterStats[i]};for(const k of ['level','xp','points','str','kistat','dex'])if(Number.isFinite(v?.[k]))p[k]=Math.max(['xp','points'].includes(k)?0:1,Math.floor(v[k]));return p});
- else if(d.player&&typeof d.player==='object'){for(const k of ['level','xp','points','str','kistat','dex'])if(Number.isFinite(d.player[k]))rosterStats[0][k]=Math.max(['xp','points'].includes(k)?0:1,Math.floor(d.player[k]))}
- activeFighter=Math.max(0,Math.min(roster.length-1,Math.floor(Number(d.activeFighter)||0)));Object.assign(player,rosterStats[activeFighter]);
- if(Number.isFinite(d.position?.x)&&Number.isFinite(d.position?.y)&&!solid(d.position.x,d.position.y)){player.x=lim(d.position.x,12,MW-12);player.y=lim(d.position.y,20,MH-10)}
- if(Number.isFinite(d.hp))player.hp=lim(d.hp,1,player.max);
- if(Number.isFinite(d.ki))player.ki=lim(d.ki,0,player.mki);
- if(d.version!==SAVE_VERSION||!localStorage.getItem(SAVE))saveWorld();
- }catch(e){console.warn('Party save unavailable',e)}}
-function resetAdventure(){try{for(const key of [SAVE,'ki-fighter-forest-v2','ki-fighter-forest-v1'])localStorage.removeItem(key)}catch(e){}start(true)}
-function questSpawn(){enemies=[];for(let i=questKills;i<3;i++){let x=515+i*105,y=250+i%2*65;enemies.push({x,y,hp:27,max:27,kind:'bandit',flank:i%2?-1:1,boss:false,fx:-1,fy:0,walking:false,faceAngle:Math.PI,gait:0,stride:0,hurt:0,flash:0,cd:1,phase:i})}}
-function talk(){if(mode!=='play'||hyp(player.x-trainer.x,player.y-trainer.y)>48)return;if(quest==='new'){quest='active';questSpawn();notice('MENTOR: Strange fighters have landed! Defeat 3 scouts east of the village!')}else if(quest==='active')notice('Scouts defeated: '+questKills+'/3');else if(quest==='return'){quest='done';player.xp+=45;applyLevelUps(player);notice('QUEST COMPLETE! +45 XP')}else notice('MENTOR: The Saiyan threat is only beginning!');saveWorld()}
-const talkButton=document.createElement('button');talkButton.textContent='Talk';talkButton.style.cssText='position:absolute;bottom:145px;left:50%;transform:translateX(-50%);z-index:2;padding:9px 16px;background:#56462a;display:none';root.appendChild(talkButton);talkButton.onclick=talk;
-const questHud=document.createElement('div');questHud.style.cssText='position:absolute;top:12px;left:50%;transform:translateX(-50%);max-width:43%;text-align:center;pointer-events:none;padding:7px 10px;border-radius:8px;background:#102333dc;color:#ffe4a2;font:bold 11px system-ui;z-index:1';root.appendChild(questHud);
-window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='e'&&mode==='play')talk()});
-function villageArt(){for(let [x,y] of [[32,151],[170,151],[54,333]]){c.fillStyle='#c2a27a';c.fillRect(x,y,90,65);c.fillStyle='#704439';c.beginPath();c.moveTo(x-6,y);c.lineTo(x+45,y-28);c.lineTo(x+96,y);c.fill();c.fillStyle='#d48c55';c.fillRect(x+37,y+34,17,31)}let x=trainer.x,y=trainer.y;c.fillStyle='#433f6c';c.fillRect(x-7,y-20,14,18);c.fillStyle='#edc18b';c.fillRect(x-6,y-30,12,12);c.fillStyle='#30232b';c.fillRect(x-7,y-33,14,5);c.fillStyle='#ffe5a5';c.font='bold 8px system-ui';c.textAlign='center';c.fillText('MENTOR',x,y-38);c.textAlign='start'}
-function questUI(){if(!player)return;switchButton.textContent='Switch [Q] · '+roster[activeFighter].name;switchButton.disabled=!canSwitchFighter();talkButton.style.display=mode==='play'&&hyp(player.x-trainer.x,player.y-trainer.y)<48?'block':'none';questHud.textContent=quest==='new'?'Find the village mentor':quest==='active'?'Defeat scouts '+questKills+'/3':quest==='return'?'Return to your mentor':'Saiyan prologue complete'}
-function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if([[32,151],[170,151],[54,333]].some(([bx,by])=>x>bx-6&&x<bx+96&&y>by-28&&y<by+65))return true;if(((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(fresh=false){closeRpgMenu(true);summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();resumeButton.hidden=true;setPowers(false);player={x:137,y:315,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];wave=0;kills=0;wait=9999;mode='play';modal.style.display='none';held.clear();quest='new';questKills=0;activeFighter=0;resetRoster();switchCD=0;savedKills=0;if(!fresh)loadWorld();if(quest==='active')questSpawn();notice('SAIYAN SAGA PROLOGUE · Talk to the mentor (E)')}
-function end(win){closeRpgMenu(true);if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);resumeButton.hidden=true;setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Try again. Use Ki blasts and dash to keep your distance.';root.querySelector('#kfplay').textContent='↻ PLAY AGAIN';modal.style.display='flex'}root.querySelector('#kfplay').onclick=()=>start(false);
+const disciplines={balanced:[1,1],striker:[1.2,.9],channeler:[.9,1.2]};
+let discipline='balanced';
+const journeyKey='ki-fighter-cedar-journey-v1';
+const fighters=[
+ {name:'Goku',role:'Balanced',str:2,kistat:2,dex:2,color:'#f5a54a'},
+ {name:'Piccolo',role:'Ki specialist',str:1,kistat:3,dex:1,color:'#8cce81'},
+ {name:'Gohan',role:'Agile',str:1,kistat:2,dex:3,color:'#a89ae4'}
+];
+let fighterIndex=0,partyStats=[],partySwitchCooldown=0;
+const partyFields=['level','xp','points','str','kistat','dex'];
+function resetParty(){fighterIndex=0;partyStats=fighters.map(f=>({level:1,xp:0,points:0,str:f.str,kistat:f.kistat,dex:f.dex}))}
+function captureParty(){if(player&&partyStats[fighterIndex])partyStats[fighterIndex]=Object.fromEntries(partyFields.map(k=>[k,player[k]]))}
+function canChangeFighter(){return mode==='play'&&player&&player.hp>0&&partySwitchCooldown<=0&&player.attack<=0&&!player.beam&&player.beamCharge===null&&player.hurt<=0&&player.dash<=0}
+function chooseFighter(i){if(!canChangeFighter()||i===fighterIndex||!partyStats[i])return false;captureParty();fighterIndex=i;Object.assign(player,partyStats[i]);player.combo=0;player.link=0;player.fly=false;player.surge=false;player.vx=0;player.vy=0;partySwitchCooldown=.75;saveJourney();notice(fighters[i].name+' · '+fighters[i].role);return true}
+const partySwitchButton=document.createElement('button');partySwitchButton.type='button';partySwitchButton.textContent='Switch [Q]';partySwitchButton.style.cssText='position:absolute;right:8px;top:126px;z-index:2;padding:8px 10px;min-height:44px';root.appendChild(partySwitchButton);partySwitchButton.onclick=()=>chooseFighter((fighterIndex+1)%fighters.length);
+const fighterRoster=document.createElement('div');fighterRoster.className='party-roster';fighterRoster.setAttribute('aria-label','Playable fighters');
+root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
+function renderFighterRoster(){fighterRoster.replaceChildren();for(let i=0;i<fighters.length;i++){const b=document.createElement('button');b.type='button';b.textContent=(i===fighterIndex?'▶ ':'')+fighters[i].name+' · LV '+partyStats[i].level;b.disabled=i===fighterIndex;b.onclick=()=>{closeCharacter();if(!chooseFighter(i))notice('Finish your current action first')};fighterRoster.appendChild(b)}}
+
+const journeySteps=['meet','recover','return','shrine','guardian','done'];
+refreshTitleActions();
+const shardIds=['crossing','ridge','cedars'];
+const persistentStats=['level','xp','str','kistat','dex','points'];
+let journeyStep='meet',clearedCamps=new Set(),mentorGestureUntil=0,storyAction=null;
+function saveJourney(){
+  try{
+    localStorage.setItem(journeyKey,JSON.stringify({
+      version:2,step:journeyStep,cleared:[...clearedCamps],discipline,activeFighter:fighterIndex,party:(captureParty(),partyStats),
+      stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]]))
+    }));
+  }catch{}
+}
+function loadJourney(){
+  journeyStep='meet';
+  discipline='balanced';
+  clearedCamps=new Set();
+  try{
+    const data=JSON.parse(localStorage.getItem(journeyKey));
+    if(!data)return;
+    if(Object.hasOwn(disciplines,data.discipline))discipline=data.discipline;
+    if(journeySteps.includes(data.step))journeyStep=data.step;
+    if(Array.isArray(data.cleared)){
+      clearedCamps=new Set(data.cleared.filter(id=>encounters.some(e=>e.id===id)));
+    }
+    for(const key of persistentStats){
+      const value=data.stats?.[key];
+      if(Number.isSafeInteger(value)&&value>=(key==='xp'||key==='points'?0:1))player[key]=value;
+    }
+    if(Array.isArray(data.party)&&data.party.length===fighters.length){
+      partyStats=data.party.map((entry,i)=>Object.fromEntries(partyFields.map(k=>{
+        const n=entry?.[k];return [k,Number.isSafeInteger(n)&&n>=(k==='xp'||k==='points'?0:1)?n:partyStats[i][k]];
+      })));
+      fighterIndex=Number.isInteger(data.activeFighter)?Math.max(0,Math.min(fighters.length-1,data.activeFighter)):0;
+      Object.assign(player,partyStats[fighterIndex]);
+    }else{
+      partyStats[0]=Object.fromEntries(partyFields.map(k=>[k,player[k]]));
+    }
+  }catch{}
+}
+const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158};
+function spawnJourneyEnemies(){
+  const guardianOpen=journeyStep==='guardian';
+  enemies=encounters.filter(e=>(e.id!=='guardian'||guardianOpen)&&!clearedCamps.has(e.id)).map((e,i)=>({
+    ...e,homeX:e.x,homeY:e.y,hp:worldEnemyHealth[e.kind],max:worldEnemyHealth[e.kind],
+    flank:i%2?-1:1,boss:e.kind==='brute',fx:0,fy:1,faceAngle:Math.PI/2,walking:false,
+    stride:0,gait:0,hurt:0,flash:0,cd:.35,phase:i,engaged:false,returning:false,alertUntil:0
+  }));
+}
+function shardCount(){return shardIds.filter(id=>clearedCamps.has(id)).length}
+function updateJourneyDefeat(enemy){
+  if(!enemy.id)return;
+  clearedCamps.add(enemy.id);
+  if(enemy.id==='watch'){
+    player.xp+=20;
+    notice('NORTHERN WATCH CLEARED · +20 XP');
+  }
+  if(journeyStep==='recover'&&shardCount()===shardIds.length){
+    journeyStep='return';
+    notice('SEAL PIECES RECOVERED');
+  }else if(enemy.id==='guardian'&&journeyStep==='guardian'){
+    journeyStep='done';
+    player.xp+=60;
+    notice('THE CEDAR SEAL IS RESTORED · +60 XP');
+  }
+}
+function journeyObjective(){
+  switch(journeyStep){
+    case 'meet':return 'Speak to Master Ren in Cedar Village.';
+    case 'recover':return 'Recover the Cedar Seal pieces · '+shardCount()+'/3';
+    case 'return':return 'Bring the seal pieces back to Master Ren.';
+    case 'shrine':return 'Follow the east trail to the Stone Shrine.';
+    case 'guardian':return 'Defeat the Forest Guardian.';
+    default:return 'The Cedar Seal is restored. Explore the forest or speak to Master Ren.';
+  }
+}
+const storyPanel=root.querySelector('#kfstory');
+const storyNext=root.querySelector('#kfstory-continue');
+const interactButton=root.querySelector('#kfinteract');
+const objective=root.querySelector('#kfobjective');
+function showStory(name,lines,label,action){
+  resetStick();
+  pressed.clear();
+  held.clear();
+  stopKi();
+  resetBeam(player);
+  setPowers(false);
+  mode='talk';
+  root.querySelector('#kfstory-title').textContent=name;
+  root.querySelector('#kfstory-text').textContent=lines;
+  storyAction=action;
+  storyNext.hidden=!action;
+  storyNext.textContent=label||'Continue';
+  storyPanel.showModal();
+}
+function closeStory(){
+  if(mode!=='talk')return;
+  storyAction=null;
+  storyPanel.close();
+  mode='play';
+}
+storyNext.onclick=()=>{
+  const action=storyAction;
+  closeStory();
+  if(action){action();applyLevelUps(player);saveJourney()}
+};
+root.querySelector('#kfstory-close').onclick=closeStory;
+storyPanel.addEventListener('cancel',e=>{e.preventDefault();closeStory()});
+function nearbyLandmark(){
+  if(hyp(player.x-mentor.x,player.y-mentor.y)<35)return mentor;
+  if(hyp(player.x-shrine.x,player.y-shrine.y)<39)return shrine;
+  return null;
+}
+function interact(){
+  if(mode!=='play')return;
+  const target=nearbyLandmark();
+  if(!target)return;
+  if(target===shrine){
+    if(journeyStep==='shrine'){
+      showStory('Stone Shrine','The reunited seal fits into the stone. Something heavy moves behind the cedars.','Place the seal',()=>{
+        journeyStep='guardian';
+        spawnJourneyEnemies();
+        notice('THE FOREST GUARDIAN AWAKENS');
+      });
+    }else showStory('Stone Shrine',journeyStep==='done'?'The crystal is warm. The forest has grown quiet.':'A broken seal is carved into the plinth.');
+    return;
+  }
+  mentorGestureUntil=storyClock+1.4;
+  if(journeyStep==='meet'){
+    showStory('Master Ren','The cedar lanterns went dark last night. Three raiders took pieces of the seal that guards this valley. Follow the east trail and bring them home.','Find the seal pieces',()=>{
+      journeyStep=shardCount()===shardIds.length?'return':'recover';
+    });
+  }else if(journeyStep==='return'){
+    showStory('Master Ren','The pieces fit. Take them to the old shrine at the eastern end of the trail. When the guardian wakes, hold your ground.','Take the restored seal',()=>{
+      journeyStep='shrine';
+      player.xp+=35;
+      notice('CEDAR SEAL REFORGED · +35 XP');
+    });
+  }else if(journeyStep==='done'){
+    showStory('Master Ren','The lanterns are burning again. The forest is yours to explore. If you want another trial, I can summon the guardian.','Challenge the guardian again',()=>{
+      clearedCamps.delete('guardian');
+      journeyStep='guardian';
+      spawnJourneyEnemies();
+    });
+  }else if(journeyStep==='recover'){
+    showStory('Master Ren','One raider camps near the crossing, one on the ridge north of the pond, and one in the cedars south of the trail.');
+  }else showStory('Master Ren','Keep following the trail east. The shrine stands beyond the last camp.');
+}
+interactButton.onclick=interact;
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96};
 function xpRequired(level){return 55+(level-1)*35}
 function applyLevelUps(p){
@@ -362,7 +641,7 @@ function applyLevelUps(p){
   if(earned)notice('LEVEL '+p.level+' · +'+earned+' '+(earned===1?'POINT':'POINTS'));
 }
 const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
-function spawn(){wave++;let n=wave===3?4:wave+2;for(let i=0;i<n;i++){let x,y;for(let j=0;j<100;j++){let a=rnd(0,7),r=rnd(85,160);x=lim(player.x+Math.cos(a)*r,30,MW-30);y=lim(player.y+Math.sin(a)*r,40,MH-30);if(!solid(x,y))break}let kind=wave===3&&i===0?'brute':wave===2&&i===3?'soldier':['bandit','thug','ninja'][i%3],hp={bandit:27,thug:59,ninja:32,soldier:29,brute:158}[kind];enemies.push({x,y,hp,max:hp,kind,flank:i%2?-1:1,boss:kind==='brute',fx:0,fy:1,walking:true,faceAngle:Math.PI/2,gait:0,stride:0,hurt:0,flash:0,cd:rnd(.5,1.2),phase:rnd(0,7)})}notice(wave===3?'BOSS BRUTE!':'WAVE '+wave+' / 3')}
+
 const fighterFrames={guard:0,jab:1,cross:2,kick:3,gather:4,release:5,dash:11,walk:12};
 const strikes={
   jab:{frame:fighterFrames.jab,range:32,arc:1.04,impact:.27},
@@ -390,7 +669,7 @@ function punch(){
 }
 function meleeHit(p){
   const strike=strikes[p.strike],edge=Math.cos(strike.arc);
-  const damage=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1);
+  const damage=(p.combo===3?28:13)*(1+(p.str-1)*.22)*(p.surge?1.5:1)*disciplines[discipline][0];
   for(const e of enemies){
     if(e.hp<=0)continue;
     const dx=e.x-p.x,dy=e.y-p.y,d=hyp(dx,dy);
@@ -416,7 +695,7 @@ function fire(){
     ? {x:p.x+(direction?(direction<0?9:-5):13.5*poseSide(p)),y:p.y-(direction?18:16)}
     : energyOrigin(p,'blast');
   const {x,y}=origin;
-  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24),time:kiBlast.range/kiBlast.speed});
+  balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24)*disciplines[discipline][1],time:kiBlast.range/kiBlast.speed});
   kiPulse(x,y,5,false,true);
 }
 const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
@@ -513,7 +792,56 @@ function beamCastPose(p){
   });
   return {arms,profile,side,lean:(thrust*.10-coil*(1-thrust)*.10)*side};
 }
+const beamBodyArt=new Image();
+beamBodyArt.src='assets/beam-body.webp';
+const beamPlasma=new Image();
+beamPlasma.src='assets/beam-plasma.webp';
+const beamPlasmaSizes=[[120,101],[75,76],[121,124],[117,46],[214,88],[282,138],[144,82],[110,72]];
+const beamBodyAnchors=[
+  [[13,-21],[13,-17],[1,-17],[-7,-14],[-7,-14],[-7,-14]],
+  [[-7,-14],[14,-18],[15,-18],[12,-18]],
+  [[3,-13],[0,-13],[-8,-13],[9,-16],[13,-18]],
+  [[3,-13],[0,-13],[-8,-13],[9,-16],[13,-18]],
+  [[-5,-13],[0,-18],[0,-17],[0,-14]],
+  [[5,-14],[0,-19],[0,-20],[0,-14]],
+];
+function drawBeamPlasma(frame,x,y,width,height){
+  const [w,h]=beamPlasmaSizes[frame];
+  c.drawImage(beamPlasma,frame*300,0,w,h,x,y,width,height);
+}
+function castDiagonal(p){
+  const vertical=Math.abs(p.fy);
+  return vertical>.383&&vertical<.924;
+}
+function beamBodyPose(p,recovery=0){
+  const diagonal=castDiagonal(p);
+  if(!atlasReady(beamBodyArt))return null;
+  const side=p.fx<0?-1:1;
+  const charging=p.beamCharge!==null;
+  const thrust=p.beamAge;
+  if(Math.abs(p.fy)>=.924){
+    const row=p.fy<0?5:4;
+    if(recovery)return {row,frame:recovery<.32?2:3,side:1};
+    if(charging)return {row,frame:p.beamCharge<.082?3:0,side:1};
+    return {row,frame:frameInClip(thrust/.095,3),side:1};
+  }
+  if(diagonal){
+    const row=p.fy<0?3:2;
+    const frame=recovery?recoverDiagonalFrame(recovery):charging
+      ?frameInClip(p.beamCharge/.33,3):2+frameInClip(thrust/.095,3);
+    return {row,frame,side};
+  }
+  if(recovery)return {row:1,frame:Math.min(5,3+frameInClip(recovery,3)),side};
+  if(charging)return {row:0,frame:frameInClip(p.beamCharge/.46,6),side};
+  return {row:1,frame:frameInClip(thrust/.085,3),side};
+}
+function recoverDiagonalFrame(progress){return progress<.26?4:5}
 function beamCastOrigin(p){
+  const body=beamBodyPose(p);
+  if(body){
+    const [x,y]=beamBodyAnchors[body.row][body.frame];
+    return {x:p.x+x*body.side,y:p.y+y};
+  }
   if(atlasReady(approvedHero)){
     const {row,frame,side}=approvedBeamPose(p);
     const [x,y]=approvedBeamAnchors[row][frame];
@@ -571,9 +899,9 @@ function insideBeam(vx,vy,dx,dy,{body,tip,wide},radius){
 }
 function beamHit(dt){
   const p=player,{fx:dx,fy:dy}=p;
-  const origin=beamOrigin(p);
+  const origin=beamCastOrigin(p);
   const shape=beamShape(p.beamAge);
-  const damage=dt*beam.damage*(1+(p.kistat-1)*.24);
+  const damage=dt*beam.damage*(1+(p.kistat-1)*.24)*disciplines[discipline][1];
   for(const e of enemies){
     if(e.hp<=0||!insideBeam(e.x-origin.x,e.y+poseHeight(-15)-origin.y,dx,dy,shape,e.boss?11:8))continue;
     e.hp-=damage;
@@ -711,6 +1039,26 @@ function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   c.fillRect(-1,-1,2,2);
   c.restore();
 
+  if(atlasReady(beamPlasma)){
+    const first=animationEase((shapeAge-.035)/.10);
+    const second=animationEase((shapeAge-.125)/.10);
+    const height=width*(.9+1.25*second)*(1+.075*Math.sin(time)+.025*Math.sin(time*1.93));
+    c.globalAlpha=opacity*(1-first);
+    if(first<1)drawBeamPlasma(3,0,-height*.5,length,height);
+    c.globalAlpha=opacity*first*(1-second);
+    if(first>0&&second<1)drawBeamPlasma(4,0,-height*.5,length,height);
+    c.globalAlpha=opacity*second;
+    if(second>0)drawBeamPlasma(5,0,-height*.5,length,height);
+    // Fast streaks travel down both edges of the held plume.
+    for(let i=0;i<3;i++){
+      const along=(age*(3.1+i*.21)+i*.32)%1;
+      const side=i%2?1:-1;
+      c.globalAlpha=opacity*Math.sin(along*Math.PI)*.82;
+      drawBeamPlasma(6,length*along*.79,side*(height*.18+along*height*.38)-2,7+along*6,4);
+    }
+    c.restore();
+    return;
+  }
   if(atlasReady(approvedEffects)){
     const swell=animationEase((shapeAge-.045)/.17);
     const flutter=1+.07*Math.sin(time)+.026*Math.sin(time*1.7);
@@ -764,7 +1112,8 @@ function renderBeam(p){
   if(emergence<1){
     c.save();
     c.globalAlpha=1-emergence;
-    renderKiOrb(x,y,4.3);
+    if(atlasReady(beamPlasma))drawBeamPlasma(2,x-6,y-6,12,12);
+    else renderKiOrb(x,y,4.3);
     c.restore();
   }
   drawBeamEffect(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence);
@@ -772,7 +1121,16 @@ function renderBeam(p){
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
   const opacity=animationEase(remaining)*animationEase(f.age/beamEmergenceTime)*.83;
-  drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
+  if(atlasReady(beamPlasma)){
+    const {body,tip,wide}=beamShape(f.age);
+    const length=body+tip;
+    c.save();
+    c.translate(f.x,f.y);
+    c.rotate(f.angle);
+    c.globalAlpha=opacity;
+    drawBeamPlasma(remaining>.5?6:7,length*(1-remaining)*.55,-wide*.54,length*.76,wide*1.08);
+    c.restore();
+  }else drawBeamEffect(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,opacity,.32+remaining*.68,f.age);
 }
 function renderBeamCharge(p){
   const {x,y}=beamCastOrigin(p);
@@ -781,7 +1139,14 @@ function renderBeamCharge(p){
   c.translate(x,y);
   c.rotate(Math.atan2(p.fy,p.fx));
   const strength=animationEase(load);
-  if(atlasReady(approvedEffects)){
+  if(atlasReady(beamPlasma)){
+    const stage=load<.25?0:load<.68?1:2;
+    const size=5+9*strength;
+    c.save();
+    c.rotate(p.beamCharge*4);
+    drawBeamPlasma(stage,-size/2,-size/2,size,size);
+    c.restore();
+  }else if(atlasReady(approvedEffects)){
     const size=5+8*strength;
     c.save();
     c.rotate(p.beamCharge*5);
@@ -802,7 +1167,7 @@ function renderBeamCharge(p){
   }
   c.restore();
 }
-function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=.32;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
+function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;notice('SURGE OFF')}else if(p.ki>=20){p.surge=true;p.surgeFlare=surgeIgnitionTime;notice('SURGE MODE!')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
 let stickPointer=null,stickX=0,stickY=0;
 function resetStick(){
@@ -847,16 +1212,26 @@ const kmap={
 };
 const pressed=new Set();
 window.addEventListener('keydown',e=>{
-  if(e.code==='KeyC'&&mode!=='rpg'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+  if(e.code==='KeyQ'&&!e.repeat&&mode==='play'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();chooseFighter((fighterIndex+1)%fighters.length);return}
+  if(mode==='talk')return;
+  if(e.code==='KeyM'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+    if(mode==='play')openJourneyMenu('map');
+    else if(mode==='paused')selectJourneyTab('map');
+    return;
+  }
+  if(e.code==='KeyE'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+    interact();
+    return;
+  }
+  if(e.code==='KeyC'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
     if(mode==='character')closeCharacter();
-    else if(player&&mode==='play')openCharacter(mode==='play'?characterButton:summaryCharacter);
+    else if(player&&mode!=='title')openCharacter(mode==='play'?characterButton:mode==='paused'?menuCharacterButton:summaryCharacter);
     return;
   }
   if(e.code==='Escape'){
     if(e.repeat)return;
-    if(mode==='rpg'){e.preventDefault();closeRpgMenu();return}
     if(mode==='character'){e.preventDefault();closeCharacter();return}
-    if(mode==='paused')resumeButton.click();
+    if(mode==='paused'||mode==='title-options'){e.preventDefault();closeJourneyMenu()}
     else if(!powersMenu.hidden)setPowers(false);
     else pauseButton.click();
     return;
@@ -983,7 +1358,7 @@ for(const btn of btns){
   btn.addEventListener('click',e=>{if(e.detail===0)act(action,true)});
 }
 const powersButton=root.querySelector('#kfpowers'),powersMenu=root.querySelector('#kfpower-menu');
-const resumeButton=root.querySelector('#kfresume'),pauseButton=root.querySelector('#kfpause');
+const pauseButton=root.querySelector('#kfpause');
 function setPowers(open){
   powersMenu.hidden=!open;
   powersButton.setAttribute('aria-expanded',String(open));
@@ -993,48 +1368,134 @@ function setPowers(open){
 }
 powersButton.onclick=()=>setPowers(powersMenu.hidden);
 root.addEventListener('pointerdown',e=>{if(!e.target.closest('.powers'))setPowers(false)});
-resumeButton.onclick=()=>{mode='play';modal.style.display='none';resumeButton.hidden=true;summaryCharacter.hidden=true};
-pauseButton.onclick=()=>openRpgMenu('party');
+const journeyMenu=root.querySelector('#kfmenu');
+const journeyMenuClose=root.querySelector('#kfmenu-close');
+const menuSections=Array.from(journeyMenu.querySelectorAll('[data-menu]'));
+const disciplineButtons=Array.from(journeyMenu.querySelectorAll('[data-discipline]'));
+const menuMap=root.querySelector('#kfmenu-map-view').getContext('2d');
+const settingsKey='ki-fighter-settings-v1';
+const settings={screenShake:true,minimap:true};
+try{
+  const saved=JSON.parse(localStorage.getItem(settingsKey));
+  for(const key of Object.keys(settings)){
+    if(typeof saved?.[key]==='boolean')settings[key]=saved[key];
+  }
+}catch{}
+let trainingLocked=false;
+const journalSteps=[
+  'Speak to Master Ren',
+  'Recover all three seal pieces',
+  'Return to Cedar Village',
+  'Place the seal at the Stone Shrine',
+  'Defeat the Forest Guardian',
+];
+function trainingAvailable(){
+  return !trainingLocked&&nearbyLandmark()===mentor&&
+    !enemies.some(e=>e.hp>0&&e.engaged);
+}
+function renderTraining(){
+  const nearMentor=nearbyLandmark()===mentor;
+  const text=trainingAvailable()?'Choose a discipline while resting near Master Ren.':
+    nearMentor?'Finish your current action or leave combat before changing disciplines.':
+      'Return to Master Ren in Cedar Village to change disciplines.';
+  root.querySelector('#kfmenu-training-location').textContent=text;
+  for(const button of disciplineButtons){
+    button.setAttribute('aria-pressed',String(button.dataset.discipline===discipline));
+    button.disabled=!trainingAvailable();
+  }
+}
+function renderJournal(){
+  root.querySelector('#kfmenu-objective').textContent=journeyObjective();
+  const current=journeySteps.indexOf(journeyStep);
+  const entries=journalSteps.map((label,index)=>{
+    const item=document.createElement('li');
+    const checked=index<current;
+    item.dataset.state=checked?'done':index===current?'current':'pending';
+    if(index===current)item.setAttribute('aria-current','step');
+    item.textContent=(checked?'✓ ':'')+label;
+    return item;
+  });
+  root.querySelector('#kfmenu-steps').replaceChildren(...entries);
+  root.querySelector('#kfmenu-watch').textContent=clearedCamps.has('watch')
+    ?'Completed. The northern outpost is clear.'
+    :'Defeat the soldier at the outpost north of the eastern trail for 20 bonus XP.';
+}
+function selectJourneyTab(tab){
+  for(const button of menuSections){
+    const selected=button.dataset.menu===tab;
+    const section=root.querySelector('#'+button.getAttribute('aria-controls'));
+    button.setAttribute('aria-pressed',String(selected));
+    section.hidden=!selected;
+  }
+  if(tab==='journal')renderJournal();
+  if(tab==='training')renderTraining();
+  if(tab==='map')drawNavigationMap(menuMap,true,lim(player.x-W/2,0,MW-W),lim(player.y-H/2,0,MH-H));
+}
+function openTitleOptions(){
+ if(mode!=='title'&&mode!=='end')return;
+ titleOptionsReturn=mode;
+ mode='title-options';
+ modal.style.display='none';
+ root.querySelector('#kfsetting-shake').checked=settings.screenShake;
+ root.querySelector('#kfsetting-minimap').checked=settings.minimap;
+ selectJourneyTab('settings');
+ journeyMenu.showModal();
+ journeyMenuClose.textContent='Back to Title';menuSaveButton.hidden=true;menuTitleButton.hidden=true;
+ journeyMenuClose.focus({preventScroll:true});
+}
+let titleOptionsReturn='title';
+function openJourneyMenu(tab='journal'){
+  if(mode!=='play')return;
+  trainingLocked=Boolean(player.attack||player.beam||player.beamCharge!==null||player.hurt||player.dash||player.blastPose);
+  resetStick();
+  stopKi();
+  resetBeam(player);
+  setPowers(false);
+  held.clear();
+  pressed.clear();
+  for(const button of btns)button.classList.remove('down');
+  mode='paused';
+  menuSaveButton.hidden=false;menuTitleButton.hidden=false;
+  selectJourneyTab(tab);
+  journeyMenu.showModal();
+  journeyMenuClose.focus({preventScroll:true});
+}
+function closeJourneyMenu(){
+  if(mode==='title-options'){
+    journeyMenu.close();mode=titleOptionsReturn;modal.style.display='flex';
+    journeyMenuClose.textContent='Resume';menuSaveButton.hidden=false;menuTitleButton.hidden=false;titleOptions.focus({preventScroll:true});return;
+  }
+  if(mode!=='paused')return;
+  mode='play';
+  journeyMenu.close();
+  pauseButton.focus({preventScroll:true});
+}
+const menuSaveButton=root.querySelector('#kfmenu-save'),menuTitleButton=root.querySelector('#kfmenu-title');
+menuSaveButton.onclick=()=>{if(mode!=='paused')return;saveJourney();menuSaveButton.textContent='Saved ✓';setTimeout(()=>{menuSaveButton.textContent='Save'},1200)};
+menuTitleButton.onclick=()=>{if(mode!=='paused')return;if(!window.confirm('Save progress and return to the title screen?'))return;saveJourney();journeyMenu.close();mode='title';title.textContent='KI FIGHTER';desc.textContent='Continue your Cedar Village adventure or begin a new journey.';modal.style.display='flex';playButton.textContent='Continue';refreshTitleActions();};
+pauseButton.onclick=()=>openJourneyMenu();
+journeyMenuClose.onclick=closeJourneyMenu;
+journeyMenu.addEventListener('cancel',e=>{e.preventDefault();closeJourneyMenu()});
+for(const button of menuSections)button.onclick=()=>selectJourneyTab(button.dataset.menu);
+for(const button of disciplineButtons){
+  button.onclick=()=>{
+    if(mode!=='paused'||!trainingAvailable())return;
+    discipline=button.dataset.discipline;
+    saveJourney();
+    renderTraining();
+  };
+}
+const menuCharacterButton=root.querySelector('#kfmenu-character');
+menuCharacterButton.onclick=()=>openCharacter(menuCharacterButton);
+for(const [key,id] of [['screenShake','kfsetting-shake'],['minimap','kfsetting-minimap']]){
+  const input=root.querySelector('#'+id);
+  input.checked=settings[key];
+  input.onchange=()=>{
+    settings[key]=input.checked;
+    try{localStorage.setItem(settingsKey,JSON.stringify(settings))}catch{}
+  };
+}
 
-const rpgMenu=root.querySelector('#kf-rpg-menu'),rpgTabs=root.querySelector('#kf-rpg-tabs'),rpgBody=root.querySelector('#kf-rpg-body'),rpgActions=root.querySelector('#kf-rpg-actions');
-let rpgTab='party',rpgReturn='play';
-const rpgSections=[['party','Fighters'],['quests','Quests'],['map','World Map'],['settings','Settings']];
-const gameSettings={screenShake:true};
-function menuButton(label,fn,parent=rpgActions){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;parent.appendChild(b);return b}
-function menuText(tag,content,parent=rpgBody){const el=document.createElement(tag);el.textContent=content;parent.appendChild(el);return el}
-function closeRpgMenu(force=false){if(!force&&rpgMenu.hidden)return;rpgMenu.hidden=true;if(!force&&mode==='rpg'){mode='play';if(mode==='play')pauseButton.focus()}}
-function openRpgMenu(tab='party'){
- if(!['play','paused'].includes(mode))return;
- rpgReturn='play';
- if(mode==='play'){resetStick();stopKi();resetBeam(player);held.clear();pressed.clear();setPowers(false)}
- mode='rpg';rpgTab=tab;rpgMenu.hidden=false;modal.style.display='none';renderRpgMenu();rpgTabs.querySelector('button')?.focus()
-}
-function renderRpgMenu(){
- rpgTabs.replaceChildren();rpgBody.replaceChildren();rpgActions.replaceChildren();
- root.querySelector('#kf-rpg-title').textContent=rpgTab==='party'?'Fighter Select':rpgTab==='quests'?'Quest Journal':rpgTab==='map'?'World Map':'Game Settings';
- for(const [key,label] of rpgSections){const b=menuButton(label,()=>{rpgTab=key;renderRpgMenu()},rpgTabs);b.setAttribute('aria-selected',String(key===rpgTab));b.setAttribute('role','tab')}
- if(rpgTab==='party'){
-  menuText('p','Choose your active fighter. Progress is saved separately for each character.');
-  for(let i=0;i<roster.length;i++){const ch=roster[i],stats=rosterStats[i],row=menuText('div','',rpgBody);row.className='rpg-row';menuText('strong',(i===activeFighter?'▶ ':'')+ch.name+' — '+ch.role,row);menuText('div','Level '+stats.level+' · Strength '+stats.str+' · Ki '+stats.kistat+' · Dexterity '+stats.dex,row);const b=menuButton(i===activeFighter?'Active Fighter':'Select Fighter',()=>{if(selectFighter(i,true))renderRpgMenu();else notice('Finish your attack before switching')},row);b.disabled=i===activeFighter||!canSwitchFighter()}
-  menuButton('Upgrade Stats',()=>{closeRpgMenu();openCharacter(characterButton)});
- }else if(rpgTab==='quests'){
-  menuText('h3','Saiyan Saga · Prologue');menuText('p',quest==='new'?'Find the village mentor to begin your mission.':quest==='active'?'Defeat the scouts east of the village: '+questKills+' / 3':quest==='return'?'The scouts are defeated. Return to your mentor for the reward.':'Completed · The Saiyan threat is approaching.');
-  menuText('p','Main story: Saiyan Saga → Namek → Frieza → Androids → Cell → Majin Buu.');
- }else if(rpgTab==='map'){
-  menuText('h3','Earth · Village and Eastern Forest');menuText('p','Schematic overview (not a terrain-accurate map).');const map=menuText('div','',rpgBody);map.className='rpg-map';const mark=menuText('span','● YOU',map);mark.style.left=player?Math.max(2,Math.min(90,player.x/MW*100))+'%':'14%';mark.style.top=player?Math.max(4,Math.min(88,player.y/MH*100))+'%':'50%';const village=menuText('span','Village',map);village.style.cssText='left:5%;top:12%';const forest=menuText('span','Eastern Forest',map);forest.style.cssText='right:6%;top:12%';menuText('p','Travel east from the village to reach the scout encounter. Your marker shows approximate world position.');
- }else{
-  menuText('h3','Preferences');
-  menuText('p','Audio controls will appear when game audio is implemented.');
-  const shake=menuText('label','',rpgBody),shakeInput=document.createElement('input');shakeInput.type='checkbox';shakeInput.checked=gameSettings.screenShake;shakeInput.onchange=()=>{gameSettings.screenShake=shakeInput.checked;saveSettings()};shake.append(shakeInput,document.createTextNode(' Screen shake'));
-  menuText('p','Controls: WASD / arrows move · Q switch · C profile · Shift dash · R recharge · Esc menu.');
- }
- menuButton('Resume Game',()=>{closeRpgMenu();modal.style.display='none'});
- menuButton('Save Now',()=>{saveWorld();menuText('p','Progress saved on this device.')});
- menuButton('Retry From Save',()=>start());menuButton('New Game',()=>{if(window.confirm('Erase this adventure save and start a new game?'))resetAdventure()});
-}
-function saveSettings(){try{localStorage.setItem('ki-fighter-settings-v1',JSON.stringify(gameSettings))}catch(e){}}
-try{Object.assign(gameSettings,JSON.parse(localStorage.getItem('ki-fighter-settings-v1'))||{})}catch(e){}
-rpgMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeRpgMenu()}});
 const healingDelay=3,healingRate=8;
 function spendKi(p,amount){
   p.ki=Math.max(0,p.ki-amount);
@@ -1125,11 +1586,56 @@ function drawEnemyWarning(e){
   }
   c.restore();
 }
+function campAllowsCombat(e,p,distance,dt){
+  if(e.homeX===undefined)return true;
+  const homeDistance=hyp(e.homeX-e.x,e.homeY-e.y);
+  const playerFromCamp=hyp(e.homeX-p.x,e.homeY-p.y);
+  const tooFar=homeDistance>92||playerFromCamp>111||distance>110;
+  if(e.engaged&&tooFar){
+    e.engaged=false;
+    e.returning=true;
+    e.attack=null;
+  }
+  if(!e.engaged&&!e.returning&&distance<=e.radius){
+    e.engaged=true;
+    e.alertUntil=storyClock+.75;
+    e.cd=Math.max(e.cd,.30);
+  }
+  if(e.engaged)return true;
+  const oldX=e.x,oldY=e.y;
+  if(e.returning&&homeDistance>3){
+    const dx=(e.homeX-e.x)/homeDistance,dy=(e.homeY-e.y)/homeDistance;
+    e.faceAngle=turnToward(e.faceAngle,Math.atan2(dy,dx),dt);
+    move(e,dx*48*dt,dy*48*dt);
+    // Route around a tree without jumping back to the camp.
+    if(hyp(e.x-oldX,e.y-oldY)<.001){
+      const side=e.flank;
+      move(e,-dy*side*34*dt,dx*side*34*dt);
+    }
+  }else{
+    e.returning=false;
+    const phase=storyClock*.55+e.phase*1.56;
+    // The guardian holds its ground. Small camps patrol their clearing.
+    const radius=e.boss?0:8;
+    const dx=e.homeX+Math.sin(phase)*radius-e.x;
+    const dy=e.homeY+(Math.cos(phase)-1)*radius*.37-e.y;
+    if(hyp(dx,dy)>1){
+      e.faceAngle=turnToward(e.faceAngle,Math.atan2(dy,dx),dt);
+      move(e,dx*dt*1.5,dy*dt*1.5);
+    }
+  }
+  const stride=hyp(e.x-oldX,e.y-oldY);
+  e.walking=stride>.001;
+  e.stride=animationDamp(e.stride,e.walking?1:0,dt,12);
+  e.gait=(e.gait+stride*.25)%(Math.PI*2);
+  return false;
+}
 function advanceEnemy(e,p,dt){
   e.flash=Math.max(0,e.flash-dt);
   e.cd-=dt;
   if(e.hurt>0){e.hurt=Math.max(0,e.hurt-dt);e.stride=animationDamp(e.stride||0,0,dt,16);return}
   const dx=p.x-e.x,dy=p.y-e.y,distance=hyp(dx,dy);
+  if(!campAllowsCombat(e,p,distance,dt))return;
   const ranged=e.kind==='ninja',reach=e.boss?32:23;
   if(e.attack){
     const attack=e.attack;
@@ -1189,7 +1695,7 @@ function damagePlayer(amount,dx=0,dy=0){
   player.attack=0;
   hurtReaction(player,dx,dy);
 }
-function update(dt){now+=dt;if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+function update(dt){now+=dt;partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){
@@ -1197,7 +1703,7 @@ for(const prop of breakableProps){
   if(prop.fall>0)prop.fall=Math.max(0,prop.fall-dt);
 }
 let p=player;
-switchCD=Math.max(0,switchCD-dt);const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
+const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
 p.rechargeVisual=animationDamp(p.rechargeVisual,rechargeTarget,dt,rechargeTarget?18:12);
 recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;p.surge=false}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
@@ -1225,7 +1731,8 @@ for(const enemy of enemies){
   if(mode!=='play')break;
   if(enemy.hp>0)advanceEnemy(enemy,p,dt);
 }
-for(let e of enemies.filter(e=>e.hp<=0)){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;p.xp+=enemyExperience[e.kind];if(quest==='active'&&e.kind==='bandit'){questKills=Math.min(3,questKills+1);if(questKills===3){quest='return';notice('REPORT BACK TO YOUR MENTOR!')}}if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);if(mode==='play'){const beforeLevel=p.level,beforeXP=p.xp;applyLevelUps(p);if(kills>savedKills||p.level!==beforeLevel||p.xp!==beforeXP){savedKills=kills;saveWorld()}}/* Quest-driven enemies; no automatic waves. */}
+const defeated=enemies.filter(e=>e.hp<=0);
+for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;p.xp+=enemyExperience[e.kind];updateJourneyDefeat(e);if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
 const characterDialog=root.querySelector('#kfcharacter');
 const characterButton=root.querySelector('#kfcharacter-open');
 const summaryCharacter=root.querySelector('#kfcharacter-summary');
@@ -1236,8 +1743,9 @@ const pointBadge=root.querySelector('#kfpoint-badge');
 let characterReturnMode='play',characterOpener=null;
 function updateCharacterScreen(){
   if(!player)return;
+  renderFighterRoster();
   const p=player;
-  characterDialog.querySelector('#kfcharacter-level').textContent=roster[activeFighter].name+' ('+roster[activeFighter].role+') · Level '+p.level;
+  characterDialog.querySelector('#kfcharacter-level').textContent='Ki Fighter · Level '+p.level;
   characterDialog.querySelector('#kfcharacter-xp').textContent=p.xp+' / '+xpRequired(p.level)+' XP';
   characterDialog.querySelector('#kfcharacter-points').textContent=p.points+' available '+(p.points===1?'point':'points');
   const values={str:p.str,ki:p.kistat,dex:p.dex};
@@ -1276,7 +1784,7 @@ function openCharacter(opener){
   characterDialog.showModal();
   characterBack.focus({preventScroll:true});
 }
-function closeCharacter(){saveWorld();
+function closeCharacter(){
   if(mode!=='character')return;
   characterDialog.close();
   mode=characterReturnMode;
@@ -1294,7 +1802,7 @@ for(const button of upgradeButtons){
     if(stat==='ki')player.kistat++;
     else player[stat]++;
     player.points--;
-    saveWorld();
+    saveJourney();
     updateCharacterScreen();
     if(!player.points)characterBack.focus({preventScroll:true});
   };
@@ -1469,6 +1977,18 @@ function enemyArt(o){
     renderKiOrb(9,-13,1.25+strength*2,true);
   }
   c.restore();
+  if(o.engaged&&o.alertUntil>storyClock){
+    c.save();
+    c.font='bold 11px system-ui';
+    c.textAlign='center';
+    c.lineWidth=2.5;
+    c.strokeStyle='#292022';
+    c.fillStyle='#ffe29a';
+    const y=o.y-(o.boss?49:39);
+    c.strokeText('!',o.x,y);
+    c.fillText('!',o.x,y);
+    c.restore();
+  }
 }
 const forestAtlas=new Image();
 forestAtlas.src='assets/forest-detail.webp';
@@ -1481,8 +2001,12 @@ const scenery=rocks.map((rock,i)=>({...rock,variant:i%5===0?7:3,scale:terrainBet
 for(let i=0;i<105;i++){
   const x=terrainBetween(18,MW-18),y=terrainBetween(18,MH-18);
   const inPond=((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1.06;
-  if(inPond||Math.abs(y-275)<18||Math.abs(x-352)<15)continue;
+  if(inPond||worldClearance(x,y)||Math.abs(y-275)<18||Math.abs(x-352)<15)continue;
   scenery.push({x,y,variant:i%6===0?2:i%3===0?6:4,scale:terrainBetween(.58,1.05)});
+}
+for(const [x,y,variant] of [[63,222,2],[130,216,4],[183,193,6],[252,208,2],
+  [73,338,2],[134,362,4],[231,349,7],[276,304,4],[296,237,2],[54,311,6]]){
+  scenery.push({x,y,variant,scale:.9});
 }
 for(let i=0;i<20;i++){
   const angle=i/20*Math.PI*2;
@@ -1868,7 +2392,7 @@ function drawStrike(o,type,progress){
 // Whole-body frames cut from the approved board. Effects use the palm
 // coordinates of the same displayed frame and are drawn independently.
 const approvedHero=new Image();
-approvedHero.src='assets/hero-approved.webp';
+approvedHero.src='assets/hero-approved.webp?v=orange';
 const approvedEffects=new Image();
 approvedEffects.src='assets/hero-approved-effects.webp';
 const approvedEffectSizes=[[61,61],[126,38],[135,36],[230,92],[129,106],[160,95],[106,105]];
@@ -1937,26 +2461,72 @@ function approvedHeroPose(o,referencePose){
     return pose(11,frameInClip(progress,4));
   }
   if(referencePose==='recharge'){
-    if(vertical)return pose(directionRow+1,0,1);
+    if(vertical)return pose(rear?19:16,0,1);
     return pose(8,frameInClip(o.rechargeVisual,4));
   }
-  if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/.32,4));
+  if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/surgeIgnitionTime,4));
   if(o.stride>.18){
     if(vertical)return pose(directionRow,frameInClip(gait,4)+1,1);
     return pose(1,frameInClip(gait,4),side);
   }
-  if(vertical)return pose(directionRow,0,1);
+  if(vertical)return pose(o.surge?(rear?19:16):directionRow,0,1);
   if(o.surge)return pose(13,frameInClip((storyClock*2.2)%1,4));
   return pose(0,blend>.17?1:0,side);
 }
-function drawApprovedHero(o,referencePose){
-  const {row,frame,side}=approvedHeroPose(o,referencePose);
-  const sourceRow=row+(o.surge?20:0);
+const matchingActions=new Image();
+matchingActions.src='assets/matching-actions.webp';
+const matchingMeleeKeys=[[0,0],[.16,1],[.31,2],[.50,3],[.73,4],[1,5]];
+function matchingActionFrame(o,pose){
+  switch(pose.row){
+    case 0:return [3,pose.frame===1?1:0];
+    case 1:return [0,frameInClip((o.gait/(Math.PI*2))%1,6)];
+    case 2:return [3,o.dash>.105?2:3];
+    case 3:
+    case 4:{
+      const strike=strikes[o.strike];
+      const progress=1-o.attack/o.attackDuration;
+      return [pose.row-2,visibleFrame(matchingMeleeKeys,actionPhase(progress,strike.impact,1-strike.impact,.5))];
+    }
+    case 5:return [3,pose.frame<3?4:0];
+    case 6:return pose.frame===3?[3,5]:null;
+    case 7:return [8,o.blastPose>.075?3:4];
+    case 8:return [9,Math.max(1,frameInClip(o.rechargeVisual*.76+(storyClock*.22)%1*.24,6))];
+    case 12:return [10,1+frameInClip(1-o.surgeFlare/surgeIgnitionTime,5)];
+    case 13:return [10,4+frameInClip((storyClock*2.2)%1,2)];
+    case 14:return [4,pose.frame];
+    case 15:return [6,pose.frame];
+    case 16:return [6,0];
+    case 17:return [5,pose.frame];
+    case 18:return [7,pose.frame];
+    case 19:return [7,0];
+    default:return null;
+  }
+}
+function drawHeroAtlasFrame(image,row,frame,side){
   const size=approvedCell*approvedScale;
   c.scale(side,1);
-  c.drawImage(approvedHero,frame*approvedCell,sourceRow*approvedCell,approvedCell,approvedCell,
+  c.drawImage(image,frame*approvedCell,row*approvedCell,approvedCell,approvedCell,
     -approvedAnchor[0]*approvedScale,-approvedAnchor[1]*approvedScale,size,size);
 }
+function drawApprovedHero(o,referencePose){
+  const recovery=!o.beam&&o.beamCharge===null&&o.beamRecoveryUntil>now&&!o.walking&&
+    !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!referencePose
+    ? Math.max(.001,1-(o.beamRecoveryUntil-now)/beamRecoveryTime):0;
+  const casting=o.beam||o.beamCharge!==null;
+  const body=o.hp>0&&!o.hurt&&(casting||recovery)?beamBodyPose(o,recovery):null;
+  if(body){
+    drawHeroAtlasFrame(beamBodyArt,body.row+(o.surge?6:0),body.frame,body.side);
+    return;
+  }
+  const pose=approvedHeroPose(o,referencePose);
+  const matched=atlasReady(matchingActions)?matchingActionFrame(o,pose):null;
+  if(matched){
+    drawHeroAtlasFrame(matchingActions,matched[0]+(o.surge&&matched[0]!==10&&o.surgeFlare<surgeIgnitionTime*.54?13:0),matched[1],pose.side);
+    return;
+  }
+  drawHeroAtlasFrame(approvedHero,pose.row+(o.surge?20:0),pose.frame,pose.side);
+}
+
 function character(o,type,referencePose){
   c.save();
   c.translate(o.x,o.y);
@@ -2131,6 +2701,46 @@ function renderKiPulse(f){
   }
   c.restore();
 }
+const surgeIgnitionTime=.47;
+function drawSurgeAura(p){
+  const age=surgeIgnitionTime-p.surgeFlare;
+  const flare=lim(age/surgeIgnitionTime,0,1);
+  const ignition=animationEase((flare-.2)/.18)*(1-animationEase((flare-.59)/.41));
+  const breathing=1+.05*Math.sin(storyClock*16)+.026*Math.sin(storyClock*25);
+  const width=38*breathing+ignition*11;
+  const height=39+ignition*15+Math.sin(storyClock*22)*1.6;
+  c.globalAlpha=(.77+.13*Math.sin(storyClock*17))*animationEase(flare/.34);
+  drawApprovedEffect(6,-width/2,4-height,width,height);
+
+  if(ignition>.01){
+    const spread=44+flare*29;
+    c.globalAlpha=ignition;
+    drawApprovedEffect(5,-spread/2,4-spread*.66,spread,spread*.66);
+    const radius=9+flare*36;
+    c.lineWidth=1.05;
+    c.strokeStyle='#ffefb2';
+    c.beginPath();
+    c.ellipse(0,3,radius,radius*.24,0,0,Math.PI*2);
+    c.stroke();
+  }
+
+  // Sparks rise along alternating sides while the body and ground stay readable.
+  for(let i=0;i<7;i++){
+    const rise=(storyClock*(1.07+i*.07)+i*.37)%1;
+    const side=i%2?1:-1;
+    const x=side*(10+Math.sin(i*5.1+rise*7)*3+rise*8);
+    const y=2-rise*(height+5);
+    c.globalAlpha=Math.sin(rise*Math.PI)*(.3+.5*animationEase(flare/.4));
+    c.strokeStyle=i%3===0?'#fff5be':'#ffb744';
+    c.lineWidth=i%3===0?1.2:.7;
+    c.beginPath();
+    c.moveTo(x-side*2,y+4);
+    c.lineTo(x+side,y+1);
+    c.lineTo(x-side*.1,y+1);
+    c.lineTo(x+side*3,y-4);
+    c.stroke();
+  }
+}
 function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 function energyAura(p){
   if(!storyReady())return;
@@ -2139,22 +2749,18 @@ function energyAura(p){
   c.scale(poseSide(p),1);
   const flicker=(.93+.07*Math.sin(storyClock*14))*(p.surge?1:p.rechargeVisual);
   if(atlasReady(approvedEffects)){
-    const pulse=1+.055*Math.sin(storyClock*19);
-    const ignition=p.surge?animationEase(p.surgeFlare/.25):0;
-    const size=(p.surge?44:32+18*p.rechargeVisual)*pulse;
-    c.globalAlpha=flicker*(1-ignition*.8);
-    drawApprovedEffect(p.surge?6:4,-size/2,4-size,size,size);
-    if(ignition>0){
-      const burst=52+13*(1-ignition);
-      c.globalAlpha=flicker*ignition;
-      drawApprovedEffect(5,-burst/2,4-burst*.69,burst,burst*.69);
+    if(p.surge)drawSurgeAura(p);
+    else{
+      const size=(32+18*p.rechargeVisual)*(1+.055*Math.sin(storyClock*19));
+      c.globalAlpha=flicker;
+      drawApprovedEffect(4,-size/2,4-size,size,size);
     }
     c.restore();
     return;
   }
   const rippleHeight=storyScale*(1+.045*Math.sin(storyClock*17));
   if(p.surge&&atlasReady(kiActions)){
-    const progress=lim(1-p.surgeFlare/.32,0,1);
+    const progress=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
     const size=58;
     c.globalAlpha=flicker;
     if(progress<1){
@@ -2171,7 +2777,7 @@ function energyAura(p){
   c.globalAlpha=flicker*(1-ignition);
   if(ignition<1)drawStoryMotion(p.surge?'sustainAura':'rechargeAura',storyClock,storyScale,rippleHeight);
   if(ignition>0){
-    const age=.32-p.surgeFlare;
+    const age=surgeIgnitionTime-p.surgeFlare;
     const expansion=1+.20*animationEase(age/.16);
     c.globalAlpha=flicker*ignition;
     drawStoryMotion('igniteAura',age,storyScale*expansion,rippleHeight);
@@ -2187,17 +2793,193 @@ function renderSceneryDebris(f){
   c.fillRect(-f.size*.5,-f.size*.3,f.size,f.size*.63);
   c.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&gameSettings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);villageArt();const northBeam=player?.beam&&castDirection(player)<0;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-36||o.x>x+W+36||o.y<y-62||o.y>y+H+67)continue;if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose);if(activeFighter!==0){c.save();c.strokeStyle=roster[activeFighter].color;c.lineWidth=2;c.beginPath();c.ellipse(o.x,o.y-17,12,24,0,0,Math.PI*2);c.stroke();c.restore()}}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();renderHUD();questUI()}
-const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','wave','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
+const worldProps=new Image();
+worldProps.src='assets/world-props.webp';
+const mentorArt=new Image();
+mentorArt.src='assets/mentor.webp';
+const worldSpriteFrames={cottage:0,hall:1,tent:2,sign:3,fire:4,shrine:5};
+function drawWorldLabel(text,x,y){
+  c.font='bold 8px system-ui';
+  c.textAlign='center';
+  c.lineWidth=2.7;
+  c.lineJoin='round';
+  c.strokeStyle='#1c271f';
+  c.fillStyle='#ffe5a7';
+  c.strokeText(text,x,y);
+  c.fillText(text,x,y);
+}
+function drawWorldObject(o){
+  c.save();
+  c.translate(o.x,o.y);
+  if(o===mentor){
+    c.fillStyle='#132920a2';
+    c.beginPath();
+    c.ellipse(0,2,8,2.6,0,0,Math.PI*2);
+    c.fill();
+    if(atlasReady(mentorArt)){
+      const greeting=mentorGestureUntil-storyClock;
+      const frame=greeting>0?(greeting>.37?2:3):storyClock%3.9>3.72?1:0;
+      c.drawImage(mentorArt,frame*192,0,192,192,-19,-34,38,38);
+    }
+    drawWorldLabel('Master Ren',0,-32);
+    c.restore();
+    return;
+  }
+  c.fillStyle='#132a21a0';
+  c.beginPath();
+  c.ellipse(0,-1,o.w*.51,o.h*.13,0,0,Math.PI*2);
+  c.fill();
+  if(atlasReady(worldProps)){
+    const h=o.h+(o.world==='fire'?Math.sin(storyClock*17+o.x)*1.5:0);
+    c.drawImage(worldProps,worldSpriteFrames[o.world]*224,0,224,224,-o.w/2,-h,o.w,h);
+  }
+  if(o.world==='fire'||o.world==='shrine'){
+    const fire=o.world==='fire';
+    const y=fire?-8:-25;
+    const radius=fire?12:17;
+    const glow=c.createRadialGradient(0,y,1,0,y,radius);
+    glow.addColorStop(0,fire?'#ffb85361':'#91f7f259');
+    glow.addColorStop(1,fire?'#f99b3c00':'#46dadb00');
+    c.fillStyle=glow;
+    c.fillRect(-radius,y-radius,radius*2,radius*2);
+    c.fillStyle=fire?'#ffbb58':'#9df9e8';
+    for(let i=0;i<4;i++){
+      const phase=(storyClock*(.7+.07*i)+i*.29+o.x*.11)%1;
+      c.globalAlpha=Math.sin(phase*Math.PI)*.76;
+      c.fillRect(Math.sin(phase*4+i*2.3)*(1+phase*5),y-phase*(fire?20:16),1,1.3);
+    }
+  }else if(o.world==='hall'){
+    c.fillStyle='#ffcb7460';
+    c.globalAlpha=.55+.20*Math.sin(storyClock*6);
+    c.fillRect(-17,-23,3,5);
+    c.fillRect(14,-23,3,5);
+  }
+  c.restore();
+}
+function drawWorldWater(view){
+  if(pond.x+pond.rx<view||pond.x-pond.rx>view+W)return;
+  c.save();
+  c.beginPath();
+  c.ellipse(pond.x,pond.y,pond.rx-2,pond.ry-2,0,0,Math.PI*2);
+  c.clip();
+  c.strokeStyle='#c3f2e1';
+  c.lineWidth=.54;
+  for(let i=0;i<13;i++){
+    const phase=(storyClock*.31+i*.17)%1;
+    const x=pond.x+Math.sin(3.78*i)*65+phase*12;
+    const y=pond.y+Math.sin(i*2.6)*44;
+    c.globalAlpha=Math.sin(phase*Math.PI)*.30;
+    c.beginPath();
+    c.ellipse(x,y,2+phase*7,1.1+phase*.75,0,.12,Math.PI-.2);
+    c.stroke();
+  }
+  c.restore();
+}
+const minimapPanel=root.querySelector('#kfminimap');
+const minimapCanvas=root.querySelector('#kfminimap-view');
+const minimapInk=minimapCanvas.getContext('2d');
+const minimapTerrain=document.createElement('canvas');
+minimapTerrain.width=minimapCanvas.width;
+minimapTerrain.height=minimapCanvas.height;
+const minimapGround=minimapTerrain.getContext('2d');
+const mapRatio=minimapCanvas.width/MW;
+minimapGround.drawImage(map,0,0,minimapTerrain.width,minimapTerrain.height);
+minimapGround.scale(mapRatio,mapRatio);
+for(const tree of trees){
+  minimapGround.fillStyle='#21362b';
+  minimapGround.beginPath();
+  minimapGround.arc(tree.x,tree.y-7,9*tree.scale,0,Math.PI*2);
+  minimapGround.fill();
+}
+for(const {x,y,solidW,solidH,world} of worldObjects){
+  if(!solidW)continue;
+  minimapGround.fillStyle=world==='hall'?'#a46849':world==='cottage'?'#81934e':'#786052';
+  minimapGround.fillRect(x-solidW/2,y-solidH,solidW,solidH);
+}
+function minimapObjectives(){
+  switch(journeyStep){
+    case 'meet':
+    case 'return':return [mentor];
+    case 'recover':return encounters.filter(o=>shardIds.includes(o.id)&&!clearedCamps.has(o.id));
+    case 'shrine':return [shrine];
+    case 'guardian':return enemies.filter(o=>o.id==='guardian'&&o.hp>0);
+    default:return [];
+  }
+}
+function drawMinimap(viewX,viewY){
+  minimapPanel.hidden=!player||mode==='title'||!settings.minimap;
+  if(!minimapPanel.hidden)drawNavigationMap(minimapInk,false,viewX,viewY);
+}
+function drawNavigationMap(ink,expanded,viewX,viewY){
+  ink.save();
+  const scale=expanded?2:1;
+  ink.setTransform(scale,0,0,scale,0,0);
+  ink.drawImage(minimapTerrain,0,0);
+  ink.strokeStyle='#e0d5ae65';
+  ink.lineWidth=1.5;
+  ink.strokeRect(viewX*mapRatio,viewY*mapRatio,W*mapRatio,H*mapRatio);
+  for(const enemy of enemies){
+    if(enemy.hp<=0||(!expanded&&hyp(enemy.homeX-player.x,enemy.homeY-player.y)>190))continue;
+    ink.fillStyle='#4d2824';
+    ink.fillRect(enemy.homeX*mapRatio-4,enemy.homeY*mapRatio-4,8,8);
+    ink.fillStyle='#ed8653';
+    ink.fillRect(enemy.homeX*mapRatio-2.5,enemy.homeY*mapRatio-2.5,5,5);
+  }
+  for(const {x,y} of minimapObjectives()){
+    ink.save();
+    ink.translate(x*mapRatio,y*mapRatio);
+    ink.rotate(Math.PI/4);
+    ink.fillStyle='#2a211b';
+    ink.fillRect(-5,-5,10,10);
+    ink.fillStyle='#ffda7e';
+    ink.fillRect(-3.5,-3.5,7,7);
+    ink.restore();
+  }
+  ink.save();
+  ink.translate(player.x*mapRatio,player.y*mapRatio);
+  ink.rotate(player.faceAngle);
+  ink.fillStyle='#fff9e9';
+  ink.strokeStyle='#23333a';
+  ink.lineWidth=2.5;
+  ink.lineJoin='round';
+  ink.beginPath();
+  ink.moveTo(7,0);
+  ink.lineTo(-5,-4.5);
+  ink.lineTo(-3,0);
+  ink.lineTo(-5,4.5);
+  ink.closePath();
+  ink.stroke();
+  ink.fill();
+  ink.restore();
+  if(expanded){
+    ink.font='bold 8px system-ui';
+    ink.textAlign='center';
+    ink.strokeStyle='#1a2824';
+    ink.fillStyle='#fff0cf';
+    ink.lineWidth=2.5;
+    for(const [label,x,y] of [['Cedar Village',155,147],['Cedar Forest',533,145],['Stone Shrine',925,147]]){
+      ink.strokeText(label,x*mapRatio,y*mapRatio);
+      ink.fillText(label,x*mapRatio,y*mapRatio);
+    }
+  }
+  ink.restore();
+}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.translate(-x,-y);drawWorldWater(x);const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
+  partySwitchButton.hidden=mode!=='play';partySwitchButton.disabled=!canChangeFighter();partySwitchButton.textContent='Switch [Q] · '+fighters[fighterIndex].name;
   hud['hp-meter'].style.transform=`scaleX(${player?player.hp/player.max:1})`;
   hud['ki-meter'].style.transform=`scaleX(${player?player.ki/player.mki:1})`;
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
-  const labels={xp:`${xp} / ${required} XP`,lv:`LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)} Ki`,wave:`${roster[activeFighter].name} · Prologue`,ko:`${kills} KO`,notice:msg};
+  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)} Ki`,region:player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village',ko:`${kills} KO`,notice:msg};
   for(const [key,value] of Object.entries(labels)){
     if(hud[key].textContent!==value)hud[key].textContent=value;
   }
+  const instruction=player?journeyObjective():'';
+  if(objective.textContent!==instruction)objective.textContent=instruction;
+  objective.hidden=!player||mode==='title';
+  interactButton.hidden=mode!=='play'||!nearbyLandmark();
   hud.notice.hidden=messageTimer<=0;
   const points=player?.points??0;
   pointBadge.hidden=points===0;
