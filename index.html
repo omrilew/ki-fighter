@@ -2761,9 +2761,11 @@ function approvedHeroPose(o,referencePose){
     return pose(8,frameInClip(o.rechargeVisual,4));
   }
   if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/surgeIgnitionTime,4));
-  if(o.stride>.18){
+  if(o.walking||o.stride>.18){
+    // All four directions retain distinct source rows; the 6-frame lateral
+    // cycle uses the matching-actions atlas rather than a static idle pose.
     if(vertical)return pose(directionRow,frameInClip(gait,4)+1,1);
-    return pose(1,frameInClip(gait,4),side);
+    return pose(1,frameInClip(gait,6),side);
   }
   if(vertical)return pose(o.surge?(rear?19:16):directionRow,0,1);
   if(o.surge)return pose(13,frameInClip((storyClock*2.2)%1,4));
@@ -2815,6 +2817,8 @@ function drawApprovedHero(o,referencePose){
     return;
   }
   const pose=approvedHeroPose(o,referencePose);
+  // Movement and attacks use the same atlas resolver in both forms. No
+  // cinematic sheet is ever stretched across walking/action frames.
   const matched=atlasReady(matchingActions)?matchingActionFrame(o,pose):null;
   if(matched){
     drawHeroAtlasFrame(matchingActions,matched[0]+(o.surge&&matched[0]!==10&&o.surgeFlare<surgeIgnitionTime*.54?13:0),matched[1],pose.side);
@@ -2831,12 +2835,12 @@ function drawApprovedHero(o,referencePose){
 function fighterAnimationState(o){
   if(o.hp<=0)return 'ko';
   if(o.hurt>0)return 'hurt';
+  // The transformation must win over every other pose while its cinematic
+  // timer is active, including movement, beam and combat input.
+  if(o.surge&&o.surgeFlare>0)return 'transform';
   if(o.beam||o.beamCharge!==null||o.blastPose>0)return 'ki';
   if(o.attack>0)return 'attack';
   if(o.dash>0)return 'dash';
-  // Transformation is a locked cinematic, not an idle/walk override.
-  // Keep it ahead of movement so the 12-frame sheet can complete uninterrupted.
-  if(o.surge&&o.surgeFlare>0)return 'transform';
   if(o.walking||o.stride>.18)return 'walk';
   if(o.rechargeVisual>.015||held.has('charge'))return 'charge';
   return 'idle';
