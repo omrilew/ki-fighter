@@ -2841,6 +2841,7 @@ function detailedSsjFrame(o){
   return 9+(Math.floor(storyClock/.24)%3);
 }
 function drawDetailedSsj(o){
+  if(ssjDebug.textContent.indexOf('DRAWING')<0)ssjDebug.textContent='SSJ12: DRAWING';
   const art=ssjTransformationAtlas,frame=detailedSsjFrame(o);
   const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
   const ignite=o.surge&&o.surgeFlare>0;
@@ -3207,6 +3208,14 @@ const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
 const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
+const ssjDebug=document.createElement('div');
+ssjDebug.id='ssj-render-debug';
+ssjDebug.style.cssText='position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:9999;padding:3px 7px;background:#10263de8;color:#fff4aa;border:1px solid #ffd55b;border-radius:4px;font:11px monospace;pointer-events:none';
+ssjDebug.textContent='SSJ12: loading';
+root.appendChild(ssjDebug);
+ssjTransformationAtlas.addEventListener('load',()=>{ssjDebug.textContent='SSJ12: loaded '+ssjTransformationAtlas.naturalWidth+'x'+ssjTransformationAtlas.naturalHeight;});
+ssjTransformationAtlas.addEventListener('error',()=>{ssjDebug.textContent='SSJ12: IMAGE FAILED';ssjDebug.style.color='#ff7070';});
+
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
 const mentorArt=new Image();
