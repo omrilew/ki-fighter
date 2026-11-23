@@ -23,6 +23,13 @@ def energy_mask(sheet,cols,rows,cell_w,cell_h):
                 # only if adjacent to strongly cyan pixels.
                 h,s,v=colorsys.rgb_to_hsv(red/255,green/255,blue/255)
                 cyan=(.46<=h<=.64 and s>.21 and blue>red*1.12 and blue>green*.90)
+                # Charge concept has blue wristbands and dark blue clothing.
+                # Only keep outer aura flames, never the character silhouette.
+                if rows==3:
+                    nx=x/max(1,tile.width-1)
+                    ny=y/max(1,tile.height-1)
+                    outer=(nx<.27 or nx>.73 or ny<.13)
+                    cyan=cyan and outer
                 px[x,y]=(red,green,blue,alpha if cyan else 0)
         # The artwork uses a white/checkered background, now fully transparent.
         # Keep entire frame registration stable; no bounding-box per-frame scaling.
