@@ -49,8 +49,9 @@ Branching event graph, episode quests, companion unlocks, boss states, dialogue 
 - Goku and Raditz return to Earth **together** when Nappa and Vegeta invade.
 - Raditz stands with Goku and the Earth defenders against his former Saiyan allies. This is his first public test of loyalty and redemption.
 - Vegeta and Nappa recognize Raditz as a former subordinate and challenge his change of allegiance; he must prove his choice through action, not just words.
-- The exact battle choreography, whether Nappa survives, Vegeta's fate, and which defenders survive remain **open major-event decisions** for the user.
+- **Locked:** Nappa is defeated and Vegeta kills him, as in the original Saiyan Saga. Raditz does not save Nappa, and Nappa does not escape or receive a redemption arc.
+- The exact battle choreography, Vegeta's fate and which defenders survive remain **open major-event decisions** for the user. Nappa's original fate is locked: after his defeat, Vegeta kills him.
 - Maintain continuity: original double death by Piccolo's attack → shared King Kai training → earned redemption → joint return against Nappa and Vegeta.
 
 ### Locked flags
-`raditz_returns_with_goku=true`, `raditz_fights_for_earth=true`, `saiyan_invasion_two_brothers=true`.
+`raditz_returns_with_goku=true`, `raditz_fights_for_earth=true`, `saiyan_invasion_two_brothers=true`, `nappa_killed_by_vegeta=true`.
