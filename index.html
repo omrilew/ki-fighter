@@ -3345,19 +3345,33 @@ function drawSurgeAura(p){
 }
 function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 // Single authoritative aura renderer. Charge never selects beam/casting poses.
+function auraFallback(p,color,stage){
+  // Never hide all Ki effects when the external illustrated asset pack fails.
+  if(!atlasReady(approvedEffects))return;
+  const w=[43,57,69,82][stage],h=[54,77,94,112][stage];
+  c.save();c.translate(p.x,p.y);c.globalAlpha=.9;
+  if(color==='gold'){
+    drawApprovedEffect(6,-w/2,6-h,w,h);
+  }else{
+    // Existing approved blue Ki energy art is a safe visual fallback.
+    drawApprovedEffect(4,-w/2,6-h,w,h);
+  }
+  c.restore();
+}
 function drawSsjAura(p){
   const charging=held.has('charge')&&p.surge;
   const transforming=p.surgeFlare>0;
-  if(!charging&&!transforming){window.KFPixelAura?.draw(c,p.x,p.y,'gold',0,storyClock,.5);return}
+  if(!charging&&!transforming)return;
   const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
   const stage=transforming?3:elapsed<.3?0:elapsed<.9?1:elapsed<1.6?2:3;
-  window.KFPixelAura?.draw(c,p.x,p.y,'gold',stage,storyClock,1);
+  if(window.KFPixelAura?.ready)window.KFPixelAura.draw(c,p.x,p.y,'gold',stage,storyClock,1);
+  else auraFallback(p,'gold',stage);
 }
 function drawChargingAura(p){
-  const charging=held.has('charge')&&!p.surge;
-  const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
+  const elapsed=Math.max(0,storyClock-(p._auraChargeSince??storyClock));
   const stage=elapsed<.3?0:elapsed<.9?1:elapsed<1.6?2:3;
-  window.KFPixelAura?.draw(c,p.x,p.y,'blue',stage,storyClock,Math.min(1,.65+elapsed*.4));
+  if(window.KFPixelAura?.ready)window.KFPixelAura.draw(c,p.x,p.y,'blue',stage,storyClock,1);
+  else auraFallback(p,'blue',stage);
 }
 function energyAura(p){
   // Reset charge timer on release; do not persist a charged aura after input ends.
