@@ -941,7 +941,10 @@ function fire(){
   balls.push({x,y,dx:p.fx,dy:p.fy,r:4,damage:11*(1+(p.kistat-1)*.24)*disciplines[discipline][1],time:kiBlast.range/kiBlast.speed});
   kiPulse(x,y,5,false,true);
 }
-const beam={start:1.5,wide:10,body:42,tip:12,chargeTime:.55,damage:56,drain:7};
+// The Kamehameha must reach past the farthest visible screen corner, even when
+// the player fires diagonally from a viewport edge. Rendering and hit detection
+// both consume beamShape(), so they always agree on the beam's actual reach.
+const beam={start:1.5,wide:10,body:Math.ceil(Math.hypot(W,H)*1.5),tip:24,chargeTime:.55,damage:56,drain:7};
 function beamShape(age){
   const expand=animationEase((age-.035)/.09);
   const settle=animationEase((age-.135)/.105);
