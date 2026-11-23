@@ -3038,16 +3038,17 @@ function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 function drawSsjAura(p){
   const hyper=p.hyper||0,charging=held.has('charge')&&p.ki>=p.mki-.01&&!p.surge;
   const progress=p.surge?1:hyper;
+  // Hyper buildup advances through frames 0-6; transformed mode loops the steady aura.
   const phase=(storyClock*5.5)%1;
-  const frame=p.surge?7:Math.min(6,Math.floor(progress*7));
-  const next=p.surge?7:Math.min(7,frame+1);
-  const blend=p.surge?0:progress*7-frame;
+  const frame=p.surge?(phase<.5?6:7):Math.min(6,Math.floor(progress*7));
+  const next=p.surge?(frame===6?7:6):Math.min(7,frame+1);
+  const blend=p.surge?(phase<.5?phase*2:(phase-.5)*2):progress*7-frame;
   const pulse=1+.035*Math.sin(storyClock*13);
   const width=(37+progress*12)*pulse,height=(42+progress*19)*pulse;
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
   c.globalAlpha=.64+.12*Math.sin(storyClock*16);
   c.drawImage(ssjAuraAtlas,frame*96,0,96,112,-width/2,4-height,width,height);
-  if(blend>0){c.globalAlpha=blend*.20;c.drawImage(ssjAuraAtlas,next*96,0,96,112,-width/2,4-height,width,height)}
+  if(blend>0){c.globalAlpha=blend*(p.surge?.46:.20);c.drawImage(ssjAuraAtlas,next*96,0,96,112,-width/2,4-height,width,height)}
   if(charging||p.surge){
     const count=4+Math.floor(progress*8);
     for(let i=0;i<count;i++){
