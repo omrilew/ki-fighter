@@ -3167,9 +3167,8 @@ function character(o,type,referencePose){
     c.restore();
     return;
   }
-  if(o.hero&&fighterAnimationState(o)==='charge'&&drawChargeSprite(o)){
-    c.restore();return;
-  }
+  // Charging uses the SAME canonical character renderer as idle/movement.
+  // The experimental charge atlas mixes character models and is quarantined.
   if(drawSsjMovement(o,referencePose)){
     c.restore();
     return;
@@ -3416,70 +3415,47 @@ function drawCinematicChargeEnergy(p,elapsed,ease){
 }
 // The aura is an animated energy layer, never a replacement fighter sprite.
 // Each flame has its own phase and climbs independently; no static spike frame.
+// Charge artwork uses the approved illustrated transformation energy sprites.
+// Never synthesize triangular flames or render a second fighter.
 function drawUnifiedChargeAura(p,gold){
  const charging=held.has('charge');
  const transforming=gold&&p.surgeFlare>0;
  if(!charging&&!transforming)return;
+ if(!atlasReady(approvedEffects)){auraFallback(p,gold?'gold':'blue',2);return}
  const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
- const charge=transforming?1:lim(elapsed/2.0,0,1);
- const power=charge*charge*(3-2*charge);
+ const power=transforming?1:lim(elapsed/2.0,0,1);
+ const ease=power*power*(3-2*power);
  const t=storyClock;
- const w=48+power*29,h=63+power*35;
- const color=gold?'#ffc42d':'#27baff';
- const highlight=gold?'#fff2a5':'#bdf5ff';
- const shadow=gold?'#b66c11':'#1471d1';
+ const w=43+ease*24,h=62+ease*28;
  c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
- // Soft rear glow fills the gap between the outer flames without obscuring Goku.
- c.globalAlpha=.13+.13*power;
- c.fillStyle=color;
- c.beginPath();c.ellipse(0,-h*.49,w*.34,h*.42,0,0,Math.PI*2);c.fill();
- // Flame tongues are drawn individually with animated tips and travel upward.
- // Their roots remain behind the fighter; each tongue has an independent cycle.
- for(let i=0;i<15;i++){
+ // Approved illustrated energy silhouette, slightly pulsing without changing fighter.
+ c.globalAlpha=.72+.12*ease;
+ drawApprovedEffect(gold?6:4,-w/2,5-h,w,h);
+ // Animated narrow tongues sampled from the same artwork. Independent movement,
+ // low opacity and clipped to the existing silhouette to avoid harsh polygons.
+ const frame=gold?6:4,dimensions=approvedEffectSizes[frame];
+ c.save();c.beginPath();c.rect(-w*.53,-h-3,w*1.06,h+8);c.clip();
+ for(let i=0;i<10;i++){
+  const phase=(t*(.45+i*.065)+i*.213)%1;
   const side=i%2?-1:1;
-  const lane=Math.floor(i/2);
-  const offset=side*(7+lane*2.35);
-  const phase=(t*(.55+(i%5)*.105)+i*.267)%1;
-  const life=Math.sin(Math.PI*phase);
-  const rise=phase*(h*.43);
-  const baseY=4-rise;
-  const height=(18+power*27+(i%4)*4)*(.55+.65*life);
-  const breadth=3.2+(i%3)*1.2+power*1.5;
-  const drift=Math.sin(t*(3.4+i*.17)+i*2.1)*3.1;
-  const tipX=offset+drift+side*(3+phase*5);
-  const tipY=baseY-height;
-  const alpha=(.17+.45*life)*(.65+.35*power);
-  c.globalAlpha=alpha;
-  c.fillStyle=i%3===0?highlight:i%3===1?color:shadow;
-  c.beginPath();
-  c.moveTo(offset-breadth,baseY);
-  c.lineTo(offset-side*breadth*.4,baseY-height*.42);
-  c.lineTo(tipX,tipY);
-  c.lineTo(offset+side*breadth*.75,baseY-height*.35);
-  c.lineTo(offset+breadth,baseY);
-  c.closePath();c.fill();
+  const sourceX=Math.floor(dimensions[0]*(side<0?.10:.76));
+  const sourceW=Math.min(17,dimensions[0]-sourceX);
+  const x=side*(w*(.20+(i%4)*.065))+Math.sin(t*3+i)*2;
+  const y=4-phase*h*.56;
+  const fh=15+ease*18+(i%3)*4;
+  c.globalAlpha=(.12+.25*ease)*Math.sin(phase*Math.PI);
+  c.drawImage(approvedEffects,frame*288+sourceX,Math.floor(dimensions[1]*.18),sourceW,Math.floor(dimensions[1]*.58),
+   x-3,y-fh,6+(i%3)*2,fh);
  }
- // Separate energy sparks; no complete-frame flicker or sprite scaling.
- for(let i=0;i<13;i++){
-  const phase=(t*(.75+(i%4)*.12)+i*.319)%1;
-  const x=(i%2?-1:1)*(w*(.19+(i%5)*.058))+Math.sin(t*4+i)*3;
-  const y=2-phase*h*.9;
-  c.globalAlpha=(.16+.55*power)*Math.sin(phase*Math.PI);
-  c.fillStyle=i%4===0?highlight:color;
-  c.fillRect(Math.round(x),Math.round(y),i%4===0?3:2,i%4===0?4:3);
+ c.restore();
+ // Sparse traveling sparks are accents, not the aura's main silhouette.
+ for(let i=0;i<8;i++){
+  const phase=(t*(.65+i*.08)+i*.291)%1;
+  c.globalAlpha=(.12+.38*ease)*Math.sin(Math.PI*phase);
+  c.fillStyle=gold?'#fff0ac':'#bceeff';
+  const x=(i%2?-1:1)*(w*.24+(i%3)*4)+Math.sin(t*4+i)*2;
+  c.fillRect(Math.round(x),Math.round(3-phase*h*.82),2,2);
  }
- if(power>.25){
-  for(let i=0;i<3;i++){
-   const phase=(t*(1.4+i*.22)+i*.33)%1;
-   const side=i%2?-1:1,x=side*(w*.22+Math.sin(t*4+i)*4),y=-h*(.2+phase*.6);
-   c.globalAlpha=(.2+.45*power)*(1-phase);
-   c.strokeStyle=highlight;c.lineWidth=1.4;
-   c.beginPath();c.moveTo(x,y+8);c.lineTo(x+side*6,y);
-   c.lineTo(x+side*2,y-7);c.lineTo(x+side*10,y-15);c.stroke();
-  }
- }
- c.globalAlpha=.18+.3*power;c.strokeStyle=highlight;c.lineWidth=1.3;
- c.beginPath();c.ellipse(0,3,16+power*16,4+power*3,0,0,Math.PI*2);c.stroke();
  c.restore();
 }
 function drawSsjAura(p){drawUnifiedChargeAura(p,true)}
