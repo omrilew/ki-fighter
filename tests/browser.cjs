@@ -44,8 +44,10 @@ assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
   'Dojo building must load the high-detail architectural atlas');
 assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
   'Dojo must render the new modular facade when its atlas is ready');
-assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();"),
-  'Dojo courtyard must be rebuilt before the building and character layers');
+assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();"),
+  'Dojo courtyard, facade and props must render before character layers');
+assert(gameSource.includes("function drawDojoTrainingProps()")&&gameSource.includes("Paired training dummies"),
+  'Dojo training equipment must be rendered as part of the courtyard');
 assert(gameSource.includes("function drawDojoCourtyard()")&&gameSource.includes("Tatami sparring mat"),
   'Dojo must render a textured wood and tatami training courtyard');
 assert(gameSource.includes("const walls=[[0,144,70,144],[80,144,145,144],[230,144,149,144],[385,144,126,144]]"),
