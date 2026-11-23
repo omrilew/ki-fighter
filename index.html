@@ -2834,6 +2834,15 @@ function drawSsjMovement(o,referencePose){
   return true;
 }
 function drawApprovedHero(o,referencePose){
+  // Apply recoil to the actual atlas sprite, not only the legacy fallback.
+  // This is a single draw pass: no ghosted character layers on impact.
+  c.save();
+  if(o.hurt>0){
+    const impact=Math.max(0,Math.min(1,o.hurt/hitStagger));
+    c.translate((o.hurtX||0)*impact*2.5,(o.hurtY||0)*impact*2.5);
+    c.rotate((o.hurtX||0)*impact*.045);
+    if(impact>.6)c.filter='brightness(1.6) saturate(.7)';
+  }
   const recovery=!o.beam&&o.beamCharge===null&&o.beamRecoveryUntil>now&&!o.walking&&
     !o.hurt&&!o.attack&&!o.dash&&!o.blastPose&&!referencePose
     ? Math.max(.001,1-(o.beamRecoveryUntil-now)/beamRecoveryTime):0;
@@ -2841,7 +2850,7 @@ function drawApprovedHero(o,referencePose){
   const body=o.hp>0&&!o.hurt&&(casting||recovery)?beamBodyPose(o,recovery):null;
   if(body&&atlasReady(beamBodyArt)){
     drawHeroAtlasFrame(beamBodyArt,body.row+(o.surge?6:0),body.frame,body.side);
-    return;
+    c.restore();return;
   }
   const pose=approvedHeroPose(o,referencePose);
   // Movement and attacks use the same atlas resolver in both forms. No
@@ -2849,9 +2858,10 @@ function drawApprovedHero(o,referencePose){
   const matched=atlasReady(matchingActions)?matchingActionFrame(o,pose):null;
   if(matched){
     drawHeroAtlasFrame(matchingActions,matched[0]+(o.surge&&matched[0]!==10&&o.surgeFlare<surgeIgnitionTime*.54?13:0),matched[1],pose.side);
-    return;
+    c.restore();return;
   }
   drawHeroAtlasFrame(approvedHero,pose.row+(o.surge?20:0),pose.frame,pose.side);
+  c.restore();
 }
 
 // Animation renderer: the cinematic atlas is used only for transformation.
