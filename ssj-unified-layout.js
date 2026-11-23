@@ -1,0 +1,1 @@
+window.KiSsjUnifiedLayout={"movement": {"x": 0, "y": 0, "cellWidth": 64, "cellHeight": 96, "rows": 4}, "production": {"x": 0, "y": 384, "cellWidth": 64, "cellHeight": 96, "rows": 4}, "combat": {"x": 0, "y": 768, "cellWidth": 64, "cellHeight": 96, "rows": 4}, "transformation": {"x": 0, "y": 1152, "cellWidth": 362, "cellHeight": 362, "rows": 3}};\n
