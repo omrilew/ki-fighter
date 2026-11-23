@@ -42,6 +42,11 @@ assert(gameSource.includes("const row=rear?2:front?(moving?1:0):3"),
   'Stationary fighter must preserve front, rear and side facing direction');
 assert(gameSource.includes("if(state!=='idle'&&state!=='walk')return false"),
   'Attack, dash, charge, hit and KO must fall through to their dedicated action atlases');
+assert(gameSource.includes("if(o.hurt>0){\n    const impact=")&&
+  gameSource.includes("if(impact>.6)c.filter='brightness(1.6) saturate(.7)'"),
+  'Approved combat sprites must show impact recoil and flash');
+assert(gameSource.includes("drawHeroAtlasFrame(beamBodyArt,body.row+(o.surge?6:0),body.frame,body.side);\n    c.restore();return;"),
+  'Beam action rendering must restore canvas state after the sprite draw');
 assert(gameSource.includes("assets/dojo-architecture-4x2.png"),
   'Dojo building must load the high-detail architectural atlas');
 assert(gameSource.includes("if(atlasReady(dojoArchitecture))"),
