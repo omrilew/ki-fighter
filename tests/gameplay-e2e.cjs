@@ -30,6 +30,12 @@ async function run(name,opts){
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const context=await browser.newContext(opts);
  const page=await context.newPage();
+ await page.route('**/*',async route=>{
+  if(new URL(route.request().url()).pathname!=='/')return route.continue();
+  const response=await route.fetch();const html=await response.text();
+  const marker='})();\n</script></div>';
+  if(!html.includes(marker))throw new Error('Game test bridge injection marker missing');
+  await route.fulfill({response,body:html.replace(marker,bridge+'\n})();\n</script></div>')});
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
@@ -38,7 +44,6 @@ async function run(name,opts){
  try{
   await page.goto(URL,{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:/New Game/i}).first().click();
-  await page.addScriptTag({content:bridge});
   await check('Character/NPC and dojo artwork decodes',async()=>{
    const result=await page.evaluate(async()=>{
     const paths=[0,1,2,3].map(i=>'assets/dojo-master-production-'+i+'.svg');
@@ -147,8 +152,7 @@ async function run(name,opts){
    const before=await page.evaluate(()=>window.__kiTest.state());
    await page.reload();
    await page.getByRole('button',{name:/Continue/i}).first().click();
-   await page.addScriptTag({content:bridge});
-   const after=await page.evaluate(()=>window.__kiTest.state());
+    const after=await page.evaluate(()=>window.__kiTest.state());
    assert.equal(after.step,before.step);
    assert.deepEqual(after.items.sort(),before.items.sort());
    assert.deepEqual(after.equipment,before.equipment);
