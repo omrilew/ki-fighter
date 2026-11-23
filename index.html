@@ -300,7 +300,7 @@ function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
 const dojoMaster={x:1170,y:212,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
-const dojoGate={x:1057,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
+const dojoGate={x:993,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
 const encounters=[
   {id:'crossing',kind:'bandit',x:434,y:246,radius:57},
   {id:'ridge',kind:'thug',x:628,y:216,radius:64},
@@ -463,9 +463,10 @@ for(let i=0;i<8;i++){bg.beginPath();bg.moveTo(1123+i*39,168);bg.lineTo(1123+i*39
 for(let i=0;i<7;i++){bg.beginPath();bg.moveTo(1123,168+i*40);bg.lineTo(1397,168+i*40);bg.stroke()}
 bg.strokeStyle='#f0d387';bg.lineWidth=3;bg.strokeRect(1138,183,245,218);
 bg.fillStyle='#f2dfa9';bg.font='bold 13px sans-serif';bg.fillText('CEDAR DOJO',1172,151);
-bg.fillStyle='#c9ae80';bg.fillRect(1037,261,95,28);
+bg.fillStyle='#c9ae80';bg.fillRect(986,261,148,28);
+bg.fillStyle='#f3d98b';bg.font='bold 13px sans-serif';bg.fillText('DOJO →',972,244);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
+function start(){dojoArrivalShown=false;summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
 function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';playButton.textContent='↻ RETRY JOURNEY';playButton.disabled=false;modal.style.display='flex'}const playButton=root.querySelector('#kfplay'),newButton=root.querySelector('#kfnew'),titleOptions=root.querySelector('#kftitle-options');
 function hasJourneySave(){try{const data=JSON.parse(localStorage.getItem(journeyKey));return !!data&&journeySteps.includes(data.step)}catch{return false}}
 function refreshTitleActions(){playButton.disabled=!hasJourneySave();playButton.textContent=hasJourneySave()?'Continue':'Continue — No Save'}
@@ -494,6 +495,14 @@ root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
 function renderFighterRoster(){fighterRoster.replaceChildren();for(let i=0;i<fighters.length;i++){const b=document.createElement('button');b.type='button';b.textContent=(i===fighterIndex?'▶ ':'')+fighters[i].name+' · LV '+partyStats[i].level;b.disabled=i===fighterIndex;b.onclick=()=>{closeCharacter();if(!chooseFighter(i))notice('Finish your current action first')};fighterRoster.appendChild(b)}}
 
 const journeySteps=['meet','recover','return','shrine','guardian','done','trial','mastered'];
+let dojoArrivalShown=false;
+function checkDojoArrival(){
+  if(!player||mode!=='play')return;
+  if(player.x>1010&&player.x<1080&&Math.abs(player.y-276)<65){
+    player.x=1127;player.y=277;
+    if(!dojoArrivalShown){dojoArrivalShown=true;notice('CEDAR DOJO · TALK TO THE MASTER')}
+  }
+}
 refreshTitleActions();
 const shardIds=['crossing','ridge','cedars'];
 const persistentStats=['level','xp','str','kistat','dex','points'];
@@ -569,7 +578,7 @@ function journeyObjective(){
     case 'return':return 'Bring the seal pieces back to Master Ren.';
     case 'shrine':return 'Follow the east trail to the Stone Shrine.';
     case 'guardian':return 'Defeat the Forest Guardian.';
-    case 'done':return 'Explore the Cedar Dojo east of the Stone Shrine.';
+    case 'done':return 'Go east past the Stone Shrine, through the golden dojo gate. Speak to the Dojo Master.';
     case 'trial':return 'Defeat three dojo challengers · '+['trial-one','trial-two','trial-three'].filter(id=>clearedCamps.has(id)).length+'/3';
     case 'mastered':return 'Dojo mastered! Speak to the Dojo Master or explore.';
     default:return 'Explore Cedar Forest.';
@@ -611,17 +620,22 @@ function nearbyLandmark(){
   if(hyp(player.x-mentor.x,player.y-mentor.y)<35)return mentor;
   if(hyp(player.x-shrine.x,player.y-shrine.y)<39)return shrine;
   if(hyp(player.x-dojoMaster.x,player.y-dojoMaster.y)<38)return dojoMaster;
+  if(hyp(player.x-dojoGate.x,player.y-dojoGate.y)<39)return dojoGate;
   return null;
 }
 function interact(){
   if(mode!=='play')return;
   const target=nearbyLandmark();
   if(!target)return;
+  if(target===dojoGate){
+    showStory('Eastern Dojo Gate','Beyond this gate lies the Cedar Dojo training court. Continue east along the trail to enter.');
+    return;
+  }
   if(target===dojoMaster){
     if(journeyStep==='done')showStory('Dojo Master','The Cedar Seal is restored. Prove your control against three challengers in this court.','Begin trial',()=>{journeyStep='trial';spawnJourneyEnemies();notice('DOJO TRIAL BEGINS')});
     else if(journeyStep==='trial')showStory('Dojo Master','Combine melee, Ki, dash and fighter switching. Defeat all three challengers.');
     else if(journeyStep==='mastered')showStory('Dojo Master','Excellent. You mastered the eastern court. Your reward and progress are saved.');
-    else showStory('Dojo Master','Restore the Cedar Seal by defeating the Forest Guardian before taking the dojo trial.');
+    else showStory('Dojo Master','You found the Cedar Dojo! Restore the Cedar Seal by defeating the Forest Guardian before taking the dojo trial.');
     return;
   }
   if(target===shrine){
@@ -1727,7 +1741,7 @@ function damagePlayer(amount,dx=0,dy=0){
   player.attack=0;
   hurtReaction(player,dx,dy);
 }
-function update(dt){now+=dt;partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+function update(dt){now+=dt;checkDojoArrival();partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){
@@ -2941,7 +2955,7 @@ function minimapObjectives(){
     case 'recover':return encounters.filter(o=>shardIds.includes(o.id)&&!clearedCamps.has(o.id));
     case 'shrine':return [shrine];
     case 'guardian':return enemies.filter(o=>o.id==='guardian'&&o.hp>0);
-    case 'done':return [dojoMaster];
+    case 'done':return [dojoGate,dojoMaster];
     case 'trial':return encounters.filter(o=>o.id.startsWith('trial-')&&!clearedCamps.has(o.id));
     case 'mastered':return [dojoMaster];
     default:return [];
