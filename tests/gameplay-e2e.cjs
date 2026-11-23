@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const ARTIFACT=process.env.TEST_ARTIFACT_DIR||'test-artifacts';
 fs.mkdirSync(ARTIFACT,{recursive:true});
-const URL=process.env.TEST_URL||'http://127.0.0.1:8765/';
+const TEST_URL=process.env.TEST_URL||'http://127.0.0.1:8765/';
 const KEY='ki-fighter-cedar-journey-v1';
 const bridge=`
 window.__kiTest={
@@ -43,7 +43,7 @@ async function run(name,opts){
  const report={name,checks:[],errors};
  const check=(label,fn)=>{report.checks.push(label);return fn()};
  try{
-  await page.goto(URL,{waitUntil:'domcontentloaded'});
+  await page.goto(TEST_URL,{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:/New Game/i}).first().click();
   await check('Character/NPC and dojo artwork decodes',async()=>{
    const result=await page.evaluate(async()=>{
