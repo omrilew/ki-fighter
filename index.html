@@ -3398,6 +3398,22 @@ function auraFallback(p,color,stage){
 }
 // Reuse the established transformation artwork for charging. The image stays
 // proportional; intensity changes through layered energy, sparks and arcs.
+// Transparent energy-only atlas extracted from the user's 24-frame artwork.
+// Never draw the concept character: canonical Goku is rendered separately.
+const cinematicChargeEnergy=new Image();
+cinematicChargeEnergy.src='assets/charge-blue-energy-24.png?v=energy24a';
+const cinematicKameEnergy=new Image();
+cinematicKameEnergy.src='assets/kamehameha-blue-energy-16.png?v=energy16a';
+function drawCinematicChargeEnergy(p,elapsed,ease){
+ if(!atlasReady(cinematicChargeEnergy))return;
+ const frame=elapsed<.72?Math.min(7,Math.floor(elapsed/.09)):8+Math.floor((elapsed-.72)*12)%16;
+ const w=48+ease*35,h=64+ease*42;
+ c.save();c.imageSmoothingEnabled=false;
+ c.globalAlpha=.30+.28*ease;
+ c.drawImage(cinematicChargeEnergy,(frame%8)*64,Math.floor(frame/8)*96,64,96,
+  p.x-w/2,p.y+6-h,w,h);
+ c.restore();
+}
 function drawUnifiedChargeAura(p,gold){
   if(!atlasReady(approvedEffects)){auraFallback(p,gold?'gold':'blue',2);return}
   const charging=held.has('charge'),transforming=gold&&p.surgeFlare>0;
@@ -3411,6 +3427,8 @@ function drawUnifiedChargeAura(p,gold){
   c.globalAlpha=.63+.18*ease; // reduce overlap over the SSJ hands
   // Approved transformation art, same proportions and placement as SSJ ignition.
   drawApprovedEffect(gold?6:4,-w/2,5-h,w,h);
+  // Overlay independent cyan energy frames only for normal Ki charging.
+  if(!gold&&charging){c.restore();drawCinematicChargeEnergy(p,elapsed,ease);c.save();c.translate(p.x,p.y)}
   // Moving flame tongues: cropped columns of the SAME approved artwork rise
   // at different speeds, preserving the core silhouette and fighter clarity.
   // The central body stays clear; tongues travel along the outer silhouette.
