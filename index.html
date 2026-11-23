@@ -2820,7 +2820,9 @@ function drawSsjMovement(o,referencePose){
   const moving=state==='walk';
   // Idle holds the approved standing frame; walking alone advances the gait.
   const cycle=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
-  const row=!moving?0:rear?2:front?1:3;
+  // Preserve facing direction while stationary: never snap to front on idle.
+  // The movement sheet provides a dedicated rear and lateral row.
+  const row=rear?2:front?(moving?1:0):3;
   const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
   const size=approvedCell*approvedScale;
   const width=size*64/96;
