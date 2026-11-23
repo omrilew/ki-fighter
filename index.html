@@ -3127,7 +3127,7 @@ function fighterAnimationState(o){
 }
 function detailedSsjIdle(o,referencePose){
   return !!o.hero&&atlasReady(ssjTransformationAtlas)&&
-    fighterAnimationState(o)==='transform';
+    (fighterAnimationState(o)==='transform'||(o.surge&&held.has('charge')&&fighterAnimationState(o)==='charge'));
 }
 function detailedSsjFrame(o){
   if(!o.surge){
@@ -3139,6 +3139,8 @@ function detailedSsjFrame(o){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
     return Math.min(11,Math.floor(progress*12));
   }
+  // Hold SSJ charge on the actual cinematic transformation's energized frames.
+  if(held.has('charge'))return 7+(Math.floor(storyClock*9)%5);
   return 9+(Math.floor(storyClock/.24)%3);
 }
 function drawDetailedSsj(o){
@@ -3460,55 +3462,12 @@ function drawUnifiedChargeAura(p,gold){
 function drawSsjAura(p){drawUnifiedChargeAura(p,true)}
 function drawChargingAura(p){drawUnifiedChargeAura(p,false)}
 function energyAura(p){
-  // Reset charge timer on release; do not persist a charged aura after input ends.
+  // Base form: no aura or charging visual at all, including residual frames.
+  // SSJ charge: the actual transformation animation already includes its aura.
+  // Do not render a second energy layer on top of that cinematic sheet.
   const chargingNow=held.has('charge');
   if(chargingNow&&!p._auraCharging)p._auraChargeSince=storyClock;
   p._auraCharging=chargingNow;
-
-  // Hyper is stored energy, not an active visual effect. A partially filled
-  // meter must never leave a permanent halo around the character.
-  if(p.surge){drawSsjAura(p);return}
-  if(held.has('charge')||p.rechargeVisual>.015){drawChargingAura(p);return}
-  if(!storyReady())return;
-  c.save();
-  c.translate(p.x,p.y);
-  c.scale(poseSide(p),1);
-  const flicker=(.93+.07*Math.sin(storyClock*14))*(p.surge?1:p.rechargeVisual);
-  if(atlasReady(approvedEffects)){
-    if(p.surge)drawSurgeAura(p);
-    else{
-      const size=(32+18*p.rechargeVisual)*(1+.055*Math.sin(storyClock*19));
-      c.globalAlpha=flicker;
-      drawApprovedEffect(4,-size/2,4-size,size,size);
-    }
-    c.restore();
-    return;
-  }
-  const rippleHeight=storyScale*(1+.045*Math.sin(storyClock*17));
-  if(p.surge&&atlasReady(kiActions)){
-    const progress=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
-    const size=58;
-    c.globalAlpha=flicker;
-    if(progress<1){
-      drawKiAction(0,kiActionClips.ignite,progress,-size/2,-size*.875,size,size);
-      c.globalAlpha*=Math.sin(progress*Math.PI);
-      drawKiAction(1,kiActionClips.impact,progress,-35,-47,70,54);
-    }else{
-      drawKiAction(0,kiActionClips.aura,(storyClock*4)%1,-size/2,-size*.875,size,size);
-    }
-    c.restore();
-    return;
-  }
-  const ignition=p.surge?surgeIgnitionWeight(p.surgeFlare):0;
-  c.globalAlpha=flicker*(1-ignition);
-  if(ignition<1)drawStoryMotion(p.surge?'sustainAura':'rechargeAura',storyClock,storyScale,rippleHeight);
-  if(ignition>0){
-    const age=surgeIgnitionTime-p.surgeFlare;
-    const expansion=1+.20*animationEase(age/.16);
-    c.globalAlpha=flicker*ignition;
-    drawStoryMotion('igniteAura',age,storyScale*expansion,rippleHeight);
-  }
-  c.restore();
 }
 function renderSceneryDebris(f){
   c.save();
