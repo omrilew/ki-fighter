@@ -3022,63 +3022,28 @@ function drawChargeSprite(o){
  c.drawImage(art,col*64,row*96,64,96,-width/2,-size+4,width,size);
  c.restore();return true;
 }
+// One authoritative SSJ character renderer. Only canonical movement cells
+// are enabled for ordinary actions until dedicated action artwork is verified.
+// Older combat atlases contained mismatched character anatomy/hand silhouettes.
 function drawSsjMovement(o,referencePose){
-  if(!o.hero||!o.surge||!atlasReady(ssjMovementAtlas))return false;
-  const state=fighterAnimationState(o);
-  if(state==='transform'||state==='ko')return false;
-  const rear=Math.sin(o.faceAngle)<-.82;
-  const front=Math.sin(o.faceAngle)>.82;
-  const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
-  const size=approvedCell*approvedScale;
-  const width=size*64/96;
-  // The uploaded combat sheet contains the older character design. Keep the
-  // approved SSJ movement silhouette for Ki actions until matching poses exist.
-  const productionCombat=atlasReady(ssjProductionAtlas);
-  const combat=productionCombat||atlasReady(ssjCombatAtlas);
-  // Ordinary Ki blasts are NOT Kamehameha. Reserve beam poses for an actual
-  // held beam or its charging/recovery sequence, never for blastPose alone.
-  const beamAction=state==='ki'&&(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now);
-  const action=state==='attack'||(beamAction&&productionCombat);
-  const kiAction=state==='ki';
-  let art=ssjMovementAtlas,row=0,frame=0,section='movement';
-  if(action&&combat){
-    art=productionCombat?ssjProductionAtlas:ssjCombatAtlas;
-    section=productionCombat?'production':'combat';
-    if(state==='attack'){
-      const kick=o.strike==='sidekick'||o.strike==='roundhouse';
-      const progress=Math.max(0,Math.min(.999,1-o.attack/Math.max(.001,o.attackDuration)));
-      row=kick?1:0;
-      frame=kick?[0,1,2,3][Math.floor(progress*4)]:[0,1,2,3][Math.floor(progress*4)];
-    }else if(state==='ki'){
-      row=2;
-      frame=o.beam?3:o.beamCharge!==null?2:1;
-      if(o.beam&&productionCombat){row=3;frame=2;}
-    }else{
-      row=productionCombat?2:3;
-      frame=productionCombat?Math.min(3,Math.floor(storyClock*5)%4):
-        held.has('charge')?2+(Math.floor(storyClock*7)%2):1;
-    }
-  }else{
-    const moving=state==='walk'||state==='dash';
-    row=rear?2:front?(moving?1:0):3;
-    frame=kiAction?0:moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0; // Charge uses neutral clenched-fist stance, never beam cast.
-  }
-  c.save();
-  if(state==='attack'){
-    const progress=1-o.attack/Math.max(.001,o.attackDuration);
-    const thrust=Math.sin(Math.PI*Math.max(0,Math.min(1,progress)))*2;
-    c.translate(Math.cos(o.faceAngle)*thrust,Math.sin(o.faceAngle)*thrust);
-  }else if(state==='hurt'){
-    c.translate((o.hurtX||0)*Math.min(1,o.hurt/hitStagger)*2,
-      (o.hurtY||0)*Math.min(1,o.hurt/hitStagger)*2);
-  }
-  c.scale(flip,1);
-  c.imageSmoothingEnabled=false;
-  const source=window.KiSsjUnifiedLayout[section];
-  c.drawImage(art,source.x+frame*source.cellWidth,source.y+row*source.cellHeight,
-    source.cellWidth,source.cellHeight,-width/2,-size+4,width,size);
-  c.restore();
-  return true;
+ if(!o.hero||!o.surge||!atlasReady(ssjUnifiedAtlas))return false;
+ const state=fighterAnimationState(o);
+ const source=window.KiSsjUnifiedLayout?.movement;
+ if(!source)return false;
+ const rear=Math.sin(o.faceAngle)<-.82;
+ const front=Math.sin(o.faceAngle)>.82;
+ const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
+ const moving=state==='walk'||state==='dash';
+ const row=rear?2:front?(moving?1:0):3;
+ const frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+ const size=approvedCell*approvedScale,width=size*64/96;
+ c.save();c.scale(flip,1);c.imageSmoothingEnabled=false;
+ if(state==='hurt')c.translate((o.hurtX||0)*2,(o.hurtY||0)*2);
+ if(state==='attack')c.translate(Math.cos(o.faceAngle)*Math.sin(Math.PI*lim(1-o.attack/Math.max(.001,o.attackDuration),0,1))*2,0);
+ c.drawImage(ssjUnifiedAtlas,source.x+frame*source.cellWidth,source.y+row*source.cellHeight,
+  source.cellWidth,source.cellHeight,-width/2,-size+4,width,size);
+ c.restore();
+ return true;
 }
 function drawApprovedHero(o,referencePose){
   // Apply recoil to the actual atlas sprite, not only the legacy fallback.
@@ -3190,8 +3155,13 @@ function character(o,type,referencePose){
   c.beginPath();
   c.ellipse(0,3,8,3,0,0,Math.PI*2);
   c.fill();
-  if(detailedSsjIdle(o,referencePose)){
-    drawDetailedSsj(o);
+  // SSJ is a strict single-owner draw path. No legacy hero/action fallback
+  // can draw a second character or replace the canonical SSJ silhouette.
+  if(o.hero&&o.surge){
+    if(atlasReady(ssjUnifiedAtlas)&&window.KiSsjUnifiedLayout){
+      if(detailedSsjIdle(o,referencePose))drawDetailedSsj(o);
+      else drawSsjMovement(o,referencePose);
+    }
     c.restore();
     return;
   }
@@ -3209,10 +3179,7 @@ function character(o,type,referencePose){
     c.drawImage(normalMovementAtlas,0,row*96,64,96,-width/2,-size+4,width,size);
     c.restore();c.restore();return;
   }
-  if(drawSsjMovement(o,referencePose)){
-    c.restore();
-    return;
-  }
+
   if(atlasReady(approvedHero)){
     drawApprovedHero(o,referencePose);
     c.restore();
