@@ -82,6 +82,19 @@ assert(gameSource.includes("case 1:return [0,frameInClip((o.gait/(Math.PI*2))%1,
   'Lateral walking must retain six matching-action frames');
 const art=await page.evaluate(async()=>{const paths=['assets/ssj-aura-atlas.svg','assets/hyper-charge-shockwave.svg','assets/dojo-hall.svg','assets/dojo-courtyard.svg','assets/dojo-master-0.svg','assets/dojo-master-1.svg','assets/dojo-master-2.svg','assets/dojo-master-3.svg'];return Promise.all(paths.map(async p=>{const i=new Image();i.src=p;try{await i.decode();return {p,ok:i.naturalWidth>0}}catch{return {p,ok:false}}}))});console.log('dojo assets',art);assert(art.every(x=>x.ok),'One or more dojo art assets failed to load');if(name==='iphone'){const overlaps=await page.locator('#kfg .top button:visible').evaluateAll(els=>{const r=els.map(e=>({name:e.textContent,box:e.getBoundingClientRect()}));return r.flatMap((a,i)=>r.slice(i+1).filter(b=>Math.min(a.box.right,b.box.right)-Math.max(a.box.left,b.box.left)>2&&Math.min(a.box.bottom,b.box.bottom)-Math.max(a.box.top,b.box.top)>2).map(b=>a.name+' / '+b.name))});console.log('mobile top button overlaps',overlaps);assert.deepEqual(overlaps,[],'Top buttons overlap on mobile');const switchOverlap=await page.locator('#kfparty-switch').evaluate(el=>{const a=el.getBoundingClientRect();return [...document.querySelectorAll('#kfg .top button')].filter(e=>e.getClientRects().length).some(e=>{const b=e.getBoundingClientRect();return Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2})});assert(!switchOverlap,'Fighter switch overlaps top buttons')}const spriteAudit=await page.evaluate(async()=>{const required=['assets/hero-approved.webp','assets/ssj-detailed-atlas.png','assets/ssj-transformation-12.png','assets/matching-actions.webp'];const loaded=await Promise.all(required.map(async src=>{const img=new Image();img.src=src;try{await img.decode();return {src,ok:img.naturalWidth>0}}catch{return {src,ok:false}}}));return {loaded,draws:window.__spriteDraws||{}}});console.log(name,'sprite audit',spriteAudit);assert(spriteAudit.loaded.every(x=>x.ok),'Critical fighter/animation sprite atlas failed to decode');assert((spriteAudit.draws['normal-movement-4x4.png']||0)>0,
   'Normal-form movement atlas must render after starting the game');
+// On mobile, verify real draw calls rather than trusting source-string checks.
+// Idle must draw the new Normal atlas without simultaneously drawing an old
+// approved/combat fighter layer over the same character.
+if(name==='iphone'){
+  const before=await page.evaluate(()=>({...window.__spriteDraws}));
+  await page.waitForTimeout(300);
+  const after=await page.evaluate(()=>({...window.__spriteDraws}));
+  const delta=key=>(after[key]||0)-(before[key]||0);
+  assert(delta('normal-movement-4x4.png')>0,'iPhone idle must draw the new Normal movement atlas');
+  assert.equal(delta('hero-approved.webp'),0,'iPhone idle must not overlay the legacy hero atlas');
+  assert.equal(delta('matching-actions.webp'),0,'iPhone idle must not overlay combat frames');
+  assert.equal(delta('ssj-movement-4x4.png'),0,'Normal form must not draw SSJ hair sprites');
+}
 await page.screenshot({path:'/tmp/'+name+'-game.png'});if(name==='desktop'){
 assert(await page.locator('#kfhyper-meter').count(),'Missing yellow hyper gauge');
 const scaling=await page.evaluate(()=>{const source=[...document.scripts].map(x=>x.textContent).join('');const fn=source.match(/function maxResourceAtLevel\(level\)\{([^}]+)\}/);if(!fn)return null;const compute=new Function('level',fn[1]);return [1,2,3,5].map(compute)});assert.deepEqual(scaling,[100,125,156,244],'Compounded 25% HP/Ki progression is incorrect');
