@@ -317,6 +317,47 @@
 }
 </style>
 <style id="kf-continuous-world">#kfg #kfmenu .map-destination-note{margin:8px 0 0;color:#e5d5af;font-size:11px;line-height:1.45;padding:8px;border-left:3px solid #c7a465;background:#15253b}</style>
+<style id="kf-visual-refresh">
+/* Unified restrained GBA-style interface: clear hierarchy, compact controls and sharp borders */
+#kfg{--ui-ink:#101c31;--ui-panel:#15243c;--ui-edge:#d6b475;--ui-paper:#e9e4d6;--ui-highlight:#f6d77d}
+#kfg .vitals,#kfg .counters,#kfg .notice{border:2px solid var(--ui-edge);border-radius:2px;background:linear-gradient(180deg,#1b304c,#0d1b31);box-shadow:inset 0 0 0 2px #334862,2px 3px 0 #0b1420;color:#f3e8d0}
+#kfg .vitals{min-width:132px}
+#kfg .vital{gap:6px}
+#kfg .meter{height:7px;border-radius:0;background:#101a2d;border:1px solid #647b9c}
+#kfg .meter i{border-radius:0}
+#kfg .counters{font-size:11px}
+#kfg .world-objective{border:2px solid #bba06c;border-left:5px solid #eec67d;border-radius:2px;background:#0d1c30ed;color:#f4e9d3;box-shadow:2px 3px 0 #091320}
+#kfg .minimap{border:2px solid #d6b475;border-radius:2px;background:#101d32;box-shadow:2px 3px 0 #0b1521}
+#kfg .minimap canvas{border-radius:0}
+#kfg .top>button,#kfg .top>.powers>button{background:#182b48!important;border:2px solid #d3b16e!important;border-radius:2px!important;color:#f8e7c0!important;text-shadow:none!important;box-shadow:inset 0 0 0 2px #2d4564,2px 3px 0 #0b1420!important}
+#kfg #kfmenu{background:#101d33;border:3px solid #d4b575;border-radius:3px;box-shadow:0 12px 35px #030a15bb,inset 0 0 0 2px #314765}
+#kfg #kfmenu .menu-head{background:#1b304d;border-bottom:2px solid #b99a64}
+#kfg #kfmenu .menu-head h2{font-size:17px;color:#f7dfac;text-transform:uppercase;letter-spacing:.08em}
+#kfg #kfmenu .menu-tabs{background:#111e34;border-bottom:2px solid #3b5271}
+#kfg #kfmenu .menu-tabs button{background:#203553;color:#e8e4d7;border:1px solid #7186a3;border-radius:2px;box-shadow:inset 0 0 0 1px #263d59}
+#kfg #kfmenu .menu-tabs button[aria-pressed=true]{background:#f4d57d!important;color:#152239!important;border-color:#fff1ba!important}
+#kfg #kfmenu .menu-panel{background:#101b2f}
+#kfg #kfmenu .menu-actions button{background:#243b5b;border:1px solid #c4ab78;color:#f4e7c8;border-radius:2px}
+#kfg #kfmenu #kfmenu-close{background:#d6b476;color:#152239;border-color:#f4dba2}
+#kfg .controls .acts button{transition:transform .08s ease,filter .08s ease}
+#kfg .controls .acts button:active{transform:translateY(2px) scale(.95);filter:brightness(1.25)}
+@media(max-width:650px){
+ #kfg .hud{inset:7px 7px auto;font-size:10px}
+ #kfg .vitals,#kfg .counters{padding:5px 7px;gap:3px}
+ #kfg .vitals{min-width:0}
+ #kfg .vital{grid-template-columns:clamp(58px,17vw,94px) auto;gap:4px}
+ #kfg .counters{font-size:10px}
+ #kfg .top{top:62px!important;right:7px!important}
+ #kfg .top>button,#kfg .top>.powers>button{font-size:10px!important;padding:5px 7px!important}
+ #kfg #kfparty-switch{top:103px!important;right:7px!important;max-width:118px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #kfg .world-objective{top:108px!important;left:7px!important;max-width:calc(100% - 144px)!important;padding:5px 7px;font-size:9px!important}
+ #kfg .minimap{top:146px;right:7px;width:clamp(94px,24vw,135px)}
+ #kfg #kfmenu .menu-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+ #kfg #kfmenu .menu-tabs button{font-size:9px!important;padding:7px 1px!important;min-height:38px!important}
+ #kfg #kfmenu .menu-head h2{font-size:15px}
+ #kfg #kfmenu .menu-actions button{font-size:9px;padding:6px}
+}
+</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
@@ -2999,6 +3040,7 @@ function renderSceneryDebris(f){
 const worldProps=new Image();
 worldProps.src='assets/world-props.webp';
 const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
+const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
 const mentorArt=new Image();
 mentorArt.src='assets/mentor.webp';
@@ -3209,7 +3251,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);if(atlasReady(dojoCourtArt)){c.save();c.imageSmoothingEnabled=false;c.drawImage(dojoCourtArt,1105,139,316,308);c.restore()}drawDojoBuilding();const northBeam=player?.beam&&player.fy<=-.924;if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge)&&(!referencePose||storyMotionReady()))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
