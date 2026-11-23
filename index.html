@@ -3342,7 +3342,7 @@ function drawSurgeAura(p){
 }
 function surgeIgnitionWeight(remaining){return animationEase(remaining/.16)}
 function drawSsjAura(p){
-  const hyper=p.hyper||0,charging=held.has('charge')&&p.ki>=p.mki-.01&&!p.surge;
+  const hyper=p.hyper||0,charging=held.has('charge')&&p.surge;
   const progress=p.surge?1:hyper;
   // Hyper buildup advances through frames 0-6; transformed mode loops the steady aura.
   const phase=(storyClock*4.5)%1;
@@ -3354,9 +3354,9 @@ function drawSsjAura(p){
   const next=p.surge&&p.surgeFlare<=0?(frame===6?7:6):Math.min(7,frame+1);
   const blend=p.surge&&p.surgeFlare<=0?(phase<.5?phase*2:(phase-.5)*2):sequence*7.999-frame;
   const pulse=1+.035*Math.sin(storyClock*13);
-  const width=(29+sequence*8)*pulse,height=(33+sequence*12)*pulse;
+  const width=(29+sequence*8+(charging?5:0))*pulse,height=(33+sequence*12+(charging?9:0))*pulse;
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
-  c.globalAlpha=.64+.12*Math.sin(storyClock*16);
+  c.globalAlpha=(charging?.85:.55)+.10*Math.sin(storyClock*16);
   c.drawImage(ssjAuraAtlas,frame*96,0,96,112,-width/2,4-height,width,height);
   if(blend>0){c.globalAlpha=blend*(p.surge?.46:.20);c.drawImage(ssjAuraAtlas,next*96,0,96,112,-width/2,4-height,width,height)}
   if(charging||p.surge){
@@ -3375,52 +3375,40 @@ function drawSsjAura(p){
 // Animated charging effect: concentric ground rings, ascending energy and
 // a breathing flame silhouette. Keep it behind the original fighter sprite.
 function drawChargingAura(p){
-  // Keep the aura within the character's gameplay silhouette.
-  const charging=held.has('charge')&&!p.surge;
-  const intensity=Math.max(p.rechargeVisual||0,charging?.45:0);
-  const t=storyClock;
+  // Base form: blue-white only. SSJ charging is handled by drawSsjAura.
+  const intensity=Math.max(p.rechargeVisual||0,held.has('charge')?.48:0);
+  const t=storyClock,stage=intensity<.32?0:intensity<.7?1:2;
+  const palette=['#0b42c5','#0879ef','#39cfff','#e4ffff'];
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
-  const beat=1+.075*Math.sin(t*12),power=.65+.35*intensity;
-  // Ground energy rings shrink and expand independently.
-  for(let j=0;j<3;j++){
-    const phase=(t*(.75+j*.13)+j/3)%1;
-    const radius=6+phase*(10+intensity*6);
-    c.globalAlpha=(1-phase)*(.22+.25*power);
-    c.strokeStyle=j===1?'#fff7bf':'#f6bc45';
-    c.lineWidth=j===1?1.7:1.1;
-    c.beginPath();c.ellipse(0,3,radius,radius*.24,0,0,Math.PI*2);c.stroke();
+  const scale=stage===0?.48:stage===1?.78:1;
+  const count=stage===0?5:stage===1?9:13;
+  for(let i=0;i<count;i++){
+    const side=i%2?-1:1,phase=t*(7+i*.31)+i*2.4;
+    const x=side*(5+(i%5)*2.4)+Math.sin(phase)*1.7;
+    const h=(14+(i%6)*3.5+intensity*15)*scale*(.88+.12*Math.sin(phase));
+    const w=2.3+(i%3)*.65;
+    c.globalAlpha=.38+.22*Math.sin(phase)*Math.sin(phase);
+    c.fillStyle=palette[i%4];
+    c.beginPath();c.moveTo(x-w,1);c.lineTo(x-w*.7,-h*.45);
+    c.lineTo(x+Math.sin(phase)*2,-h);c.lineTo(x+w*.7,-h*.48);
+    c.lineTo(x+w,1);c.closePath();c.fill();
   }
-  // Flame tongues are individually animated, rather than a static sprite.
-  const tongues=11;
-  for(let i=0;i<tongues;i++){
-    const side=i%2?-1:1;
-    const seed=i*2.39996;
-    const flicker=Math.sin(t*(8+i*.41)+seed);
-    const x=side*(5+(i%4)*2+flicker*1.1);
-    const base=1-(i%3)*3;
-    const height=(12+intensity*12+(i%5)*2)*(1+.12*flicker)*beat;
-    c.globalAlpha=(.16+.18*(.5+.5*Math.sin(t*9+seed)))*power;
-    c.fillStyle=i%3===0?'#fff5bd':i%3===1?'#fbd357':'#ff9d36';
-    c.beginPath();c.moveTo(x-4,base);c.quadraticCurveTo(x-side*5,base-height*.45,x+side*2,base-height);
-    c.quadraticCurveTo(x+side*7,base-height*.48,x+4,base);c.closePath();c.fill();
+  for(let i=0;i<8+stage*5;i++){
+    const rise=(t*(.9+i*.04)+i*.618)%1;
+    const x=(i%2?-1:1)*(9+(i%5)*2+rise*6);
+    c.globalAlpha=Math.sin(rise*Math.PI)*.9;
+    c.fillStyle=i%4===0?'#eaffff':'#35caff';
+    c.fillRect(Math.round(x),Math.round(2-rise*(24+stage*14)),i%4===0?2:1,2);
   }
-  // Sparks lift from the feet and accelerate upwards as Hyper fills.
-  for(let i=0;i<18;i++){
-    const rise=(t*(.68+i*.035)+i*.6180339)%1;
-    const side=i%2?-1:1;
-    const x=side*(5+(i%5)*2+rise*(5+intensity*5))+Math.sin(t*3+i)*1.5;
-    const y=1-rise*(20+intensity*17);
-    c.globalAlpha=Math.sin(rise*Math.PI)*(.38+.5*power);
-    c.fillStyle=i%4===0?'#ffffff':i%3===0?'#fff2ad':'#ffca50';
-    c.fillRect(Math.round(x),Math.round(y),i%6===0?2:1,i%4===0?3:2);
-  }
+  c.globalAlpha=.4+intensity*.3;c.strokeStyle='#58dfff';c.lineWidth=1.5;
+  c.beginPath();c.ellipse(0,3,11+stage*5,3+stage,0,0,Math.PI*2);c.stroke();
   c.restore();
 }
 function energyAura(p){
   // Hyper is stored energy, not an active visual effect. A partially filled
   // meter must never leave a permanent halo around the character.
-  if(!p.surge&&(held.has('charge')||p.rechargeVisual>.015)){drawChargingAura(p);return}
-  if(p.surge&&atlasReady(ssjAuraAtlas)){drawSsjAura(p);return}
+  if(p.surge){drawSsjAura(p);return}
+  if(held.has('charge')||p.rechargeVisual>.015){drawChargingAura(p);return}
   if(!storyReady())return;
   c.save();
   c.translate(p.x,p.y);
