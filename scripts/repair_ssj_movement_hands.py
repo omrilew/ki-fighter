@@ -12,10 +12,10 @@ px=im.load()
 # Each patch sits inside the existing dark glove silhouette, at the end of
 # the connected forearm. Top rows show both fists; rear view shows knuckles.
 poses={
- 0:[(17,56),(46,56)],
- 1:[(17,56),(46,56)],
- 2:[(17,55),(46,55)],
- 3:[(18,54),(42,54)],
+ 0:[(17,60),(46,60)],
+ 1:[(17,60),(46,60)],
+ 2:[(17,59),(46,59)],
+ 3:[(18,58),(42,58)],
 }
 palette={
  'outline':(64,35,42,255),
