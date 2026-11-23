@@ -3000,7 +3000,7 @@ function drawSsjMovement(o,referencePose){
   // Ordinary Ki blasts are NOT Kamehameha. Reserve beam poses for an actual
   // held beam or its charging/recovery sequence, never for blastPose alone.
   const beamAction=state==='ki'&&(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now);
-  const action=state==='attack'||state==='charge'||(beamAction&&productionCombat);
+  const action=state==='attack'||(beamAction&&productionCombat);
   const kiAction=state==='ki';
   let art=ssjMovementAtlas,row=0,frame=0;
   if(action&&combat){
@@ -3022,7 +3022,7 @@ function drawSsjMovement(o,referencePose){
   }else{
     const moving=state==='walk'||state==='dash';
     row=rear?2:front?(moving?1:0):3;
-    frame=kiAction?0:moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+    frame=kiAction?0:moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0; // Charge uses neutral clenched-fist stance, never beam cast.
   }
   c.save();
   if(state==='attack'){
@@ -3407,7 +3407,7 @@ function drawChargingAura(p){
 function energyAura(p){
   // Hyper is stored energy, not an active visual effect. A partially filled
   // meter must never leave a permanent halo around the character.
-  if(p.surge){drawSsjAura(p);return}
+  if(p.surge){if(atlasReady(ssjAuraAtlas))drawSsjAura(p);return}
   if(held.has('charge')||p.rechargeVisual>.015){drawChargingAura(p);return}
   if(!storyReady())return;
   c.save();
