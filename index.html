@@ -1933,7 +1933,7 @@ function spendKi(p,amount){
   p.ki=Math.max(0,p.ki-amount);
   p.kiDelay=healingDelay;
 }
-const hyperChargeSeconds=4.2;
+const hyperChargeSeconds=2.4;
 const hyperShockwaveRadius=118;
 function hyperTransform(p){
   if(p.surge||p.hyper<1)return;
@@ -1966,7 +1966,7 @@ function updateKi(p,dt){
   if(p.beam){spendKi(p,beam.drain*dt);return}
   if(held.has('charge')&&!p.surge&&p.beamCharge===null){
     const before=p.ki;
-    p.ki=Math.min(p.mki,p.ki+23*dt);
+    p.ki=Math.min(p.mki,p.ki+34*dt);
     if(before>=p.mki-.01){
       p.hyper=Math.min(1,(p.hyper||0)+dt/hyperChargeSeconds);
       if(p.hyper>=1)hyperTransform(p);
@@ -3303,7 +3303,7 @@ function renderKiPulse(f){
   }
   c.restore();
 }
-const surgeIgnitionTime=1.04;
+const surgeIgnitionTime=.68;
 function drawSurgeAura(p){
   const age=surgeIgnitionTime-p.surgeFlare;
   const flare=lim(age/surgeIgnitionTime,0,1);
@@ -3367,7 +3367,7 @@ function energyAura(p){
 
   // Hyper is stored energy, not an active visual effect. A partially filled
   // meter must never leave a permanent halo around the character.
-  if(p.surge){if(atlasReady(ssjAuraAtlas))drawSsjAura(p);return}
+  if(p.surge){drawSsjAura(p);return}
   if(held.has('charge')||p.rechargeVisual>.015){drawChargingAura(p);return}
   if(!storyReady())return;
   c.save();
