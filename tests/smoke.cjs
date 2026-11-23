@@ -16,6 +16,6 @@ for(const filename of ['normal-movement-4x4.png','ssj-movement-4x4.png']){
   assert.equal(bytes.readUInt32BE(20),384,filename+' has incorrect sheet height');
 }
 assert(html.includes('const approvedScale=.32'),'Keep the existing approved character scale');
-assert(html.includes('ssj-movement-4x4.png?v=clean-body-3')&&html.includes('normal-movement-4x4.png?v=clean-body-3'),
+assert(html.includes('ssj-movement-4x4.png?v=clean-body-3')&&html.includes('normal-movement-4x4.png?v=navy-hair-4'),
   'Both cleaned atlases must bypass stale browser caches');
 console.log('Ki Fighter syntax and integration smoke checks passed');
