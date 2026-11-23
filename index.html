@@ -2824,9 +2824,12 @@ function drawApprovedHero(o,referencePose){
 // Render the newly approved fighter atlas in normal idle, charge and SSJ.
 // Combat/movement retain their directional action sprites.
 function detailedSsjIdle(o,referencePose){
-  // Render uses {...player,hero:true}, so identity comparison to player
-  // ALWAYS failed. The explicit hero flag survives the render clone.
-  return !!o.hero&&atlasReady(ssjTransformationAtlas);
+  // The 12-frame sheet contains transformation poses, not locomotion or
+  // combat. Preserve the approved directional/action atlas for those states.
+  const busy=o.walking||Math.abs(o.stride||0)>.18||o.attack>0||
+    o.dash>0||o.hurt>0||o.blastPose>0||!!o.beam||
+    o.beamCharge!==null||o.beamRecoveryUntil>now;
+  return !!o.hero&&o.surge&&atlasReady(ssjTransformationAtlas)&&!busy;
 }
 function detailedSsjFrame(o){
   if(!o.surge){
@@ -2848,9 +2851,8 @@ function drawDetailedSsj(o){
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
   const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress)):1;
   const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5:Math.sin(storyClock*5)*.4;
-  // Original 68px was too small to see the new art on a phone.
-  // Align the sprite's boots with the existing world-space foot position.
-  const size=94*pulse;
+  // Match the existing 68px world-space sprite footprint and foot baseline.
+  const size=68*pulse;
   c.imageSmoothingEnabled=false;
   c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
