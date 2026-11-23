@@ -700,15 +700,72 @@ const fighterRoster=document.createElement('div');fighterRoster.className='party
 root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
 function renderFighterRoster(){fighterRoster.replaceChildren();for(let i=0;i<fighters.length;i++){const b=document.createElement('button');b.type='button';b.textContent=(i===fighterIndex?'▶ ':'')+fighters[i].name+' · LV '+partyStats[i].level;b.disabled=i===fighterIndex;b.onclick=()=>{closeCharacter();if(!chooseFighter(i))notice('Finish your current action first')};fighterRoster.appendChild(b)}}
 
-const journeySteps=['meet','recover','return','shrine','guardian','done','trial','mastered'];
+const journeySteps=['meet','recover','return','shrine','guardian','done','trial','trial-cleared','mastered'];
 refreshTitleActions();
 const shardIds=['crossing','ridge','cedars'];
 const persistentStats=['level','xp','str','kistat','dex','points'];
 let journeyStep='meet',clearedCamps=new Set(),mentorGestureUntil=0,storyAction=null;
+// Invisible equipment: data-only stat modifiers; never alter fighter sprites.
+const itemCatalog=Object.freeze({
+ training_weights:{name:'Training Weights',slot:'training',speed:.80,xp:1.30},
+ iron_weights:{name:'Iron Weights',slot:'training',speed:.67,xp:1.55},
+ wind_charm:{name:'Wind Charm',slot:'charm',speed:1.12,xp:1},
+ scholar_charm:{name:'Scholar Charm',slot:'charm',speed:1,xp:1.12},
+ cedar_token:{name:'Cedar Token',slot:null,speed:1,xp:1}
+});
+let inventory=new Set(),equipment={training:null,charm:null};
+function itemEffects(){
+ let speed=1,xp=1;
+ for(const id of Object.values(equipment)){const item=itemCatalog[id];if(item){speed*=item.speed;xp*=item.xp}}
+ return {speed:Math.max(.55,Math.min(1.5,speed)),xp:Math.min(1.8,xp)};
+}
+function collectItem(id){
+ if(!itemCatalog[id]||inventory.has(id))return false;
+ inventory.add(id);notice('ITEM FOUND · '+itemCatalog[id].name);saveJourney();return true;
+}
+function equipItem(id){
+ const item=itemCatalog[id];if(!item||!item.slot||!inventory.has(id))return false;
+ equipment[item.slot]=equipment[item.slot]===id?null:id;
+ notice((equipment[item.slot]?'EQUIPPED · ':'UNEQUIPPED · ')+item.name);
+ saveJourney();renderInventory();return true;
+}
+function grantExperience(amount){const earned=Math.max(0,Math.round(amount*itemEffects().xp));player.xp+=earned;return earned}
+const inventoryButton=document.createElement('button');
+inventoryButton.type='button';inventoryButton.id='kf-inventory-open';inventoryButton.textContent='Items [I]';
+inventoryButton.style.cssText='position:absolute;right:8px;top:176px;z-index:3;padding:8px 10px;min-height:40px';
+root.appendChild(inventoryButton);
+const inventoryPanel=document.createElement('dialog');inventoryPanel.id='kf-inventory';
+inventoryPanel.style.cssText='background:#15241e;color:#f4e6c7;border:2px solid #b28a55;border-radius:8px;max-width:min(90vw,420px);max-height:75vh;overflow:auto;padding:18px;z-index:100';
+root.appendChild(inventoryPanel);
+function renderInventory(){
+ inventoryPanel.replaceChildren();
+ const heading=document.createElement('h2');heading.textContent='Inventory · Equipment';inventoryPanel.appendChild(heading);
+ const effects=itemEffects(),stats=document.createElement('p');
+ stats.textContent='Movement '+Math.round(effects.speed*100)+'% · XP '+Math.round(effects.xp*100)+'%';
+ inventoryPanel.appendChild(stats);
+ const list=document.createElement('div');
+ for(const id of inventory){
+  const item=itemCatalog[id],line=document.createElement('div');
+  line.style.cssText='padding:9px 0;border-top:1px solid #4c5b4a';
+  const name=document.createElement('strong');name.textContent=item.name;line.appendChild(name);
+  const description=document.createElement('div');
+  description.textContent=(item.slot?'Speed '+Math.round(item.speed*100)+'% · XP '+Math.round(item.xp*100)+'%':'Quest item');
+  line.appendChild(description);
+  if(item.slot){const button=document.createElement('button');button.type='button';button.textContent=equipment[item.slot]===id?'Unequip':'Equip';button.onclick=()=>equipItem(id);line.appendChild(button)}
+  list.appendChild(line);
+ }
+ if(!inventory.size)list.textContent='No items yet. Defeat enemies and complete the dojo trial.';
+ inventoryPanel.appendChild(list);
+ const close=document.createElement('button');close.textContent='Close';close.onclick=()=>inventoryPanel.close();inventoryPanel.appendChild(close);
+}
+function toggleInventory(){if(mode!=='play')return;if(inventoryPanel.open){inventoryPanel.close();return}renderInventory();inventoryPanel.showModal()}
+inventoryButton.onclick=toggleInventory;
+document.addEventListener('keydown',event=>{if(event.code==='KeyI'&&!event.repeat&&mode==='play'&&!event.ctrlKey&&!event.metaKey){event.preventDefault();toggleInventory()}});
+
 function saveJourney(){
   try{
     localStorage.setItem(journeyKey,JSON.stringify({
-      version:2,step:journeyStep,cleared:[...clearedCamps],discipline,activeFighter:fighterIndex,party:(captureParty(),partyStats),
+      version:3,step:journeyStep,cleared:[...clearedCamps],items:[...inventory],equipment:{...equipment},discipline,activeFighter:fighterIndex,party:(captureParty(),partyStats),
       stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]]))
     }));
   }catch{}
@@ -716,10 +773,12 @@ function saveJourney(){
 function loadJourney(){
   journeyStep='meet';
   discipline='balanced';
-  clearedCamps=new Set();
+  clearedCamps=new Set();inventory=new Set();equipment={training:null,charm:null};
   try{
     const data=JSON.parse(localStorage.getItem(journeyKey));
     if(!data)return;
+    if(Array.isArray(data.items))inventory=new Set(data.items.filter(id=>Object.hasOwn(itemCatalog,id)));
+    for(const slot of ['training','charm']){const id=data.equipment?.[slot];if(inventory.has(id)&&itemCatalog[id]?.slot===slot)equipment[slot]=id}
     if(Object.hasOwn(disciplines,data.discipline))discipline=data.discipline;
     if(journeySteps.includes(data.step))journeyStep=data.step;
     if(Array.isArray(data.cleared)){
@@ -755,10 +814,10 @@ function updateJourneyDefeat(enemy){
   if(!enemy.id)return;
   clearedCamps.add(enemy.id);
   if(enemy.id.startsWith('trial-')&&journeyStep==='trial'&&['trial-one','trial-two','trial-three'].every(id=>clearedCamps.has(id))){
-    journeyStep='mastered';player.xp+=90;notice('DOJO TRIAL COMPLETE · +90 XP');
+    journeyStep='trial-cleared';notice('TRIAL CLEARED · REPORT TO THE DOJO MASTER');
   }
   if(enemy.id==='watch'){
-    player.xp+=20;
+    grantExperience(20);
     notice('NORTHERN WATCH CLEARED · +20 XP');
   }
   if(journeyStep==='recover'&&shardCount()===shardIds.length){
@@ -766,7 +825,7 @@ function updateJourneyDefeat(enemy){
     notice('SEAL PIECES RECOVERED');
   }else if(enemy.id==='guardian'&&journeyStep==='guardian'){
     journeyStep='done';
-    player.xp+=60;
+    grantExperience(60);
     notice('THE CEDAR SEAL IS RESTORED · +60 XP');
   }
 }
@@ -779,7 +838,8 @@ function journeyObjective(){
     case 'guardian':return 'Defeat the Forest Guardian.';
     case 'done':return 'Go east past the Stone Shrine, through the golden dojo gate. Speak to the Dojo Master.';
     case 'trial':return 'Defeat three dojo challengers · '+['trial-one','trial-two','trial-three'].filter(id=>clearedCamps.has(id)).length+'/3';
-    case 'mastered':return 'Dojo mastered! Speak to the Dojo Master or explore.';
+    case 'trial-cleared':return 'Return to the Dojo Master to claim your training reward.';
+    case 'mastered':return 'Dojo mastered! Equip your training weights in Items [I].';
     default:return 'Explore Cedar Forest.';
   }
 }
@@ -828,9 +888,10 @@ function interact(){
   if(!target)return;
   if(target===dojoGate){showStory('Cedar Dojo Gate','The path continues east into Cedar Dojo. Walk through the gate to reach the training court.');return;}
   if(target===dojoMaster){
-    if(journeyStep==='done')showStory('Dojo Master','The Cedar Seal is restored. Prove your control against three challengers in this court.','Begin trial',()=>{journeyStep='trial';spawnJourneyEnemies();notice('DOJO TRIAL BEGINS')});
-    else if(journeyStep==='trial')showStory('Dojo Master','Combine melee, Ki, dash and fighter switching. Defeat all three challengers.');
-    else if(journeyStep==='mastered')showStory('Dojo Master','Excellent. You mastered the eastern court. Your reward and progress are saved.');
+    if(journeyStep==='done')showStory('Master Sora','The Cedar Seal is safe, but power without control is dangerous. Face three disciples in my courtyard. Complete the trial and earn training weights that slow you down but sharpen your growth.','Accept: Trial of Discipline',()=>{journeyStep='trial';spawnJourneyEnemies();notice('TRIAL OF DISCIPLINE · 0/3')});
+    else if(journeyStep==='trial')showStory('Master Sora','Defeat my three disciples in the outdoor court. Use melee, normal Ki and movement. Return to me for guidance.');
+    else if(journeyStep==='trial-cleared')showStory('Master Sora','You defeated all three disciples. Training weights are your reward. Equip them in Items to trade speed for experience.','Claim training reward',()=>{collectItem('training_weights');collectItem('cedar_token');grantExperience(90);journeyStep='mastered';notice('TRIAL COMPLETE · WEIGHTS + XP')});
+    else if(journeyStep==='mastered')showStory('Master Sora','The weights are yours to equip or remove. Harder training brings faster growth. Seek rare charms from the forest.');
     else showStory('Dojo Master','You found the Cedar Dojo! Restore the Cedar Seal by defeating the Forest Guardian before taking the dojo trial.');
     return;
   }
@@ -2112,7 +2173,7 @@ for(const prop of breakableProps){
 let p=player;
 const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
 p.rechargeVisual=animationDamp(p.rechargeVisual,rechargeTarget,dt,rechargeTarget?18:12);
-recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;if(p.surge){p.surge=false;p.hyper=0;p.hyperReady=false}}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07);if(p.beamCharge!==null||held.has('charge'))speed*=.32;
+recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;if(p.surge){p.surge=false;p.hyper=0;p.hyperReady=false}}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07)*itemEffects().speed;if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
 move(p,p.vx*dt,p.vy*dt);
 const travel=hyp(p.x-fromX,p.y-fromY);
@@ -2139,7 +2200,10 @@ for(const enemy of enemies){
   if(enemy.hp>0)advanceEnemy(enemy,p,dt);
 }
 const defeated=enemies.filter(e=>e.hp<=0);
-for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;p.xp+=enemyExperience[e.kind];updateJourneyDefeat(e);if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
+for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(enemyExperience[e.kind]);updateJourneyDefeat(e);
+ if(e.id==='ridge')collectItem('wind_charm');
+ if(e.id==='watch')collectItem('scholar_charm');
+ if(e.id==='trial-three')collectItem('iron_weights');if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
 const characterDialog=root.querySelector('#kfcharacter');
 const characterButton=root.querySelector('#kfcharacter-open');
 const summaryCharacter=root.querySelector('#kfcharacter-summary');
