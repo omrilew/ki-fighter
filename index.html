@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="assets/hero-animation/manifest.js"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="assets/hero-animation/manifest.js?v=charge-stride-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -1959,9 +1959,10 @@ const hyperShockwaveRadius=118;
 function hyperTransform(p){
   if(p.surge||p.hyper<1)return;
   p.hyper=1;p.hyperReady=true;p.surge=true;p.surgeFlare=surgeIgnitionTime;
-  p.hyperWave=.7;shake=.34;
+  const mainHero=fighterIndex===0;
+  p.hyperWave=.7;shake=mainHero?.12:.34;
   notice('SUPER SAIYAN! HYPER SHOCKWAVE');
-  kiPulse(p.x,p.y,hyperShockwaveRadius,false,true);
+  if(!mainHero)kiPulse(p.x,p.y,hyperShockwaveRadius,false,true);
   for(const e of enemies){
     if(e.hp<=0)continue;
     const dx=e.x-p.x,dy=e.y-p.y,d=hyp(dx,dy);
@@ -1978,9 +1979,10 @@ function hyperTransform(p){
     const dx=prop.x-p.x,dy=prop.y-p.y,d=hyp(dx,dy);
     if(d<hyperShockwaveRadius)damageScenery(prop,80,dx/(d||1),dy/(d||1));
   }
-  for(let i=0;i<28;i++){
-    const a=i*Math.PI*2/28,r=rnd(9,28);
-    fx.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r*.5,vx:Math.cos(a)*rnd(55,155),vy:Math.sin(a)*rnd(22,65)-rnd(20,55),time:rnd(.28,.7),color:i%3?'#f4d477':'#fff7cf',debris:true,size:rnd(1.5,4.3),rotation:rnd(0,6),spin:rnd(-9,9)});
+  const sparks=mainHero?12:28;
+  for(let i=0;i<sparks;i++){
+    const a=i*Math.PI*2/sparks,r=rnd(9,mainHero?16:28);
+    fx.push({x:p.x+Math.cos(a)*r,y:p.y+Math.sin(a)*r*.5,vx:Math.cos(a)*rnd(mainHero?22:55,mainHero?48:155),vy:Math.sin(a)*rnd(22,mainHero?35:65)-rnd(20,mainHero?30:55),time:rnd(.28,.7),color:i%3?'#f4d477':'#fff7cf',debris:true,size:rnd(1.5,4.3),rotation:rnd(0,6),spin:rnd(-9,9)});
   }
 }
 function updateKi(p,dt){
@@ -2196,6 +2198,8 @@ for(const prop of breakableProps){
 }
 let p=player;
 const rechargeTarget=held.has('charge')&&!p.beam&&p.beamCharge===null?1:0;
+const animatingCharge=rechargeTarget||(fighterIndex===0&&p.surgeFlare>0);
+p.rechargeElapsed=animatingCharge?(p.rechargeElapsed??0)+dt:0;
 p.rechargeVisual=animationDamp(p.rechargeVisual,rechargeTarget,dt,rechargeTarget?18:12);
 recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;if(p.surge){p.surge=false;p.hyper=0;p.hyperReady=false}}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?102:p.surge?85:67)*(1+(p.dex-1)*.07)*itemEffects().speed;if(p.beamCharge!==null||held.has('charge'))speed*=.32;
 if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
@@ -3182,15 +3186,14 @@ function drawDetailedSsj(o){
   c.drawImage(art,source.x+(frame%4)*cellW,source.y+Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 const packedHeroAtlas=new Image();
-packedHeroAtlas.src='assets/hero-animation/body-atlas.png';
-const packedTransformationAtlas=new Image();
-packedTransformationAtlas.src='assets/hero-animation/transformation.png';
+packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=charge-stride-1';
 const packedHeroScale=approvedCell*approvedScale/96;
 const packedHeroFacings=['right','downRight','down','downLeft','left','upLeft','up','upRight'];
 
 function packedHeroPose(p,launch=false){
   const manifest=window.KiHeroManifest;
-  let action='idle',progress,elapsed=storyClock*1000,angle=p.faceAngle;
+  let action='idle',progress,transformation,elapsed=storyClock*1000,angle=p.faceAngle;
+  let surge=p.surge;
   if(launch){
     action='kiBlast';angle=p.blastAngle;
   }
@@ -3199,7 +3202,9 @@ function packedHeroPose(p,launch=false){
   }else if(p.hurt>0){
     action='hurt';progress=1-p.hurt/hitStagger;
   }else if(p.surge&&p.surgeFlare>0){
-    return {cinematic:Math.min(11,Math.floor(12*lim(1-p.surgeFlare/surgeIgnitionTime,0,1)))};
+    transformation=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
+    surge=transformation>=manifest.special.ssjTransformation.revealAt;
+    action='recharge';elapsed=(p.rechargeElapsed??0)*1000;
   }else if(p.beam||p.beamRecoveryUntil>now){
     action='beamRelease';
     const aim=cinematicBeamDirection(p);
@@ -3217,14 +3222,14 @@ function packedHeroPose(p,launch=false){
   }else if(p.dash>0){
     action='dash';progress=1-p.dash/.19;
   }else if(held.has('charge')){
-    action='recharge';
+    action='recharge';elapsed=(p.rechargeElapsed??0)*1000;
   }else if(p.fly){
     action='flight';
   }else if(p.walking||p.stride>.18){
     action='walk';progress=p.gait/(Math.PI*2);
   }
 
-  const clips=manifest.clips[p.surge?'ssj':'normal'][action];
+  const clips=manifest.clips[surge?'ssj':'normal'][action];
   const sector=(Math.round(angle/(Math.PI/4))+8)%8;
   const facing=packedHeroFacings[sector];
   const mirrors=manifest.renderPolicy.mirrorDirections;
@@ -3248,10 +3253,14 @@ function packedHeroPose(p,launch=false){
   }else{
     const active=action==='beamRelease'?frames.slice(0,hold+1):frames;
     const duration=active.reduce((sum,f)=>sum+f.durationMs,0);
-    let offset=progress===undefined?(clip.loop||action==='recharge'||action==='flight'?elapsed%duration:elapsed):lim(progress,0,1)*duration;
+    let offset=progress===undefined?elapsed:lim(progress,0,1)*duration;
+    if(clip.loop&&progress===undefined){
+      const intro=active.slice(0,clip.loopStart??0).reduce((sum,f)=>sum+f.durationMs,0);
+      if(offset>=intro)offset=intro+(offset-intro)%(duration-intro);
+    }else if(action==='flight'&&progress===undefined)offset%=duration;
     frame=active.find(f=>{offset-=f.durationMs;return offset<0})||active.at(-1);
   }
-  return {frame,flip};
+  return {frame,flip,recharging:action==='recharge',surge,transformation};
 }
 
 function packedHeroOrigin(p,pose){
@@ -3260,6 +3269,26 @@ function packedHeroOrigin(p,pose){
   const [x,y]=frame.muzzle;
   const [footX,footY]=frame.feet;
   return {x:p.x+(x-footX)*packedHeroScale*flip,y:p.y+(y-footY)*packedHeroScale+3};
+}
+
+function drawPackedChargeAura(p,pose){
+  if(!atlasReady(approvedEffects))return;
+  const elapsed=p.rechargeElapsed??0;
+  const growth=animationEase(lim(elapsed/.48,0,1));
+  const breath=Math.sin(elapsed*5.6);
+  const width=27+12*growth+breath,height=34+13*growth+breath*1.3;
+  const frame=pose.surge?6:4;
+  const ignition=pose.transformation===undefined?0:Math.sin(Math.PI*pose.transformation);
+  c.save();
+  c.globalAlpha=growth*.76+ignition*.16;
+  drawApprovedEffect(frame,-width/2,3-height,width,height);
+  for(let i=0;i<2;i++){
+    const rise=(elapsed*.92+i*.5)%1;
+    c.globalAlpha=growth*Math.sin(Math.PI*rise)*.23;
+    const ribbonWidth=width*(.72-.18*rise),ribbonHeight=height*.83;
+    drawApprovedEffect(frame,-ribbonWidth/2,3-ribbonHeight-rise*height*.24,ribbonWidth,ribbonHeight);
+  }
+  c.restore();
 }
 
 function drawPackedHero(p){
@@ -3271,13 +3300,8 @@ function drawPackedHero(p){
   c.ellipse(0,3,8,3,0,0,Math.PI*2);
   c.fill();
   c.imageSmoothingEnabled=false;
-  if(pose.cinematic!==undefined){
-    const size=approvedCell*approvedScale;
-    const [w,h]=window.KiHeroManifest.special.ssjTransformation.cell;
-    const index=pose.cinematic;
-    if(atlasReady(packedTransformationAtlas))
-      c.drawImage(packedTransformationAtlas,index%4*w,Math.floor(index/4)*h,w,h,-size/2,4-size,size,size);
-  }else if(atlasReady(packedHeroAtlas)){
+  if(atlasReady(packedHeroAtlas)){
+    if(pose.recharging)drawPackedChargeAura(p,pose);
     const {frame,flip}=pose,[x,y,w,h]=frame.rect,[footX,footY]=frame.feet;
     c.scale(flip,1);
     c.drawImage(packedHeroAtlas,x,y,w,h,-footX*packedHeroScale,3-footY*packedHeroScale,w*packedHeroScale,h*packedHeroScale);
@@ -3741,8 +3765,9 @@ function drawHyperWave(p){
   if(!p.hyperWave)return;
   const progress=1-p.hyperWave/.7;
   c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
-  const size=38+hyperShockwaveRadius*2*progress;
-  if(atlasReady(hyperWaveArt)){const frame=Math.min(7,Math.floor(progress*8));c.globalAlpha=1-progress*.85;c.drawImage(hyperWaveArt,frame*128,0,128,128,-size/2,-size*.48,size,size*.96)}
+  const mainHero=fighterIndex===0;
+  const size=mainHero?24+44*animationEase(progress):38+hyperShockwaveRadius*2*progress;
+  if(atlasReady(hyperWaveArt)){const frame=Math.min(7,Math.floor(progress*8));c.globalAlpha=(mainHero?.62:1)*(1-progress*.85);c.drawImage(hyperWaveArt,frame*128,0,128,128,-size/2,-size*.48,size,size*.96)}
   else{c.strokeStyle='#ffdd72';c.lineWidth=4;c.beginPath();c.ellipse(0,0,size/2,size*.22,0,0,Math.PI*2);c.stroke()}
   c.restore();
 }

@@ -13,7 +13,23 @@ assert.equal(renderPolicy.legacyFallback,false);
 assert.equal(preflight.blocked.length,0);
 assert.equal(preflight.missingClips.length,0);
 
+for(const idle of Object.values(clips.normal.idle)){
+  assert(idle.loop);
+  assert.equal(idle.frames.length,6);
+}
+
 for(const form of ['normal','ssj']){
+  const stride=clips[form].walk.right;
+  assert.equal(stride.frames.length,8);
+  assert.equal(new Set(stride.frames.map(f=>f.rect.join(','))).size,8);
+
+  const recharge=clips[form].recharge.shared;
+  assert(recharge.loop&&recharge.loopStart>0);
+  assert(recharge.frames.length>16);
+  assert.equal(recharge.effectOwnership,'separate');
+  const intro=new Set(recharge.frames.slice(0,recharge.loopStart).map(f=>f.rect.join(',')));
+  for(const frame of recharge.frames.slice(recharge.loopStart))assert(!intro.has(frame.rect.join(',')));
+
   for(const action of ['idle','walk','dash','punch','kick','kiBlast','beamGather','beamRelease','flight']){
     const directions=clips[form][action];
     for(const facing of ['right','down','up'])assert(directions[facing],form+'/'+action+'/'+facing);
