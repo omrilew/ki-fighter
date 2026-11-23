@@ -44,6 +44,10 @@ assert(gameSource.includes("drawDojoCourtyard();drawDojoBuilding();"),
   'Dojo courtyard must be rebuilt before the building and character layers');
 assert(gameSource.includes("function drawDojoCourtyard()")&&gameSource.includes("Tatami sparring mat"),
   'Dojo must render a textured wood and tatami training courtyard');
+assert(gameSource.includes("const walls=[[0,144,70,144],[80,144,145,144],[230,144,149,144],[385,144,126,144]]"),
+  'Dojo walls must crop real shoji panels instead of arbitrary 128-pixel cells');
+assert(gameSource.includes("const sx=(row+col)%2?345:230"),
+  'Tatami tiles must sample the actual woven-mat region of the atlas');
 const newArt=await page.evaluate(async()=>{
   const paths=['assets/dojo-architecture-4x2.png','assets/ssj-movement-4x4.png','assets/normal-movement-4x4.png'];
   return Promise.all(paths.map(src=>new Promise(resolve=>{
