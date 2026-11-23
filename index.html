@@ -3025,25 +3025,29 @@ function drawChargeSprite(o){
 // One authoritative SSJ character renderer. Only canonical movement cells
 // are enabled for ordinary actions until dedicated action artwork is verified.
 // Older combat atlases contained mismatched character anatomy/hand silhouettes.
+// SSJ gameplay uses a fresh single-source atlas derived from canonical base
+// anatomy, with hands preserved. Transformation/charging still use the
+// untouched cinematic transformation section of the unified atlas.
 function drawSsjMovement(o,referencePose){
- if(!o.hero||!o.surge||!atlasReady(ssjUnifiedAtlas))return false;
+ if(!o.hero||!o.surge||!atlasReady(ssjGameplayCleanAtlas))return false;
  const state=fighterAnimationState(o);
- const source=window.KiSsjUnifiedLayout?.movement;
- if(!source)return false;
  const rear=Math.sin(o.faceAngle)<-.82;
  const front=Math.sin(o.faceAngle)>.82;
  const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
  const moving=state==='walk'||state==='dash';
  const row=rear?2:front?(moving?1:0):3;
- const frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+ let frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+ if(state==='attack')frame=Math.min(3,Math.floor(lim(1-o.attack/Math.max(.001,o.attackDuration),0,.999)*4));
+ if(state==='ki')frame=o.beam?2:o.beamCharge!==null?1:0;
  const size=approvedCell*approvedScale,width=size*64/96;
  c.save();c.scale(flip,1);c.imageSmoothingEnabled=false;
  if(state==='hurt')c.translate((o.hurtX||0)*2,(o.hurtY||0)*2);
- if(state==='attack')c.translate(Math.cos(o.faceAngle)*Math.sin(Math.PI*lim(1-o.attack/Math.max(.001,o.attackDuration),0,1))*2,0);
- c.drawImage(ssjUnifiedAtlas,source.x+frame*source.cellWidth,source.y+row*source.cellHeight,
-  source.cellWidth,source.cellHeight,-width/2,-size+4,width,size);
- c.restore();
- return true;
+ if(state==='attack'){
+  const progress=lim(1-o.attack/Math.max(.001,o.attackDuration),0,1);
+  c.translate(Math.cos(o.faceAngle)*Math.sin(Math.PI*progress)*2,0);
+ }
+ c.drawImage(ssjGameplayCleanAtlas,frame*64,row*96,64,96,-width/2,-size+4,width,size);
+ c.restore();return true;
 }
 function drawApprovedHero(o,referencePose){
   // Apply recoil to the actual atlas sprite, not only the legacy fallback.
@@ -3158,9 +3162,16 @@ function character(o,type,referencePose){
   // SSJ is a strict single-owner draw path. No legacy hero/action fallback
   // can draw a second character or replace the canonical SSJ silhouette.
   if(o.hero&&o.surge){
-    if(atlasReady(ssjUnifiedAtlas)&&window.KiSsjUnifiedLayout){
-      if(detailedSsjIdle(o,referencePose))drawDetailedSsj(o);
-      else drawSsjMovement(o,referencePose);
+    if(detailedSsjIdle(o,referencePose)){
+      if(window.KiSsjUnifiedLayout)drawDetailedSsj(o);
+    }else if(atlasReady(ssjGameplayCleanAtlas)){
+      drawSsjMovement(o,referencePose);
+    }else if(atlasReady(normalMovementAtlas)){
+      // Safe fallback: canonical base body, never defective old SSJ art.
+      const size=approvedCell*approvedScale,width=size*64/96;
+      const row=Math.sin(o.faceAngle)<-.82?2:Math.sin(o.faceAngle)>.82?0:3;
+      c.imageSmoothingEnabled=false;
+      c.drawImage(normalMovementAtlas,0,row*96,64,96,-width/2,-size+4,width,size);
     }
     c.restore();
     return;
@@ -3480,6 +3491,8 @@ const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
 // One canonical SSJ image for movement, combat, and transformation.
+const ssjGameplayCleanAtlas=new Image();
+ssjGameplayCleanAtlas.src='assets/ssj-gameplay-clean-4x4.png?v=clean-ssj-1';
 const ssjUnifiedAtlas=new Image();
 ssjUnifiedAtlas.src='assets/ssj-unified-production.png?v=unified-20261123';
 const ssjProductionAtlas=ssjUnifiedAtlas;
