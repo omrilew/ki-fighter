@@ -36,10 +36,10 @@ assert(gameSource.includes("function renderBeamTrace(f){")&&
   gameSource.includes("function renderBeamCharge(p){")&&
   gameSource.includes("cinematicBeamAtlas,frame*64,0,64,64"),
   'Cinematic Kamehameha charge and fade must match its active beam');
-assert(gameSource.includes("const expand=animationEase((age-.05)/.38)")&&
-  gameSource.includes("const settle=animationEase((age-.32)/.48)")&&
+assert(gameSource.includes("const total=Math.min(190,travel*112)")&&
+  gameSource.includes("const travel=Math.max(0,age-.09)")&&
   gameSource.includes("const beamEmergenceTime=.18"),
-  'Kamehameha should extend gradually and synchronize hit range with visible progression');
+  'Kamehameha must grow from zero at fixed speed, cap range and share collision geometry');
 assert(gameSource.includes("function cinematicBeamDirection(p)")&&
   gameSource.includes("const facing=cinematicBeamDirection(p);")&&
   gameSource.includes("p.fx=facing.x;p.fy=facing.y;"),
