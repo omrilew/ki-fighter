@@ -3281,7 +3281,26 @@ function drawWorldObject(o){
   c.translate(o.x,o.y);
   if(o===dojoMaster||o===dojoGate){
     c.fillStyle='#101e32';c.fillRect(-12,-3,24,5);
-    if(o===dojoGate){c.fillStyle='#e3c27e';c.fillRect(-13,-43,5,42);c.fillRect(8,-43,5,42);c.fillRect(-16,-48,32,8);drawWorldLabel('EAST DOJO',0,-52)}
+    if(o===dojoGate){
+      // Layered timber torii gate, matching the dojo's darker architectural palette.
+      c.fillStyle='#302720';c.fillRect(-15,-46,7,46);c.fillRect(8,-46,7,46);
+      c.fillStyle='#926039';c.fillRect(-13,-45,4,42);c.fillRect(9,-45,4,42);
+      c.fillStyle='#d3a76a';c.fillRect(-12,-45,1,40);c.fillRect(10,-45,1,40);
+      c.fillStyle='#352b2b';c.fillRect(-21,-52,42,8);
+      c.fillStyle='#75533e';c.fillRect(-20,-51,40,4);
+      c.fillStyle='#c19a66';c.fillRect(-17,-48,34,2);
+      c.fillStyle='#29323c';c.fillRect(-24,-57,48,5);
+      c.fillStyle='#657183';c.fillRect(-21,-57,42,2);
+      c.fillStyle='#b18a52';c.fillRect(-5,-45,10,7);
+      c.fillStyle='#342820';c.fillRect(-3,-43,6,3);
+      for(const side of [-1,1]){
+        const lx=side*19;
+        c.fillStyle='#4a3024';c.fillRect(lx-3,-35,6,11);
+        c.fillStyle='#e3bb72';c.fillRect(lx-2,-33,4,7);
+        c.fillStyle='#fff0b2';c.fillRect(lx-1,-31,2,3);
+      }
+      drawWorldLabel('EAST DOJO',0,-61);
+    }
     else{
       const t=storyClock,gesture=Math.floor(t/3.4)%4;
       const bob=Math.sin(t*4)*.6;
