@@ -1265,6 +1265,56 @@ const kiActionClips={
   ignite:[[0,0],[.16,1],[.32,2],[.48,3],[.65,4],[1,5]],
   impact:[[0,2],[.25,3],[.5,4],[.66,5],[.83,6],[1,7]],
 };
+// Kamehameha visual tiers: cinematic is the starting skill. Aura Burst is
+// deliberately reserved for a future upgrade; classic/retro remain available
+// to other attacks rather than being silently reused here.
+const kamehamehaVisualTiers=Object.freeze({base:'cinematic',upgrade:'aura-burst'});
+function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
+  const shape=beamShape(shapeAge);
+  const length=shape.body+shape.tip;
+  const width=Math.max(2,shape.wide*thin*.56);
+  const emergence=animationEase(age/.13);
+  const time=age*35;
+  c.save();c.translate(x,y);c.rotate(angle);c.globalAlpha=opacity;
+  // Controlled, torso-sized layered core: avoid the huge oval plasma plume.
+  const layers=[['#0757bb',1.55],['#009de8',1.18],['#8ceaff',.82],['#f5ffff',.43]];
+  for(const [color,scale] of layers){
+    const h=width*scale;
+    c.fillStyle=color;
+    c.beginPath();c.moveTo(0,-h*.55);
+    for(let i=1;i<=18;i++){
+      const u=i/18;
+      const ripple=(Math.sin(u*38-time)*.06+Math.sin(u*67+time*.8)*.035)*h;
+      c.lineTo(length*u,-h*(.58+.12*Math.sin(Math.PI*u))+ripple);
+    }
+    c.lineTo(length+width*.38,0);
+    for(let i=18;i>=0;i--){
+      const u=i/18;
+      const ripple=(Math.sin(u*38-time+1.8)*.06+Math.sin(u*67+time*.8)*.035)*h;
+      c.lineTo(length*u,h*(.58+.12*Math.sin(Math.PI*u))+ripple);
+    }
+    c.closePath();c.fill();
+  }
+  // Release ring appears only at the start of the beam.
+  const ring=1-animationEase((age-.045)/.23);
+  if(ring>0){
+    c.globalAlpha=opacity*ring*.9;c.strokeStyle='#8fefff';
+    c.lineWidth=Math.max(.7,width*.11);
+    c.beginPath();c.ellipse(width*(.8-ring*.5),0,width*(1.1-ring*.5),width*(1.8-ring*.8),0,0,Math.PI*2);c.stroke();
+  }
+  // Fast cyan streaks move down both edges, without changing the hitbox.
+  c.lineWidth=Math.max(.5,width*.1);
+  for(let i=0;i<6;i++){
+    const u=(age*(2.7+i*.11)+i*.23)%1;
+    c.globalAlpha=opacity*Math.sin(Math.PI*u)*.8;
+    c.strokeStyle=i%2?'#b8f7ff':'#218eff';
+    const ySide=(i%2?1:-1)*width*(.8+.3*Math.sin(time+i));
+    c.beginPath();c.moveTo(length*u,ySide);c.lineTo(length*Math.max(0,u-.07),ySide);c.stroke();
+  }
+  c.globalAlpha=opacity*emergence;
+  c.fillStyle='#eaffff';c.beginPath();c.arc(length,0,Math.max(1,width*.45),0,Math.PI*2);c.fill();
+  c.restore();
+}
 function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   const {body,tip,wide}=beamShape(shapeAge);
   const length=body+tip;
@@ -1362,7 +1412,7 @@ function renderBeam(p){
     else renderKiOrb(x,y,4.3);
     c.restore();
   }
-  drawBeamEffect(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence);
+  drawCinematicKamehameha(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence);
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
