@@ -1,4 +1,15 @@
 const {chromium,devices}=require('playwright');const path=require('node:path');const assert=require('node:assert/strict');(async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox']});let failures=0;for(const [name,opts] of [['desktop',{viewport:{width:1280,height:720}}],['iphone',{...devices['iPhone 13'],browserName:undefined}]]){const ctx=await browser.newContext(opts);const page=await ctx.newPage();const errors=[];await page.addInitScript(()=>{window.__spriteDraws={};const original=CanvasRenderingContext2D.prototype.drawImage;CanvasRenderingContext2D.prototype.drawImage=function(image,...args){const src=image?.src||'';if(src.includes('/assets/')){const key=src.split('/').pop().split('?')[0];window.__spriteDraws[key]=(window.__spriteDraws[key]||0)+1;}return original.call(this,image,...args);};});page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await page.goto('http://127.0.0.1:8765/');await page.waitForTimeout(1000);console.log(name,'initial',await page.locator('#kfregion').textContent(),'title buttons',await page.locator('button:visible').allTextContents());await page.screenshot({path:'/tmp/'+name+'-title.png'});const buttons=await page.locator('button:visible').allTextContents();const start=page.getByRole('button',{name:/New Game/i}).first();if(await start.count())await start.click();else console.log('No new game button');await page.waitForTimeout(400);console.log(name,'game',await page.locator('#kfregion').textContent(),'errors',errors);
+// Exercise the actual beam input in Chromium, not only the source formula.
+if(name==='desktop'){
+  await page.keyboard.down('KeyB');
+  await page.waitForTimeout(1100);
+  await page.screenshot({path:'/tmp/desktop-fullscreen-kamehameha.png'});
+  const beamDraws=await page.evaluate(()=>window.__spriteDraws['beam-plasma.webp']||0);
+  assert(beamDraws>0,'Holding Kamehameha must draw its animated plasma atlas');
+  await page.keyboard.up('KeyB');
+  await page.waitForTimeout(200);
+}
+
 // Regression: the Kamehameha must cover the entire visible playfield, not a short 54-unit burst.
 // Verify the actual script used by the browser rather than a duplicated test constant.
 const animationSource=await page.locator('#kfg script').allTextContents();
