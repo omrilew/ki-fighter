@@ -36,6 +36,7 @@ async function run(name,opts){
   const marker='})();\n</script></div>';
   if(!html.includes(marker))throw new Error('Game test bridge injection marker missing');
   await route.fulfill({response,body:html.replace(marker,bridge+'\n})();\n</script></div>')});
+ });
  const errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
