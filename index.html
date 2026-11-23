@@ -2834,8 +2834,10 @@ function fighterAnimationState(o){
   if(o.beam||o.beamCharge!==null||o.blastPose>0)return 'ki';
   if(o.attack>0)return 'attack';
   if(o.dash>0)return 'dash';
-  if(o.walking||o.stride>.18)return 'walk';
+  // Transformation is a locked cinematic, not an idle/walk override.
+  // Keep it ahead of movement so the 12-frame sheet can complete uninterrupted.
   if(o.surge&&o.surgeFlare>0)return 'transform';
+  if(o.walking||o.stride>.18)return 'walk';
   if(o.rechargeVisual>.015||held.has('charge'))return 'charge';
   return 'idle';
 }
@@ -2863,7 +2865,9 @@ function drawDetailedSsj(o){
   const pulse=ignite?1+.055*Math.sin(Math.PI*Math.max(0,progress)):1;
   const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*1.5:Math.sin(storyClock*5)*.4;
   // The transformation sheet includes a wide aura; use a smaller footprint.
-  const size=48*pulse;
+  // Match the approved fighter's 46px source footprint. The cinematic atlas
+  // contains extra aura padding; keep the character anchor fixed at the feet.
+  const size=approvedCell*approvedScale*pulse;
   c.imageSmoothingEnabled=false;
   c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
