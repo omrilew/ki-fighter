@@ -1345,7 +1345,6 @@ window.addEventListener('pointerup',e=>{if(e.pointerId===stickPointer)resetStick
 window.addEventListener('pointercancel',e=>{if(e.pointerId===stickPointer)resetStick()});
 window.addEventListener('blur',resetStick);
 window.addEventListener('pagehide',resetStick);
-window.addEventListener('touchend',e=>{if(stickPointer!==null&&!Array.from(e.touches).some(t=>t.identifier===stickPointer))resetStick()},{passive:true});
 window.addEventListener('touchcancel',resetStick,{passive:true});
 for(const event of ['pointerup','pointercancel','lostpointercapture']){
   stick.addEventListener(event,e=>{if(e.pointerId===stickPointer)resetStick()});
@@ -1844,7 +1843,7 @@ function damagePlayer(amount,dx=0,dy=0){
   hurtReaction(player,dx,dy);
 }
 function update(dt){now+=dt;
-  if(stickPointer!==null&&performance.now()-stickLastEvent>2200)resetStick();
+  if(stickPointer!==null&&performance.now()-stickLastEvent>8000)resetStick();
   if(mode!=='play'&&stickPointer!==null)resetStick();
   checkDojoArrival();partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
