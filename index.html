@@ -1555,7 +1555,8 @@ function renderBeam(p){
     else renderKiOrb(x,y,4.3);
     c.restore();
   }
-  drawCinematicKamehameha(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence);
+  const facing=cinematicBeamDirection(p);
+  drawCinematicKamehameha(x,y,Math.atan2(facing.y,facing.x),p.beamAge,emergence);
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
@@ -1576,17 +1577,28 @@ function renderBeamTrace(f){
   }
   c.restore();
 }
+// Shared cinematic phase timing for Kamehameha charging.
+function cinematicActionPhase(elapsed,duration){
+ const p=lim(elapsed/Math.max(.001,duration),0,1);
+ return {progress:p,stage:p<.18?0:p<.5?1:p<.84?2:3,eased:animationEase(p)};
+}
 function renderBeamCharge(p){
-  const {x,y}=beamCastOrigin(p);
-  const load=lim(p.beamCharge/beam.chargeTime,0,1);
-  const frame=Math.min(3,Math.floor(load*4));
-  const size=10+12*animationEase(load);
-  if(atlasReady(cinematicBeamAtlas)){
-    c.save();c.imageSmoothingEnabled=false;
-    c.drawImage(cinematicBeamAtlas,frame*64,0,64,64,
-      x-size/2,y-size/2,size,size);
-    c.restore();
-  }else renderKiOrb(x,y,2+3*load);
+ const {x,y}=beamCastOrigin(p);
+ const action=cinematicActionPhase(p.beamCharge,beam.chargeTime);
+ const size=7+13*action.eased;
+ c.save();c.imageSmoothingEnabled=false;
+ if(atlasReady(cinematicBeamAtlas))
+  c.drawImage(cinematicBeamAtlas,action.stage*64,0,64,64,x-size/2,y-size/2,size,size);
+ else renderKiOrb(x,y,2+3*action.progress);
+ if(action.stage>0)for(let i=0;i<9;i++){
+  const phase=(storyClock*(1.4+i*.08)+i*.317)%1;
+  const angle=i*2.399+storyClock*3.4;
+  const radius=(5+16*action.eased)*(1-phase);
+  c.globalAlpha=(.24+.65*action.eased)*(1-phase);
+  c.fillStyle=i%3===0?'#ffffff':p.surge?'#ffe58b':'#79eaff';
+  c.fillRect(Math.round(x+Math.cos(angle)*radius),Math.round(y+Math.sin(angle)*radius*.75),2,2);
+ }
+ c.restore();
 }
 function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;burst(p.x,p.y-16,'#d3f2ff')}if(a==='surge'&&down){if(p.surge){p.surge=false;p.hyper=0;notice('SUPER SAIYAN OFF')}else notice('HOLD CHARGE AT FULL KI TO TRANSFORM')}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED')}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
