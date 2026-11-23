@@ -25,5 +25,11 @@ jobs:
           git add assets/normal-movement-4x4.png assets/ssj-movement-4x4.png
           if ! git diff --cached --quiet; then
             git commit -m "Generate clean aligned Normal and SSJ movement atlases"
-            git push origin HEAD:feature/forest-trial-vertical-slice
+            for attempt in 1 2 3 4 5; do
+              git fetch origin feature/forest-trial-vertical-slice
+              git rebase origin/feature/forest-trial-vertical-slice
+              if git push origin HEAD:feature/forest-trial-vertical-slice; then exit 0; fi
+              sleep 2
+            done
+            exit 1
           fi
