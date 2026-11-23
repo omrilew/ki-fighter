@@ -1149,7 +1149,7 @@ function recoverDiagonalFrame(progress){return progress<.26?4:5}
 function beamCastOrigin(p){
   // SSJ is drawn from a 64x96 atlas at 46.08px tall. Legacy beam-body
   // anchors belong to a DIFFERENT character and place the muzzle off-hand.
-  if(p.hero&&p.surge&&atlasReady(ssjMovementAtlas)){
+  if(p.hero&&p.surge&&atlasReady(ssjGameplayCleanAtlas)){
     const size=approvedCell*approvedScale;
     const width=size*64/96;
     const a=cinematicBeamDirection(p);
@@ -3489,18 +3489,13 @@ const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
 const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architecture-4x2.png';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
-const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
-// One canonical SSJ image for movement, combat, and transformation.
+// Original cinematic SSJ transformation atlas; gameplay uses the clean atlas above.
 const ssjGameplayCleanAtlas=new Image();
 ssjGameplayCleanAtlas.src='assets/ssj-gameplay-clean-4x4.png?v=clean-ssj-1';
 const ssjUnifiedAtlas=new Image();
 ssjUnifiedAtlas.src='assets/ssj-unified-production.png?v=unified-20261123';
-const ssjProductionAtlas=ssjUnifiedAtlas;
-const ssjCombatAtlas=ssjUnifiedAtlas;
-const ssjMovementAtlas=ssjUnifiedAtlas;
 const normalMovementAtlas=new Image();normalMovementAtlas.src='assets/normal-movement-4x4.png?v=navy-hair-4';
 const ssjTransformationAtlas=ssjUnifiedAtlas;
-const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-production-'+i+'.svg?v=1';return img});
 const mentorArt=new Image();
 mentorArt.src='assets/mentor.webp';
