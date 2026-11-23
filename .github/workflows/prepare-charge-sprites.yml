@@ -1,0 +1,46 @@
+name: Prepare uploaded charging sprites and SSJ sprite diagnostics
+on:
+  push:
+    branches: [feature/forest-trial-vertical-slice]
+    paths: [.github/workflows/prepare-charge-sprites.yml, assets/ki_charge_16_frame_pack.zip]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract and verify uploaded charge PNGs
+        run: |
+          python - <<'PY'
+          from zipfile import ZipFile
+          from io import BytesIO
+          from pathlib import Path
+          from PIL import Image
+          z=ZipFile('assets/ki_charge_16_frame_pack.zip')
+          print('ZIP entries:',z.namelist())
+          for name in ('charge-normal-16.png','charge-ssj-16.png'):
+              matches=[x for x in z.namelist() if x.endswith('/'+name) or x==name]
+              if len(matches)!=1:raise RuntimeError(f'Expected one {name}, got {matches}')
+              data=z.read(matches[0]);im=Image.open(BytesIO(data)).convert('RGBA')
+              if im.width%8 or im.height%2:raise RuntimeError(f'Invalid 8x2 grid: {im.size}')
+              if im.getbbox() is None:raise RuntimeError(f'Empty sprite sheet {name}')
+              out=Path('assets')/name;out.write_bytes(data)
+              print(name,im.size,'frame',im.width//8,im.height//2)
+          # Create source-frame review sheets; do NOT modify anatomy blindly.
+          for name in ('ssj-movement-4x4.png','ssj-production-actions-4x4.png','ssj-combat-actions-4x4.png'):
+              im=Image.open(Path('assets')/name).convert('RGBA')
+              print('SOURCE',name,im.size,'frame',im.width//4,im.height//4)
+          PY
+      - name: Commit extracted assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/charge-normal-16.png assets/charge-ssj-16.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Extract uploaded 16-frame charging sprites into game assets"
+            git push origin HEAD:feature/forest-trial-vertical-slice
+          fi
