@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="assets/hero-animation/manifest.js?v=charge-stride-2"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="assets/hero-animation/manifest.js?v=approved-charge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -3186,14 +3186,15 @@ function drawDetailedSsj(o){
   c.drawImage(art,source.x+(frame%4)*cellW,source.y+Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 const packedHeroAtlas=new Image();
-packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=charge-stride-2';
+packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=approved-charge-1';
+const packedTransformationAtlas=new Image();
+packedTransformationAtlas.src='assets/hero-animation/transformation-fit.png';
 const packedHeroScale=approvedCell*approvedScale/96;
 const packedHeroFacings=['right','downRight','down','downLeft','left','upLeft','up','upRight'];
 
 function packedHeroPose(p,launch=false){
   const manifest=window.KiHeroManifest;
-  let action='idle',progress,transformation,elapsed=storyClock*1000,angle=p.faceAngle;
-  let surge=p.surge;
+  let action='idle',progress,elapsed=storyClock*1000,angle=p.faceAngle;
   if(launch){
     action='kiBlast';angle=p.blastAngle;
   }
@@ -3202,9 +3203,9 @@ function packedHeroPose(p,launch=false){
   }else if(p.hurt>0){
     action='hurt';progress=1-p.hurt/hitStagger;
   }else if(p.surge&&p.surgeFlare>0){
-    transformation=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
-    surge=transformation>=manifest.special.ssjTransformation.revealAt;
-    action='recharge';elapsed=(p.rechargeElapsed??0)*1000;
+    const frames=manifest.special.ssjTransformation.frames;
+    const phase=lim(1-p.surgeFlare/surgeIgnitionTime,0,1);
+    return {frame:frames[Math.min(frames.length-1,Math.floor(phase*frames.length))],flip:1};
   }else if(p.beam||p.beamRecoveryUntil>now){
     action='beamRelease';
     const aim=cinematicBeamDirection(p);
@@ -3229,7 +3230,7 @@ function packedHeroPose(p,launch=false){
     action='walk';progress=p.gait/(Math.PI*2);
   }
 
-  const clips=manifest.clips[surge?'ssj':'normal'][action];
+  const clips=manifest.clips[p.surge?'ssj':'normal'][action];
   const sector=(Math.round(angle/(Math.PI/4))+8)%8;
   const facing=packedHeroFacings[sector];
   const mirrors=manifest.renderPolicy.mirrorDirections;
@@ -3260,7 +3261,7 @@ function packedHeroPose(p,launch=false){
     }else if(action==='flight'&&progress===undefined)offset%=duration;
     frame=active.find(f=>{offset-=f.durationMs;return offset<0})||active.at(-1);
   }
-  return {frame,flip,recharging:action==='recharge',surge,transformation};
+  return {frame,flip};
 }
 
 function packedHeroOrigin(p,pose){
@@ -3269,26 +3270,6 @@ function packedHeroOrigin(p,pose){
   const [x,y]=frame.muzzle;
   const [footX,footY]=frame.feet;
   return {x:p.x+(x-footX)*packedHeroScale*flip,y:p.y+(y-footY)*packedHeroScale+3};
-}
-
-function drawPackedChargeAura(p,pose){
-  if(!atlasReady(approvedEffects))return;
-  const elapsed=p.rechargeElapsed??0;
-  const growth=animationEase(lim(elapsed/.48,0,1));
-  const breath=Math.sin(elapsed*5.6);
-  const width=27+12*growth+breath,height=34+13*growth+breath*1.3;
-  const frame=pose.surge?6:4;
-  const ignition=pose.transformation===undefined?0:Math.sin(Math.PI*pose.transformation);
-  c.save();
-  c.globalAlpha=growth*.76+ignition*.16;
-  drawApprovedEffect(frame,-width/2,3-height,width,height);
-  for(let i=0;i<2;i++){
-    const rise=(elapsed*.92+i*.5)%1;
-    c.globalAlpha=growth*Math.sin(Math.PI*rise)*.23;
-    const ribbonWidth=width*(.72-.18*rise),ribbonHeight=height*.83;
-    drawApprovedEffect(frame,-ribbonWidth/2,3-ribbonHeight-rise*height*.24,ribbonWidth,ribbonHeight);
-  }
-  c.restore();
 }
 
 function drawPackedHero(p){
@@ -3300,11 +3281,12 @@ function drawPackedHero(p){
   c.ellipse(0,3,8,3,0,0,Math.PI*2);
   c.fill();
   c.imageSmoothingEnabled=false;
-  if(atlasReady(packedHeroAtlas)){
-    if(pose.recharging)drawPackedChargeAura(p,pose);
-    const {frame,flip}=pose,[x,y,w,h]=frame.rect,[footX,footY]=frame.feet;
+  const {frame,flip}=pose;
+  const atlas=frame.sheet==='transformation-fit.png'?packedTransformationAtlas:packedHeroAtlas;
+  if(atlasReady(atlas)){
+    const [x,y,w,h]=frame.rect,[footX,footY]=frame.feet;
     c.scale(flip,1);
-    c.drawImage(packedHeroAtlas,x,y,w,h,-footX*packedHeroScale,3-footY*packedHeroScale,w*packedHeroScale,h*packedHeroScale);
+    c.drawImage(atlas,x,y,w,h,-footX*packedHeroScale,3-footY*packedHeroScale,w*packedHeroScale,h*packedHeroScale);
   }
   c.restore();
 }

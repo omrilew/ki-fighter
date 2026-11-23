@@ -5,13 +5,22 @@ const vm=require('node:vm');
 const context={window:{}};
 const directory='assets/hero-animation/';
 vm.runInNewContext(fs.readFileSync(directory+'manifest.js','utf8'),context);
-const {cell,grid,clips,preflight,renderPolicy}=context.window.KiHeroManifest;
+const {cell,grid,clips,preflight,renderPolicy,special}=context.window.KiHeroManifest;
 const bytes=fs.readFileSync(directory+'body-atlas.png');
 assert.equal(bytes.readUInt32BE(16),grid.columns*cell[0]);
 assert.equal(bytes.readUInt32BE(20),grid.rows*cell[1]);
 assert.equal(renderPolicy.legacyFallback,false);
 assert.equal(preflight.blocked.length,0);
 assert.equal(preflight.missingClips.length,0);
+
+const transformation=fs.readFileSync(directory+'transformation-fit.png');
+assert.equal(special.ssjTransformation.frames.length,12);
+for(const {sheet,rect:[x,y,w,h],feet} of special.ssjTransformation.frames){
+  assert.equal(sheet,'transformation-fit.png');
+  assert(x>=0&&x+w<=transformation.readUInt32BE(16));
+  assert(y>=0&&y+h<=transformation.readUInt32BE(20));
+  assert.equal(feet.join(','),'48,96');
+}
 
 for(const idle of Object.values(clips.normal.idle)){
   assert(idle.loop);
@@ -26,7 +35,7 @@ for(const form of ['normal','ssj']){
   const recharge=clips[form].recharge.shared;
   assert(recharge.loop&&recharge.loopStart>0);
   assert(recharge.frames.length>16);
-  assert.equal(recharge.effectOwnership,'separate');
+  assert.equal(recharge.effectOwnership,'body-and-aura');
   const intro=new Set(recharge.frames.slice(0,recharge.loopStart).map(f=>f.rect.join(',')));
   for(const frame of recharge.frames.slice(recharge.loopStart))assert(!intro.has(frame.rect.join(',')));
 
