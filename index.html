@@ -316,6 +316,7 @@
 #kfg #kfmenu .menu-tabs button{font-size:9px!important;min-width:0!important}
 }
 </style>
+<style id="kf-continuous-world">#kfg #kfmenu .map-destination-note{margin:8px 0 0;color:#e5d5af;font-size:11px;line-height:1.45;padding:8px;border-left:3px solid #c7a465;background:#15253b}</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
@@ -332,9 +333,7 @@
   </div>
   <p id="kfobjective" class="world-objective" hidden></p>
   <button id="kfinteract" class="world-interact" type="button" hidden>Interact</button>
-  <button id="kfdojo-travel" class="world-interact" type="button" hidden style="bottom:36%;background:#a78140;color:#0d1d30;border:2px solid #f5d48a;font-weight:900">ENTER CEDAR DOJO →</button>
   <div class="top">
-    <button id="kfdojo-shortcut" type="button" hidden style="background:#b78c43;color:#111d30;border:2px solid #f8dc9d;font-weight:900">DOJO →</button>
     <div class="powers">
       <button id="kfpowers" aria-expanded="false" aria-controls="kfpower-menu">Powers</button>
       <div class="power-menu" id="kfpower-menu" hidden>
@@ -399,12 +398,9 @@
     <p id="kfmenu-watch"></p>
   </section>
   <section id="kfmenu-map" class="menu-panel" hidden>
-    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map showing Cedar Village, Stone Shrine, and Cedar Dojo. Select Cedar Dojo to travel there."></canvas>
+    <canvas id="kfmenu-map-view" width="624" height="336" role="img" aria-label="World map showing Cedar Village, Stone Shrine, and Cedar Dojo as connected locations in one continuous world."></canvas>
     <p class="map-legend"><span>You</span><span>Objective</span><span>Camp</span></p>
-    <div class="map-destination" style="margin-top:14px;padding:15px;border:1px solid #8ca4c2;background:#1a304b;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-      <div><strong style="display:block;color:#ffe0a0;font-size:16px">CEDAR DOJO · EASTERN TRAINING GROUNDS</strong><small style="display:block;color:#c9d9ed;margin-top:5px">Tap the destination on the map, or use the travel button. The dojo trial unlocks after the Forest Guardian.</small></div>
-      <button id="kfmap-travel-dojo" type="button" style="padding:13px 19px;background:#ad8646;color:#102037;border:2px solid #f6d88d;font-weight:900">TRAVEL TO CEDAR DOJO →</button>
-    </div>
+    <p class="map-destination-note">Cedar Dojo lies east of Stone Shrine. Follow the main trail on foot; the world is continuous.</p>
   </section>
   <section id="kfmenu-training" class="menu-panel" hidden>
     <p id="kfmenu-training-location"></p>
@@ -463,7 +459,7 @@ const worldObjects=[
   shrine,dojoMaster,dojoGate,
 ];
 function worldClearance(x,y){
-  return (x>1040&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
+  return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
     encounters.some(e=>hyp(x-e.x,y-e.y)<34)||
     worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
 }
@@ -621,8 +617,8 @@ bg.fillStyle='#f3d98b';bg.font='bold 13px sans-serif';bg.fillText('DOJO →',950
 bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
-  if(x>937&&x<1150&&Math.abs(y-276)<33)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){dojoArrivalShown=false;summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
+  if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
+function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
 function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';playButton.textContent='↻ RETRY JOURNEY';playButton.disabled=false;modal.style.display='flex'}const playButton=root.querySelector('#kfplay'),newButton=root.querySelector('#kfnew'),titleOptions=root.querySelector('#kftitle-options');
 function hasJourneySave(){try{const data=JSON.parse(localStorage.getItem(journeyKey));return !!data&&journeySteps.includes(data.step)}catch{return false}}
 function refreshTitleActions(){playButton.disabled=!hasJourneySave();playButton.textContent=hasJourneySave()?'Continue':'Continue — No Save'}
@@ -651,24 +647,6 @@ root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
 function renderFighterRoster(){fighterRoster.replaceChildren();for(let i=0;i<fighters.length;i++){const b=document.createElement('button');b.type='button';b.textContent=(i===fighterIndex?'▶ ':'')+fighters[i].name+' · LV '+partyStats[i].level;b.disabled=i===fighterIndex;b.onclick=()=>{closeCharacter();if(!chooseFighter(i))notice('Finish your current action first')};fighterRoster.appendChild(b)}}
 
 const journeySteps=['meet','recover','return','shrine','guardian','done','trial','mastered'];
-let dojoArrivalShown=false;
-const dojoTravelButton=root.querySelector('#kfdojo-travel');
-const dojoShortcut=root.querySelector('#kfdojo-shortcut');
-function enterDojo(){
-  if(mode!=='play'||!player)return;
-  player.x=1150;player.y=276;player.vx=0;player.vy=0;
-  dojoArrivalShown=true;
-  notice('CEDAR DOJO · FIND THE DOJO MASTER');
-  saveJourney();
-}
-dojoTravelButton.addEventListener('click',enterDojo);
-dojoShortcut.addEventListener('click',enterDojo);
-function checkDojoArrival(){
-  if(!player||mode!=='play')return;
-  if(player.x>955&&player.x<1080&&Math.abs(player.y-276)<68){
-    enterDojo();
-  }
-}
 refreshTitleActions();
 const shardIds=['crossing','ridge','cedars'];
 const persistentStats=['level','xp','str','kistat','dex','points'];
@@ -793,7 +771,7 @@ function interact(){
   if(mode!=='play')return;
   const target=nearbyLandmark();
   if(!target)return;
-  if(target===dojoGate){enterDojo();return;}
+  if(target===dojoGate){showStory('Cedar Dojo Gate','The path continues east into Cedar Dojo. Walk through the gate to reach the training court.');return;}
   if(target===dojoMaster){
     if(journeyStep==='done')showStory('Dojo Master','The Cedar Seal is restored. Prove your control against three challengers in this court.','Begin trial',()=>{journeyStep='trial';spawnJourneyEnemies();notice('DOJO TRIAL BEGINS')});
     else if(journeyStep==='trial')showStory('Dojo Master','Combine melee, Ki, dash and fighter switching. Defeat all three challengers.');
@@ -803,7 +781,7 @@ function interact(){
   }
   if(target===shrine){
     if(journeyStep==='done'||journeyStep==='trial'||journeyStep==='mastered'){
-      showStory('Stone Shrine','A golden trail leads east to the Cedar Dojo. Travel there now?','Enter Cedar Dojo',enterDojo);
+      showStory('Stone Shrine','The Cedar Dojo is east along the same forest road. Follow the path past the gate; there is no separate loading area.');
       return;
     }
     if(journeyStep==='shrine'){
@@ -1593,20 +1571,6 @@ const menuSections=Array.from(journeyMenu.querySelectorAll('[data-menu]'));
 const disciplineButtons=Array.from(journeyMenu.querySelectorAll('[data-discipline]'));
 const menuMapCanvas=root.querySelector('#kfmenu-map-view');
 const menuMap=menuMapCanvas.getContext('2d');
-const mapTravelDojo=root.querySelector('#kfmap-travel-dojo');
-mapTravelDojo.addEventListener('click',()=>{
-  if(mode!=='paused')return;
-  closeJourneyMenu();
-  enterDojo();
-});
-menuMapCanvas.style.cursor='pointer';
-menuMapCanvas.title='Select the eastern Cedar Dojo to travel there';
-menuMapCanvas.addEventListener('click',e=>{
-  if(mode!=='paused')return;
-  const rect=menuMapCanvas.getBoundingClientRect();
-  const x=(e.clientX-rect.left)/rect.width;
-  if(x>.69){closeJourneyMenu();enterDojo();}
-});
 const settingsKey='ki-fighter-settings-v1';
 const settings={screenShake:true,minimap:true};
 try{
@@ -1934,7 +1898,7 @@ function damagePlayer(amount,dx=0,dy=0){
 function update(dt){now+=dt;
   if(stickPointer!==null&&performance.now()-stickLastEvent>8000)resetStick();
   if(mode!=='play'&&stickPointer!==null)resetStick();
-  checkDojoArrival();partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+  partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){
@@ -3226,12 +3190,13 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   ink.fill();
   ink.restore();
   if(expanded){
-    // Persistent world-map destination, even before the dojo quest is unlocked.
+    // Persistent landmark: the dojo is reachable by walking, not fast travel.
     const dx=1250*mapRatio,dy=273*mapRatio;
     ink.fillStyle='#f5cf76';ink.strokeStyle='#26324b';ink.lineWidth=2;
     ink.fillRect(dx-7,dy-7,14,14);ink.strokeRect(dx-7,dy-7,14,14);
     ink.fillStyle='#18263c';ink.font='bold 8px system-ui';ink.textAlign='center';
     ink.fillText('D',dx,dy+3);
+    ink.textAlign='left';ink.fillStyle='#f3d99f';ink.font='bold 9px system-ui';ink.fillText('Cedar Dojo',dx-24,dy-12);
     ink.font='bold 8px system-ui';
     ink.textAlign='center';
     ink.strokeStyle='#1a2824';
@@ -3261,8 +3226,6 @@ function renderHUD(){
   if(objective.textContent!==instruction)objective.textContent=instruction;
   objective.hidden=!player||mode==='title';
   interactButton.hidden=mode!=='play'||!nearbyLandmark();
-  dojoTravelButton.hidden=mode!=='play'||!player||player.x<780||player.x>1090||Math.abs(player.y-276)>145;
-  dojoShortcut.hidden=mode!=='play'||!player||player.x<800||player.x>1120;
   hud.notice.hidden=messageTimer<=0;
   const points=player?.points??0;
   pointBadge.hidden=points===0;
