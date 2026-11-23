@@ -176,6 +176,15 @@
 @media(max-width:460px){#kfg .modal:before{inset:6px}#kfg .modal h2{font-size:40px}#kfg .modal p{font-size:11px}#kfg .top{top:71px}#kfg .top button{font-size:11px;padding:7px}#kfg #kfmenu .menu-tabs button{font-size:11px;padding:8px}#kfg .vitals{padding:5px}#kfg .acts{gap:4px}}
 @media(max-height:420px) and (min-width:500px){#kfg .stick{--size:90px}#kfg .acts button{width:55px;min-height:55px}#kfg #kfmenu .menu-panel{min-height:90px;padding:8px}}
 </style>
+<style>
+#kfg #kfmenu .menu-actions{display:flex;gap:5px;flex-wrap:wrap}
+#kfg #kfmenu .menu-actions button{min-height:44px;padding:8px 12px}
+#kfg #kfmenu .technique-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#kfg #kfmenu .technique-list>div{display:grid;gap:5px;padding:10px;background:#1a2c49;border:1px solid #6d83a5}
+#kfg #kfmenu .technique-list strong{color:#f5d36f}
+#kfg #kfmenu .technique-list span{font-size:12px;color:#cbd6e8}
+@media(max-width:530px){#kfg #kfmenu .technique-list{grid-template-columns:1fr}#kfg #kfmenu .menu-head{gap:6px;flex-wrap:wrap}}
+</style>
 <canvas id="kfc"></canvas>
 <div class="ui">
   <div class="hud">
@@ -241,12 +250,12 @@
 <dialog id="kfmenu" aria-labelledby="kfmenu-title">
   <header class="menu-head">
     <h2 id="kfmenu-title">Journey</h2>
-    <button id="kfmenu-close" type="button" autofocus>Resume</button>
+    <div class="menu-actions"><button id="kfmenu-save" type="button">Save</button><button id="kfmenu-title" type="button">Title</button><button id="kfmenu-close" type="button" autofocus>Resume</button></div>
   </header>
   <nav aria-label="Journey menu" class="menu-tabs">
-    <button type="button" data-menu="journal" aria-pressed="true" aria-controls="kfmenu-journal">Journal</button>
+    <button type="button" data-menu="journal" aria-pressed="true" aria-controls="kfmenu-journal">Quests</button>
     <button type="button" data-menu="map" aria-pressed="false" aria-controls="kfmenu-map">World map</button>
-    <button type="button" data-menu="training" aria-pressed="false" aria-controls="kfmenu-training">Training</button>
+    <button type="button" data-menu="training" aria-pressed="false" aria-controls="kfmenu-training">Training</button><button type="button" data-menu="techniques" aria-pressed="false" aria-controls="kfmenu-techniques">Techniques</button>
     <button type="button" data-menu="settings" aria-pressed="false" aria-controls="kfmenu-settings">Settings</button>
   </nav>
   <section id="kfmenu-journal" class="menu-panel">
@@ -269,7 +278,17 @@
     </div>
     <button id="kfmenu-character" type="button">Character upgrades</button>
   </section>
-  <section id="kfmenu-settings" class="menu-panel" hidden>
+  <section id="kfmenu-techniques" class="menu-panel" hidden>
+<h3>Combat Techniques</h3>
+<div class="technique-list">
+<div><strong>Strike Combo</strong><span>Left click / Strike · Three-hit melee chain</span></div>
+<div><strong>Ki Blast</strong><span>Right click or tap Ki · Quick ranged attack</span></div>
+<div><strong>Charged Beam</strong><span>Hold and release Ki · Sustained energy attack</span></div>
+<div><strong>Dash</strong><span>Shift / Dash · Short evasive movement</span></div>
+<div><strong>Ki Recharge</strong><span>R / Charge · Restore energy</span></div>
+<div><strong>Flight / Surge</strong><span>Open Powers · Toggle advanced movement or power</span></div>
+</div></section>
+<section id="kfmenu-settings" class="menu-panel" hidden>
     <label><input id="kfsetting-shake" type="checkbox"> Screen shake</label>
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
@@ -1395,7 +1414,7 @@ function openTitleOptions(){
  root.querySelector('#kfsetting-minimap').checked=settings.minimap;
  selectJourneyTab('settings');
  journeyMenu.showModal();
- journeyMenuClose.textContent='Back to Title';
+ journeyMenuClose.textContent='Back to Title';menuSaveButton.hidden=true;menuTitleButton.hidden=true;
  journeyMenuClose.focus({preventScroll:true});
 }
 let titleOptionsReturn='title';
@@ -1410,6 +1429,7 @@ function openJourneyMenu(tab='journal'){
   pressed.clear();
   for(const button of btns)button.classList.remove('down');
   mode='paused';
+  menuSaveButton.hidden=false;menuTitleButton.hidden=false;
   selectJourneyTab(tab);
   journeyMenu.showModal();
   journeyMenuClose.focus({preventScroll:true});
@@ -1417,13 +1437,16 @@ function openJourneyMenu(tab='journal'){
 function closeJourneyMenu(){
   if(mode==='title-options'){
     journeyMenu.close();mode=titleOptionsReturn;modal.style.display='flex';
-    journeyMenuClose.textContent='Resume';titleOptions.focus({preventScroll:true});return;
+    journeyMenuClose.textContent='Resume';menuSaveButton.hidden=false;menuTitleButton.hidden=false;titleOptions.focus({preventScroll:true});return;
   }
   if(mode!=='paused')return;
   mode='play';
   journeyMenu.close();
   pauseButton.focus({preventScroll:true});
 }
+const menuSaveButton=root.querySelector('#kfmenu-save'),menuTitleButton=root.querySelector('#kfmenu-title');
+menuSaveButton.onclick=()=>{if(mode!=='paused')return;saveJourney();menuSaveButton.textContent='Saved ✓';setTimeout(()=>{menuSaveButton.textContent='Save'},1200)};
+menuTitleButton.onclick=()=>{if(mode!=='paused')return;if(!window.confirm('Save progress and return to the title screen?'))return;saveJourney();journeyMenu.close();mode='title';title.textContent='KI FIGHTER';desc.textContent='Continue your Cedar Village adventure or begin a new journey.';modal.style.display='flex';playButton.textContent='Continue';refreshTitleActions();};
 pauseButton.onclick=()=>openJourneyMenu();
 journeyMenuClose.onclick=closeJourneyMenu;
 journeyMenu.addEventListener('cancel',e=>{e.preventDefault();closeJourneyMenu()});
