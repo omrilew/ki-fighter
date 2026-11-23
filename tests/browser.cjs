@@ -31,6 +31,11 @@ assert(gameSource.includes("return pose(directionRow,1+frameInClip(gait,5),1)"),
   'Front and rear walking must animate through five moving frames');
 assert(gameSource.includes("const kamehamehaVisualTiers=Object.freeze({base:'cinematic',upgrade:'aura-burst'})"),
   'Cinematic Kamehameha must reserve Aura Burst for future skill progression');
+assert(gameSource.includes("function renderBeamTrace(f){")&&
+  gameSource.includes("drawCinematicKamehameha(f.x,f.y,f.angle,f.age+beamTraceTime-f.time")&&
+  gameSource.includes("function renderBeamCharge(p){")&&
+  gameSource.includes("Rotating containment arcs are unique to cinematic Kamehameha"),
+  'Cinematic Kamehameha charge and fade must match its active beam');
 assert(gameSource.includes("function drawCinematicKamehameha(")&&
   gameSource.includes("drawCinematicKamehameha(x,y,Math.atan2(p.fy,p.fx),p.beamAge,emergence)"),
   'Active Kamehameha must use the cinematic beam renderer');
