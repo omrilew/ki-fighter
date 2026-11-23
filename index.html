@@ -3169,6 +3169,18 @@ function character(o,type,referencePose){
   }
   // Charging uses the SAME canonical character renderer as idle/movement.
   // The experimental charge atlas mixes character models and is quarantined.
+  // Base Ki charging must use the canonical BLACK-HAIRED base atlas.
+  // matching-actions charge row and generated charge sheets are not model-safe.
+  if(o.hero&&!o.surge&&fighterAnimationState(o)==='charge'&&atlasReady(normalMovementAtlas)){
+    const size=approvedCell*approvedScale,width=size*64/96;
+    const rear=Math.sin(o.faceAngle)<-.82;
+    const front=Math.sin(o.faceAngle)>.82;
+    const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
+    const row=rear?2:front?0:3;
+    c.save();c.scale(flip,1);c.imageSmoothingEnabled=false;
+    c.drawImage(normalMovementAtlas,0,row*96,64,96,-width/2,-size+4,width,size);
+    c.restore();c.restore();return;
+  }
   if(drawSsjMovement(o,referencePose)){
     c.restore();
     return;
