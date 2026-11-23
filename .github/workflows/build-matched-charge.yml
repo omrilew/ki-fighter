@@ -22,5 +22,6 @@ jobs:
           git add assets/charge-normal-matched-24.png assets/charge-ssj-matched-24.png
           if ! git diff --cached --quiet; then
             git commit -m "Generate 24-frame charge atlases matching approved Goku sprites"
+            git pull --rebase origin feature/forest-trial-vertical-slice
             git push origin HEAD:feature/forest-trial-vertical-slice
           fi
