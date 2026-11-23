@@ -1276,6 +1276,8 @@ const kiActionClips={
 // deliberately reserved for a future upgrade; classic/retro remain available
 // to other attacks rather than being silently reused here.
 const kamehamehaVisualTiers=Object.freeze({base:'cinematic',upgrade:'aura-burst'});
+const cinematicContinuousBeam=new Image();
+cinematicContinuousBeam.src='assets/cinematic-kamehameha-continuous.svg?v=1';
 const cinematicBeamAtlas=new Image();
 cinematicBeamAtlas.src='assets/cinematic-kamehameha-layer.svg?v=2';
 function cinematicBeamDirection(p){
@@ -1293,13 +1295,15 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   if(!atlasReady(cinematicBeamAtlas))return drawBeamEffect(x,y,angle,age,opacity,thin,shapeAge);
   c.save();c.translate(x,y);c.rotate(angle);
   c.globalAlpha=opacity;c.imageSmoothingEnabled=false;
-  // Each 64x64 frame is real authored artwork, not a canvas gradient.
-  // Repeating the seamless segment preserves pixel edges at any range.
-  const segment=34;
-  for(let pos=0;pos<length;pos+=segment){
-    const part=Math.min(segment,length-pos);
-    const frame=(Math.floor(pos/segment)+Math.floor(age*7))%4;
-    c.drawImage(cinematicBeamAtlas,frame*64,64,64,64,pos,-width*.8,part+.5,width*1.6);
+  // A single continuous authored beam layer: no repeated diamond tiles.
+  // Crop the source by visible length, so the leading edge really travels.
+  if(atlasReady(cinematicContinuousBeam)&&length>0){
+    const sourceWidth=Math.max(1,Math.min(512,length/190*512));
+    c.drawImage(cinematicContinuousBeam,0,0,sourceWidth,64,
+      0,-width*.8,length,width*1.6);
+  }else if(length>0){
+    c.fillStyle='#0a76db';c.fillRect(0,-width*.75,length,width*1.5);
+    c.fillStyle='#d8faff';c.fillRect(0,-width*.28,length,width*.56);
   }
   // Authored energy orb masks the emitter and the far beam tip.
   const endFrame=Math.min(3,Math.floor(age*14)%4);
@@ -2852,7 +2856,10 @@ function drawSsjMovement(o,referencePose){
   // approved SSJ movement silhouette for Ki actions until matching poses exist.
   const productionCombat=atlasReady(ssjProductionAtlas);
   const combat=productionCombat||atlasReady(ssjCombatAtlas);
-  const action=state==='attack'||state==='charge'||(state==='ki'&&productionCombat);
+  // Ordinary Ki blasts are NOT Kamehameha. Reserve beam poses for an actual
+  // held beam or its charging/recovery sequence, never for blastPose alone.
+  const beamAction=state==='ki'&&(o.beam||o.beamCharge!==null||o.beamRecoveryUntil>now);
+  const action=state==='attack'||state==='charge'||(beamAction&&productionCombat);
   const kiAction=state==='ki';
   let art=ssjMovementAtlas,row=0,frame=0;
   if(action&&combat){
@@ -2864,7 +2871,7 @@ function drawSsjMovement(o,referencePose){
       frame=kick?[0,1,2,3][Math.floor(progress*4)]:[0,1,2,3][Math.floor(progress*4)];
     }else if(state==='ki'){
       row=2;
-      frame=o.beam||o.blastPose>0?3:o.beamCharge!==null?2:1;
+      frame=o.beam?3:o.beamCharge!==null?2:1;
       if(o.beam&&productionCombat){row=3;frame=2;}
     }else{
       row=productionCombat?2:3;
