@@ -689,10 +689,12 @@ const fighters=[
 ];
 let fighterIndex=0,partyStats=[],partySwitchCooldown=0;
 const partyFields=['level','xp','points','str','kistat','dex'];
+function maxResourceAtLevel(level){return Math.round(100*Math.pow(1.25,Math.max(0,level-1)))}
+function syncLevelResources(p,refill=false){const oldMax=p.max||100,oldKi=p.mki||100;const next=maxResourceAtLevel(p.level);p.max=next;p.mki=next;p.hp=refill?next:Math.min(next,Math.round((p.hp/oldMax)*next));p.ki=refill?next:Math.min(next,Math.round((p.ki/oldKi)*next))}
 function resetParty(){fighterIndex=0;partyStats=fighters.map(f=>({level:1,xp:0,points:0,str:f.str,kistat:f.kistat,dex:f.dex}))}
 function captureParty(){if(player&&partyStats[fighterIndex])partyStats[fighterIndex]=Object.fromEntries(partyFields.map(k=>[k,player[k]]))}
 function canChangeFighter(){return mode==='play'&&player&&player.hp>0&&partySwitchCooldown<=0&&player.attack<=0&&!player.beam&&player.beamCharge===null&&player.hurt<=0&&player.dash<=0}
-function chooseFighter(i){if(!canChangeFighter()||i===fighterIndex||!partyStats[i])return false;captureParty();fighterIndex=i;Object.assign(player,partyStats[i]);player.combo=0;player.link=0;player.fly=false;player.surge=false;player.vx=0;player.vy=0;partySwitchCooldown=.75;saveJourney();notice(fighters[i].name+' · '+fighters[i].role);return true}
+function chooseFighter(i){if(!canChangeFighter()||i===fighterIndex||!partyStats[i])return false;captureParty();fighterIndex=i;Object.assign(player,partyStats[i]);syncLevelResources(player);player.combo=0;player.link=0;player.fly=false;player.surge=false;player.vx=0;player.vy=0;partySwitchCooldown=.75;saveJourney();notice(fighters[i].name+' · '+fighters[i].role);return true}
 const partySwitchButton=document.createElement('button');partySwitchButton.id='kfparty-switch';partySwitchButton.type='button';partySwitchButton.textContent='Switch [Q]';partySwitchButton.style.cssText='position:absolute;right:8px;top:126px;z-index:2;padding:8px 10px;min-height:44px';root.appendChild(partySwitchButton);partySwitchButton.onclick=()=>chooseFighter((fighterIndex+1)%fighters.length);
 const fighterRoster=document.createElement('div');fighterRoster.className='party-roster';fighterRoster.setAttribute('aria-label','Playable fighters');
 root.querySelector('#kfcharacter .character-main').prepend(fighterRoster);
@@ -737,6 +739,7 @@ function loadJourney(){
       partyStats[0]=Object.fromEntries(partyFields.map(k=>[k,player[k]]));
     }
   }catch{}
+  syncLevelResources(player,true);
 }
 const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158};
 function spawnJourneyEnemies(){
@@ -875,11 +878,10 @@ function applyLevelUps(p){
     p.xp-=xpRequired(p.level);
     p.level++;
     p.points++;
-    p.hp=Math.min(p.max,p.hp+25);
-    p.ki=p.mki;
+    syncLevelResources(p,true);
   }
   const earned=p.points-initial;
-  if(earned)notice('LEVEL '+p.level+' · +'+earned+' '+(earned===1?'POINT':'POINTS'));
+  if(earned)notice('LEVEL '+p.level+' · HP '+p.max+' · KI '+p.mki+' · +'+earned+' '+(earned===1?'POINT':'POINTS'));
 }
 const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
 
@@ -3321,7 +3323,7 @@ function renderHUD(){
   const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){surgeControl.disabled=!player?.surge;surgeControl.textContent=player?.surge?'Power down':'Surge locked'}
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
-  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village',ko:`${kills} KO`,notice:msg};
+  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village',ko:`${kills} KO`,notice:msg};
   for(const [key,value] of Object.entries(labels)){
     if(hud[key].textContent!==value)hud[key].textContent=value;
   }
