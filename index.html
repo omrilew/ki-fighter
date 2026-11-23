@@ -2833,7 +2833,8 @@ function detailedSsjFrame(o){
     const progress=Math.max(0,Math.min(1,1-o.surgeFlare/surgeIgnitionTime));
     return Math.min(7,Math.floor(progress*8));
   }
-  return 6+(Math.floor(storyClock/.32)%2);
+  // Alternate idle poses, but never play the early transformation poses again.
+  return 6+(Math.floor(storyClock/.22)%2);
 }
 function drawDetailedSsj(o){
   const frame=detailedSsjFrame(o);
@@ -2841,8 +2842,10 @@ function drawDetailedSsj(o){
   const ignite=o.surgeFlare>0;
   const progress=ignite?1-o.surgeFlare/surgeIgnitionTime:1;
   const pulse=ignite?1+.08*Math.sin(Math.PI*Math.max(0,progress)):1;
+  // The feet stay planted while the upper body lifts and settles.
+  const bob=ignite?Math.sin(Math.PI*Math.max(0,progress))*2:Math.sin(storyClock*5)*.65;
   c.imageSmoothingEnabled=false;
-  c.drawImage(ssjDetailedAtlas,(frame%4)*443,Math.floor(frame/4)*443,443,443,-34*pulse,-63*pulse,68*pulse,68*pulse);
+  c.drawImage(ssjDetailedAtlas,(frame%4)*443,Math.floor(frame/4)*443,443,443,-34*pulse,-63*pulse-bob,68*pulse,68*pulse);
 }
 function character(o,type,referencePose){
   c.save();
