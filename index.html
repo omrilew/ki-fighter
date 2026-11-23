@@ -3031,32 +3031,35 @@ function drawChargeSprite(o){
 // Exactly one SSJ character image per frame. Transformation and SSJ charge
 // remain owned by the original cinematic atlas. Combat uses the NEW
 // hand-complete action sheet; no movement-frame substitution for attacks.
+// One coherent character atlas for every SSJ gameplay state.
+// All cells share a 64x96 silhouette and identical foot anchors.
+// The approved cinematic transformation is handled separately.
 function drawSsjMovement(o,referencePose){
- if(!o.hero||!o.surge||!atlasReady(ssjGameplayCleanAtlas))return false;
+ if(!o.hero||!o.surge||!atlasReady(ssjCohesiveAtlas))return false;
  const state=fighterAnimationState(o);
  const rear=Math.sin(o.faceAngle)<-.82;
  const front=Math.sin(o.faceAngle)>.82;
  const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
  const moving=state==='walk'||state==='dash';
- const row=rear?2:front?(moving?1:0):3;
- const movementFrame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
- let image=ssjGameplayCleanAtlas,sourceRow=row,frame=movementFrame;
- if((state==='attack'||state==='ki'||state==='hurt'||state==='ko')&&atlasReady(ssjGameplayActionsAtlas)){
-   image=ssjGameplayActionsAtlas;
-   sourceRow=state==='attack'?0:state==='ki'?1:state==='hurt'?2:3;
-   if(state==='attack'){
-     const t=lim(1-o.attack/Math.max(.001,o.attackDuration),0,.999);
-     frame=Math.min(3,Math.floor(t*4));
-   }else if(state==='ki'){
-     frame=o.beam?3:o.beamCharge!==null?Math.min(2,Math.floor((o.beamCharge||0)*5)):0;
-   }else if(state==='hurt'){
-     frame=Math.min(3,Math.floor(Math.max(0,o.hurt)*9));
-   }else frame=3;
+ let row=rear?2:front?(moving?1:0):3;
+ let frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):Math.floor(storyClock*2)%4;
+ if(state==='attack'){
+   const t=lim(1-o.attack/Math.max(.001,o.attackDuration),0,.999);
+   const strike=strikes[o.strike];
+   row=strike&&strike.frame===fighterFrames.kick?5:4;
+   frame=Math.min(3,Math.floor(t*4));
+ }else if(state==='ki'){
+   row=6;
+   frame=o.beam?3:o.beamCharge!==null?Math.min(2,Math.floor((o.beamCharge||0)*5)):0;
+ }else if(state==='hurt'){
+   row=7;frame=Math.min(3,Math.floor(Math.max(0,o.hurt)*9));
+ }else if(state==='ko'){
+   row=8;frame=3;
  }
  const size=approvedCell*approvedScale,width=size*64/96;
  c.save();c.scale(flip,1);c.imageSmoothingEnabled=false;
  if(state==='hurt')c.translate((o.hurtX||0)*2,(o.hurtY||0)*2);
- c.drawImage(image,frame*64,sourceRow*96,64,96,-width/2,-size+4,width,size);
+ c.drawImage(ssjCohesiveAtlas,frame*64,row*96,64,96,-width/2,-size+4,width,size);
  c.restore();return true;
 }
 function drawApprovedHero(o,referencePose){
@@ -3174,7 +3177,7 @@ function character(o,type,referencePose){
   if(o.hero&&o.surge){
     if(detailedSsjIdle(o,referencePose)){
       if(window.KiSsjUnifiedLayout)drawDetailedSsj(o);
-    }else if(atlasReady(ssjGameplayCleanAtlas)){
+    }else if(atlasReady(ssjCohesiveAtlas)){
       drawSsjMovement(o,referencePose);
     }else if(atlasReady(normalMovementAtlas)){
       // Safe fallback: canonical base body, never defective old SSJ art.
@@ -3500,6 +3503,8 @@ const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architectur
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 // Original cinematic SSJ transformation atlas; gameplay uses the clean atlas above.
+const ssjCohesiveAtlas=new Image();
+ssjCohesiveAtlas.src='assets/ssj-cohesive-4x9.png?v=cohesive-1';
 const ssjGameplayActionsAtlas=new Image();
 ssjGameplayActionsAtlas.src='assets/ssj-gameplay-actions-4x4.png?v=action-rebuild-1';
 const ssjGameplayCleanAtlas=new Image();
