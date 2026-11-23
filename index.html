@@ -944,7 +944,7 @@ function fire(){
 // The Kamehameha must reach past the farthest visible screen corner, even when
 // the player fires diagonally from a viewport edge. Rendering and hit detection
 // both consume beamShape(), so they always agree on the beam's actual reach.
-const beam={start:1.5,wide:10,body:Math.ceil(Math.hypot(W,H)*1.5),tip:24,chargeTime:.55,damage:56,drain:7};
+const beam={start:3,wide:19,body:Math.ceil(Math.hypot(W,H)*1.5),tip:32,chargeTime:.55,damage:56,drain:7};
 function beamShape(age){
   const expand=animationEase((age-.035)/.09);
   const settle=animationEase((age-.135)/.105);
@@ -1276,7 +1276,7 @@ function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   c.globalAlpha=opacity;
   c.save();
   c.translate(length*.57,0);
-  c.scale(length*.59,width*1.85);
+  c.scale(length*.59,width*2.2);
   const glow=c.createRadialGradient(0,0,0,0,0,1);
   glow.addColorStop(0,'#258fff83');
   glow.addColorStop(.65,'#258fff38');
@@ -1288,7 +1288,7 @@ function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   if(atlasReady(beamPlasma)){
     const first=animationEase((shapeAge-.035)/.10);
     const second=animationEase((shapeAge-.125)/.10);
-    const height=width*(.9+1.25*second)*(1+.075*Math.sin(time)+.025*Math.sin(time*1.93));
+    const height=width*(1.1+1.45*second)*(1+.075*Math.sin(time)+.025*Math.sin(time*1.93));
     c.globalAlpha=opacity*(1-first);
     if(first<1)drawBeamPlasma(3,0,-height*.5,length,height);
     c.globalAlpha=opacity*first*(1-second);
