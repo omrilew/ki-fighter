@@ -2824,10 +2824,9 @@ function drawApprovedHero(o,referencePose){
 // Render the newly approved fighter atlas in normal idle, charge and SSJ.
 // Combat/movement retain their directional action sprites.
 function detailedSsjIdle(o,referencePose){
-  return o===player&&atlasReady(ssjTransformationAtlas)&&
-    !o.walking&&o.stride<.18&&!o.hurt&&!o.attack&&!o.dash&&
-    !o.blastPose&&!o.beam&&o.beamCharge===null&&
-    !(o.beamRecoveryUntil>now);
+  // Always use the new approved artwork for the player while it is loaded.
+  // Previous state gates silently reverted to the old sprite on mobile.
+  return o===player&&atlasReady(ssjTransformationAtlas);
 }
 function detailedSsjFrame(o){
   if(!o.surge){
@@ -3207,7 +3206,7 @@ const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
-const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png';
+const ssjTransformationAtlas=new Image();ssjTransformationAtlas.src='assets/ssj-transformation-12.png?v=ssj12-20261123b';
 const ssjAuraAtlas=new Image();ssjAuraAtlas.src='assets/ssj-aura-atlas.svg';
 const dojoMasterFrames=[0,1,2,3].map(i=>{const img=new Image();img.src='assets/dojo-master-'+i+'.svg';return img});
 const mentorArt=new Image();
