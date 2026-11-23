@@ -3225,6 +3225,8 @@ function renderSceneryDebris(f){
 const worldProps=new Image();
 worldProps.src='assets/world-props.webp';
 const dojoHallArt=new Image();dojoHallArt.src='assets/dojo-hall.svg';
+// Eight 128×144 panels: wood/tatami floors (top row), architectural walls (bottom).
+const dojoArchitecture=new Image();dojoArchitecture.src='assets/dojo-architecture-4x2.png';
 const dojoCourtArt=new Image();dojoCourtArt.src='assets/dojo-courtyard.svg';
 const hyperWaveArt=new Image();hyperWaveArt.src='assets/hyper-charge-shockwave.svg';
 const ssjDetailedAtlas=new Image();ssjDetailedAtlas.src='assets/ssj-detailed-atlas.png';
@@ -3326,9 +3328,21 @@ function drawHyperWave(p){
   c.restore();
 }
 function drawDojoBuilding(){
- if(!atlasReady(dojoHallArt))return;
  c.save();c.imageSmoothingEnabled=false;
- c.drawImage(dojoHallArt,1106,77,326,111);
+ if(atlasReady(dojoArchitecture)){
+   // Build a real modular dojo facade from the new high-detail atlas.
+   // Individual source panels are 128×144; destination panels are 82×104.
+   // Align all panel baselines so the shoji and wood framing join cleanly.
+   const x=1105,y=77,w=82,h=104;
+   for(let i=0;i<4;i++){
+     const panel=[0,1,2,3][i];
+     c.drawImage(dojoArchitecture,panel*128,144,128,144,x+i*w,y,w,h);
+   }
+   // Continuous timber porch across the front of the hall.
+   for(let i=0;i<4;i++)c.drawImage(dojoArchitecture,128,0,128,144,x+i*w,y+h-2,w,10);
+ }else if(atlasReady(dojoHallArt)){
+   c.drawImage(dojoHallArt,1106,77,326,111);
+ }
  c.restore();
 }
 function drawWorldWater(view){
