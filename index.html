@@ -2762,9 +2762,9 @@ function approvedHeroPose(o,referencePose){
   }
   if(o.surge&&o.surgeFlare>0&&!vertical)return pose(12,frameInClip(1-o.surgeFlare/surgeIgnitionTime,4));
   if(o.walking||o.stride>.18){
-    // All four directions retain distinct source rows; the 6-frame lateral
-    // cycle uses the matching-actions atlas rather than a static idle pose.
-    if(vertical)return pose(directionRow,frameInClip(gait,4)+1,1);
+    // All four directions have independent artwork and a cycling gait.
+    // Front/back frames 1..5 avoid the standing frame 0 while moving.
+    if(vertical)return pose(directionRow,1+frameInClip(gait,5),1);
     return pose(1,frameInClip(gait,6),side);
   }
   if(vertical)return pose(o.surge?(rear?19:16):directionRow,0,1);
