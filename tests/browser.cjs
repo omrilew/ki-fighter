@@ -157,10 +157,17 @@ const ssjBeforeMove=await page.evaluate(()=>window.__spriteDraws['ssj-movement-4
 await page.keyboard.down('KeyD');await page.waitForTimeout(350);await page.keyboard.up('KeyD');
 const ssjAfterMove=await page.evaluate(()=>window.__spriteDraws['ssj-movement-4x4.png']||0);
 assert(ssjAfterMove>ssjBeforeMove,'New SSJ directional movement atlas must animate after transformation');
-const combatBefore=await page.evaluate(()=>window.__spriteDraws['ssj-combat-actions-4x4.png']||0);
-await page.keyboard.down('KeyJ');await page.waitForTimeout(100);await page.keyboard.up('KeyJ');
-const combatAfter=await page.evaluate(()=>window.__spriteDraws['ssj-combat-actions-4x4.png']||0);
-assert(combatAfter>combatBefore,'SSJ Strike must draw new combat atlas');
+const productionAsset=await page.evaluate(async()=>{
+  const img=new Image();img.src='assets/ssj-production-actions-4x4.png?v=production-1';
+  try{await img.decode();return {ok:true,width:img.naturalWidth,height:img.naturalHeight}}
+  catch{return {ok:false,width:0,height:0}}
+});
+assert.deepEqual(productionAsset,{ok:true,width:256,height:384},
+  'Production SSJ action atlas must load at the approved 4x4 dimensions');
+const combatBefore=await page.evaluate(()=>window.__spriteDraws['ssj-production-actions-4x4.png']||0);
+await page.keyboard.down('KeyJ');await page.waitForTimeout(160);await page.keyboard.up('KeyJ');
+const combatAfter=await page.evaluate(()=>window.__spriteDraws['ssj-production-actions-4x4.png']||0);
+assert(combatAfter>combatBefore,'SSJ Strike must draw production combat atlas');
 
 await page.screenshot({path:'/tmp/desktop-super-saiyan.png'});
 }
