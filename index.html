@@ -2837,7 +2837,7 @@ function drawHeroAtlasFrame(image,row,frame,side){
 // They are used only for idle/walk; attack, beam and transformation remain
 // on their dedicated action atlases. All frames share the feet anchor.
 function drawSsjMovement(o,referencePose){
-  if(!o.hero||referencePose||!o.surge||!atlasReady(ssjMovementAtlas))return false;
+  if(!o.hero||!o.surge||!atlasReady(ssjMovementAtlas))return false;
   const state=fighterAnimationState(o);
   if(state==='transform'||state==='ko')return false;
   const rear=Math.sin(o.faceAngle)<-.82;
@@ -2845,8 +2845,11 @@ function drawSsjMovement(o,referencePose){
   const flip=!rear&&!front&&Math.cos(o.faceAngle)<0?-1:1;
   const size=approvedCell*approvedScale;
   const width=size*64/96;
+  // The uploaded combat sheet contains the older character design. Keep the
+  // approved SSJ movement silhouette for Ki actions until matching poses exist.
   const combat=atlasReady(ssjCombatAtlas);
-  const action=state==='attack'||state==='ki'||state==='charge';
+  const action=state==='attack'||state==='charge';
+  const kiAction=state==='ki';
   let art=ssjMovementAtlas,row=0,frame=0;
   if(action&&combat){
     art=ssjCombatAtlas;
@@ -2855,9 +2858,6 @@ function drawSsjMovement(o,referencePose){
       const progress=Math.max(0,Math.min(.999,1-o.attack/Math.max(.001,o.attackDuration)));
       row=kick?1:0;
       frame=kick?[0,1,2,3][Math.floor(progress*4)]:[0,1,2,3][Math.floor(progress*4)];
-    }else if(state==='ki'){
-      row=2;
-      frame=o.beam||o.blastPose>0?2:o.beamCharge!==null?1:o.beamRecoveryUntil>now?3:0;
     }else{
       row=3;
       frame=held.has('charge')?2+(Math.floor(storyClock*7)%2):1;
@@ -2865,7 +2865,7 @@ function drawSsjMovement(o,referencePose){
   }else{
     const moving=state==='walk'||state==='dash';
     row=rear?2:front?(moving?1:0):3;
-    frame=moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
+    frame=kiAction?0:moving?frameInClip(((o.gait/(Math.PI*2))%1+1)%1,4):0;
   }
   c.save();
   if(state==='attack'){
