@@ -946,13 +946,14 @@ function fire(){
 // both consume beamShape(), so they always agree on the beam's actual reach.
 const beam={start:3,wide:19,body:Math.ceil(Math.hypot(W,H)*1.5),tip:32,chargeTime:.55,damage:56,drain:7};
 function beamShape(age){
-  // Let the beam visibly travel outward rather than reaching full range
-  // almost instantly. This shape is shared by visuals and hit detection.
-  const expand=animationEase((age-.05)/.38);
-  const settle=animationEase((age-.32)/.48);
-  const length=.25+.35*expand+.40*settle;
-  const width=.35+.35*expand+.30*settle;
-  return {body:beam.body*length,tip:beam.tip*length,wide:beam.wide*width};
+  // The blast has a real traveling head. It starts at the hands, advances
+  // at a fixed world-space speed and stops at a controlled maximum range.
+  // The same geometry drives rendering, collisions and the fading trace.
+  const travel=Math.max(0,age-.09);
+  const total=Math.min(190,travel*112);
+  const tip=Math.min(beam.tip,total*.22);
+  const width=animationEase(Math.min(1,travel/.35));
+  return {body:Math.max(0,total-tip),tip,wide:beam.wide*(.52+.48*width)};
 }
 const {ease:animationEase,damp:animationDamp,sample:samplePose,framesAt,actionPhase,clips:animationClips}=KiAnimation;
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
