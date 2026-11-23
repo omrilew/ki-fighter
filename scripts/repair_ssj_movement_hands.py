@@ -12,10 +12,10 @@ px=im.load()
 # Each patch sits inside the existing dark glove silhouette, at the end of
 # the connected forearm. Top rows show both fists; rear view shows knuckles.
 poses={
- 0:[(17,60),(46,60)],
- 1:[(17,60),(46,60)],
- 2:[(17,59),(46,59)],
- 3:[(18,58),(42,58)],
+ 0:[(18,58),(46,58)],
+ 1:[(18,58),(46,58)],
+ 2:[(18,58),(46,58)],
+ 3:[(18,56),(42,56)],
 }
 palette={
  'outline':(64,35,42,255),
@@ -30,18 +30,21 @@ for row in range(4):
    # Tiny clenched-fist pattern, deliberately not a circle/blob.
    # Skin replaces existing pixels only; alpha/silhouette is untouched.
    shape=[
-    ' .SS. ',
-    '.SMMs.',
-    'SMLMMs',
-    'SMLMMs',
-    '.SMMs.',
-    ' .SS. '
+    '  .SSS.  ',
+    ' .SMMMS. ',
+    '.SMMMMMS.',
+    'SMMMLMMMS',
+    'SMMMLMMMS',
+    'SMMMMMMMS',
+    '.SMMMMMS.',
+    ' .SSSSS. ',
+    '  .....  '
    ]
    for dy,line in enumerate(shape):
     for dx,ch in enumerate(line):
      if ch==' ':continue
-     x=col*64+hx+dx-3
-     y=row*96+hy+dy-3
+     x=col*64+hx+dx-4
+     y=row*96+hy+dy-4
      old=px[x,y]
      if old[3]<170:continue
      # Retain any existing orange gi, gold hair, or bright skin.
