@@ -3429,45 +3429,29 @@ function drawCinematicChargeEnergy(p,elapsed,ease){
 // Each flame has its own phase and climbs independently; no static spike frame.
 // Charge artwork uses the approved illustrated transformation energy sprites.
 // Never synthesize triangular flames or render a second fighter.
+// These are the SAME twelve illustrated frames as the SSJ transformation,
+// with the fighter pixels masked out. Blue is a palette variant of that art.
+const transformationChargeAuras={gold:new Image(),blue:new Image()};
+transformationChargeAuras.gold.src='assets/transformation-aura-gold-12.png?v=transform12';
+transformationChargeAuras.blue.src='assets/transformation-aura-blue-12.png?v=transform12';
 function drawUnifiedChargeAura(p,gold){
- const charging=held.has('charge');
- const transforming=gold&&p.surgeFlare>0;
+ const charging=held.has('charge'),transforming=gold&&p.surgeFlare>0;
  if(!charging&&!transforming)return;
- if(!atlasReady(approvedEffects)){auraFallback(p,gold?'gold':'blue',2);return}
+ const art=transformationChargeAuras[gold?'gold':'blue'];
+ if(!atlasReady(art))return;
  const elapsed=charging?Math.max(0,storyClock-(p._auraChargeSince??storyClock)):0;
- const power=transforming?1:lim(elapsed/2.0,0,1);
- const ease=power*power*(3-2*power);
- const t=storyClock;
- const w=43+ease*24,h=62+ease*28;
+ const intensity=transforming?1:lim(elapsed/1.7,0,1);
+ const ease=intensity*intensity*(3-2*intensity);
+ const frame=transforming
+  ?Math.min(11,Math.floor(lim(1-p.surgeFlare/surgeIgnitionTime,0,1)*12))
+  :Math.floor(storyClock*13)%12;
+ const cellW=art.naturalWidth/4,cellH=art.naturalHeight/3;
+ const size=approvedCell*approvedScale*(1.04+.27*ease);
+ const pulse=1+.025*Math.sin(storyClock*9);
  c.save();c.translate(p.x,p.y);c.imageSmoothingEnabled=false;
- // Approved illustrated energy silhouette, slightly pulsing without changing fighter.
- c.globalAlpha=.72+.12*ease;
- drawApprovedEffect(gold?6:4,-w/2,5-h,w,h);
- // Animated narrow tongues sampled from the same artwork. Independent movement,
- // low opacity and clipped to the existing silhouette to avoid harsh polygons.
- const frame=gold?6:4,dimensions=approvedEffectSizes[frame];
- c.save();c.beginPath();c.rect(-w*.53,-h-3,w*1.06,h+8);c.clip();
- for(let i=0;i<10;i++){
-  const phase=(t*(.45+i*.065)+i*.213)%1;
-  const side=i%2?-1:1;
-  const sourceX=Math.floor(dimensions[0]*(side<0?.10:.76));
-  const sourceW=Math.min(17,dimensions[0]-sourceX);
-  const x=side*(w*(.20+(i%4)*.065))+Math.sin(t*3+i)*2;
-  const y=4-phase*h*.56;
-  const fh=15+ease*18+(i%3)*4;
-  c.globalAlpha=(.12+.25*ease)*Math.sin(phase*Math.PI);
-  c.drawImage(approvedEffects,frame*288+sourceX,Math.floor(dimensions[1]*.18),sourceW,Math.floor(dimensions[1]*.58),
-   x-3,y-fh,6+(i%3)*2,fh);
- }
- c.restore();
- // Sparse traveling sparks are accents, not the aura's main silhouette.
- for(let i=0;i<8;i++){
-  const phase=(t*(.65+i*.08)+i*.291)%1;
-  c.globalAlpha=(.12+.38*ease)*Math.sin(Math.PI*phase);
-  c.fillStyle=gold?'#fff0ac':'#bceeff';
-  const x=(i%2?-1:1)*(w*.24+(i%3)*4)+Math.sin(t*4+i)*2;
-  c.fillRect(Math.round(x),Math.round(3-phase*h*.82),2,2);
- }
+ c.globalAlpha=.76+.22*ease;
+ c.drawImage(art,(frame%4)*cellW,Math.floor(frame/4)*cellH,cellW,cellH,
+   -size*pulse/2,4-size*pulse,size*pulse,size*pulse);
  c.restore();
 }
 function drawSsjAura(p){drawUnifiedChargeAura(p,true)}
