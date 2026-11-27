@@ -21,7 +21,7 @@ Requires Pillow, numpy and node (to read the JS manifest).
 import argparse, io, json, re, subprocess
 import numpy as np
 from PIL import Image
-from validate_hero_atlas import gait_weights
+from validate_hero_atlas import gait_weights, hand_mask, muzzle_checks
 
 DIR = 'assets/hero-animation/'
 CELL_W, CELL_H = 64, 96
@@ -29,6 +29,47 @@ OUTLINE = (34, 22, 30)
 # Fade/grow of the aura layer across the 9 intro frames (stand -> crouch).
 INTRO_ALPHA = [0, 0, 0, 0, .22, .42, .62, .8, .93]
 INTRO_SCALE = [.55, .55, .55, .55, .6, .68, .77, .86, .94]
+# Combat clip trims (frames removed from a clip; their cells are cleared):
+# - Kamehameha facing the camera / away: release frames 0-1 are a neutral
+#   standing pose between the gather (hands at the belly) and the push, so the
+#   pose popped and the beam emerged from the belt with no hands near it.
+# - SSJ gather down/up: the last frame turns to a 3/4 side crouch, then the
+#   release snaps back to the front/back view.
+COMBAT_TRIMS = [
+    # (form, action, direction, frames dropped from start, frames dropped from end)
+    ('normal', 'beamRelease', 'down', 2, 0), ('normal', 'beamRelease', 'up', 2, 0),
+    ('ssj', 'beamRelease', 'down', 2, 0), ('ssj', 'beamRelease', 'up', 2, 0),
+    ('ssj', 'beamGather', 'down', 0, 1), ('ssj', 'beamGather', 'up', 0, 1),
+]
+
+
+def form_section(text, form):
+    starts = {f: text.index('\n    %s: {\n' % f) for f in ('normal', 'ssj')}
+    start = starts[form]
+    later = [v for v in starts.values() if v > start]
+    return start, (min(later) if later else len(text))
+
+
+def trim_clip(text, man, form, action, direction, head, tail):
+    lo, hi = form_section(text, form)
+    a = text.index('\n      %s: {\n' % action, lo, hi)
+    d = text.index('\n        %s: {\n' % direction, a, hi)
+    f0 = text.index('          frames: [\n', d) + len('          frames: [\n')
+    f1 = text.index('          ],\n', f0)
+    lines = text[f0:f1].splitlines(keepends=True)
+    clip = man['clips'][form][action][direction]
+    assert len(lines) == len(clip['frames'])
+    keep = lines[head:len(lines) - tail]
+    text = text[:f0] + ''.join(keep) + text[f1:]
+    clip['frames'] = clip['frames'][head:len(clip['frames']) - tail]
+    if 'holdFrame' in clip:
+        old = '          holdFrame: %d,\n' % clip['holdFrame']
+        at = text.index(old, d)
+        clip['holdFrame'] = max(0, clip['holdFrame'] - head)
+        text = text[:at] + '          holdFrame: %d,\n' % clip['holdFrame'] + text[at + len(old):]
+    return text
+
+
 # Never shorten the walk cycle below the original 26.2 world px (54.5 atlas px
 # at 0.48 scale): a shorter cycle would raise the step cadence.
 MIN_STRIDE_CELL_PX = 55
@@ -273,6 +314,8 @@ def main():
     manifest_text = git_bytes(args.rev, DIR + 'manifest.js').decode()
     man = load_manifest(manifest_text)
 
+    for trim in COMBAT_TRIMS:
+        manifest_text = trim_clip(manifest_text, man, *trim)
     atlas = fix_magenta(hard_alpha(src))
 
     # 3. clear unreferenced cells
@@ -370,6 +413,20 @@ def main():
                 lines += '          gaitWeights: %s,\n          strideCellPx: %d,\n' % (json.dumps(meta['gaitWeights']), max(sum(meta['gaitWeights']), MIN_STRIDE_CELL_PX))
             lines += '          restFrames: %s,\n' % json.dumps(meta['restFrames'])
             text = text[:at] + lines + text[at:]
+    # Kamehameha muzzles that sit off the hands move to the nearest hand pixel.
+    for form, action, direction, i in muzzle_checks(man):
+        f = man['clips'][form][action][direction]['frames'][i]
+        x, y, w, h = f['rect']
+        ys, xs = np.nonzero(hand_mask(atlas[y:y + h, x:x + w]))
+        mx, my = f['muzzle']
+        d = np.hypot(xs - mx, ys - my)
+        if len(d) and d.min() > 3:
+            k = int(np.argmin(d))
+            old_line = '"rect": [%d, %d, %d, %d], "durationMs": %d, "feet": [%d, %d], "muzzle": [%d, %d]' % (x, y, w, h, f['durationMs'], *f['feet'], mx, my)
+            assert text.count(old_line) == 1, old_line
+            text = text.replace(old_line, old_line[:old_line.rindex('[')] + '[%d, %d]' % (xs[k], ys[k]))
+            f['muzzle'] = [int(xs[k]), int(ys[k])]
+
     text = text.replace('"body-and-aura"', '"separate-aura"').replace("'body-and-aura'", "'separate-aura'")
     text = text.replace('effectOwnership: "body-and-aura"', 'effectOwnership: "separate-aura"')
     open(DIR + 'manifest.js', 'w').write(text)

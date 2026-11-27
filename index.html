@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="assets/hero-animation/manifest.js?v=aura-split-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="assets/hero-animation/manifest.js?v=combat-fix-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -1194,7 +1194,9 @@ function fireChargedBeam(p){
   spendKi(p,2);
   p.beam=1;
   p.beamAge=0;
-  const {x,y}=beamCastOrigin(p);
+  // Pulse where the beam leaves the hands (release hold pose), so no ghost
+  // ring is left at the gather position while the arms push forward.
+  const {x,y}=fighterIndex===0?packedBeamHoldOrigin(p):beamCastOrigin(p);
   kiPulse(x,y,5);
   notice('KAMEHAMEHA!');
 }
@@ -1594,7 +1596,8 @@ function cinematicActionPhase(elapsed,duration){
 function renderBeamCharge(p){
  const {x,y}=beamCastOrigin(p);
  const action=cinematicActionPhase(p.beamCharge,beam.chargeTime);
- const size=7+13*action.eased;
+ // Orb stays below ~30% of the hero's height so it never hides the fighter.
+ const size=5+8*action.eased;
  c.save();c.imageSmoothingEnabled=false;
  if(fighterIndex===0&&atlasReady(beamPlasma)){
   const frame=Math.min(2,action.stage);
@@ -1605,7 +1608,7 @@ function renderBeamCharge(p){
  if(action.stage>0)for(let i=0;i<9;i++){
   const phase=(storyClock*(1.4+i*.08)+i*.317)%1;
   const angle=i*2.399+storyClock*3.4;
-  const radius=(5+16*action.eased)*(1-phase);
+  const radius=(4+10*action.eased)*(1-phase);
   c.globalAlpha=(.24+.65*action.eased)*(1-phase);
   c.fillStyle=i%3===0?'#ffffff':p.surge?'#ffe58b':'#79eaff';
   c.fillRect(Math.round(x+Math.cos(angle)*radius),Math.round(y+Math.sin(angle)*radius*.75),2,2);
@@ -3191,7 +3194,7 @@ function drawDetailedSsj(o){
   c.drawImage(art,source.x+(frame%4)*cellW,source.y+Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 const packedHeroAtlas=new Image();
-packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=aura-split-1';
+packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=combat-fix-1';
 const packedTransformationAtlas=new Image();
 packedTransformationAtlas.src='assets/hero-animation/transformation-fit.png';
 const packedHeroScale=approvedCell*approvedScale/96;
@@ -3241,6 +3244,13 @@ function packedHeroClip(p,action,angle){
   return {clip:clips[direction],direction,flip};
 }
 
+function packedBeamHoldOrigin(p){
+  const release=packedHeroClip(p,'beamRelease',p.faceAngle);
+  if(!release)return beamCastOrigin(p);
+  const frame=release.clip.frames[release.clip.holdFrame??0];
+  return packedHeroOrigin(p,{frame,flip:release.flip});
+}
+
 function packedIntroSeconds(p){
   const clip=window.KiHeroManifest?.clips[p.surge?'ssj':'normal']?.recharge?.shared;
   if(!clip)return 0;
@@ -3272,6 +3282,8 @@ function updatePackedHeroMotion(p,dt,travel,charging){
   if(p.surgeFlare>0)p.surgeEndedAt=undefined;
   else if(p.wasTransforming)p.surgeEndedAt=now;
   p.wasTransforming=p.surgeFlare>0;
+  if(p.wasSurge&&!p.surge)p.surgeEndedAt=now;  // reverting to normal form
+  p.wasSurge=!!p.surge;
   p.wasCharging=charging;
   p.rechargeHeld=charging?(p.rechargeHeld??0)+dt:0;
 }
@@ -3308,7 +3320,8 @@ function packedHeroPose(p,launch=false){
     action='kiBlast';progress=1-p.blastPose/.15;angle=p.blastAngle;
   }else if(p.attack>0){
     action=p.strike?.includes('kick')?'kick':'punch';
-    if(p.surge&&p.combo>1&&Math.abs(p.attackY)<.707)action+='FollowUp';
+    // SSJ follow-up frames are drawn ~15% larger than the rest of the hero;
+    // using them made combos pop in size, so combos reuse the base strikes.
     progress=1-p.attack/p.attackDuration;
     angle=Math.atan2(p.attackY,p.attackX);
   }else if(p.dash>0){
@@ -3319,6 +3332,11 @@ function packedHeroPose(p,launch=false){
     action='flight';
   }else if(p.walking||p.walkSettle>0){
     action='walk';
+  }else if(p.link>0&&p.strike&&!(p.chargeOutro>0)){
+    // Between combo hits stay in the strike's guard pose instead of turning
+    // to the camera-facing idle and back.
+    action=p.strike.includes('kick')?'kick':'punch';progress=1;
+    angle=Math.atan2(p.attackY,p.attackX);
   }else if(p.chargeOutro>0){
     action='recharge';elapsed=p.chargeOutro*1000;
   }
@@ -4127,7 +4145,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)renderBeam(player);const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)renderBeamCharge(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null&&!northCharge)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');

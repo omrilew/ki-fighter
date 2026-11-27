@@ -4,8 +4,9 @@
 Fails (exit 1) on: semi-transparent body pixels, magenta/purple fringe,
 bright green stray pixels, junk in unreferenced cells, empty frames, feet
 off the baseline, baked aura left on charge bodies, aura overlapping the
-body, bad aura references, and side-walk gait weights that do not match the
-foot travel measured from the artwork.
+body, bad aura references, Kamehameha muzzles that are not on the hands,
+and side-walk gait weights that do not match the foot travel measured from
+the artwork.
 
 Usage: python3 scripts/validate_hero_atlas.py
 """
@@ -68,6 +69,34 @@ def gait_weights(cells):
     return [max(foot_travel(cells[i], cells[(i + 1) % len(cells)]), 4) for i in range(len(cells))]
 
 
+def hand_mask(cell):
+    """Hand (skin) or ki-glow pixels below the face rows."""
+    cr, cg, cb = cell[..., 0].astype(int), cell[..., 1].astype(int), cell[..., 2].astype(int)
+    op = cell[..., 3] == 255
+    skin = op & (cr > 165) & (cg > 100) & (cb > 60) & (cr > cb + 35) & (cg < cr * .92) & (cg > cr * .5) & (cb > cr * .35)
+    glow = op & (((cb > cr + 30) & (cg > 120)) | (np.minimum(np.minimum(cr, cg), cb) > 200))
+    hand = skin | glow
+    hand[:40] = False
+    return hand
+
+
+def muzzle_checks(m):
+    """(form, action, direction, index) of Kamehameha frames whose muzzle must be on the hands.
+
+    Last gather frame and every release frame up to the hold. Back views
+    ('up') are exempt: the hands are hidden in front of the body.
+    """
+    for form in ['normal', 'ssj']:
+        for action in ['beamGather', 'beamRelease']:
+            for direction, clip in m['clips'][form][action].items():
+                if direction == 'up':
+                    continue
+                n = len(clip['frames'])
+                idx = [n - 1] if action == 'beamGather' else range(clip.get('holdFrame', 0) + 1)
+                for i in idx:
+                    yield form, action, direction, i
+
+
 def main():
     m = manifest()
     atlas = np.array(Image.open(DIR + 'body-atlas.png').convert('RGBA')).astype(int)
@@ -109,8 +138,7 @@ def main():
         cr, cg, cb = cell[..., 0], cell[..., 1], cell[..., 2]
         green = (cell[..., 3] == 255) & (cg > cr + 40) & (cg > cb + 25) & (cg > 110)
         # SSJ eyes are teal/green; allow a few pixels in the head area only
-        allowed = green.copy()
-        allowed[:, :] = False
+        allowed = np.zeros_like(green)
         if form == 'ssj':
             allowed[:60] = green[:60]
         stray = green & ~allowed
@@ -161,6 +189,15 @@ def main():
                 fail('%s recharge aura alpha decreases at frame %d' % (form, i))
             prev_alpha = a['alpha']
 
+    # Kamehameha: the beam must leave from the hands
+    for form, action, direction, i in muzzle_checks(m):
+        f = m['clips'][form][action][direction]['frames'][i]
+        ys, xs = np.nonzero(hand_mask(crop(atlas, f['rect'])))
+        mx, my = f['muzzle']
+        dist = float(np.min(np.hypot(xs - mx, ys - my))) if len(xs) else 99
+        if dist > 3:
+            fail('%s.%s.%s[%d] muzzle %s is %.1f px from the hands' % (form, action, direction, i, f['muzzle'], dist))
+
     # side-walk gait weights must follow the drawn foot travel
     for form in ['normal', 'ssj']:
         clip = m['clips'][form]['walk']['right']
@@ -177,9 +214,8 @@ def main():
             if abs(max(t, 4) - w) > 1:
                 fail('%s walk.right frame %d weight %d but measured foot travel %d' % (form, i, w, t))
         print('%s walk.right measured travel %s weights %s' % (form, travel, weights))
-        for name in ('restFrames',):
-            if name not in clip:
-                fail(form + ' walk.right missing ' + name)
+        if 'restFrames' not in clip:
+            fail(form + ' walk.right missing restFrames')
 
     print('frames checked: %d, green pixels (SSJ eyes): %d' % (len(frames), green_total))
     if errors:

@@ -37,4 +37,9 @@ KO > hurt > beam/Ki > attack > dash > walk > transformation > charge > idle.
 - Walk clips are distance-driven: `gaitWeights` (measured foot travel per
   frame), `strideCellPx` (cycle length in atlas px, never below 55 so cadence
   does not rise) and `restFrames` (planted poses the walk may stop on).
+- Combat clip trims live in `COMBAT_TRIMS` in the build script (Kamehameha
+  down/up releases start on the push pose; SSJ down/up gathers end before the
+  3/4 turn). Kamehameha muzzles on the last gather frame and on release frames
+  up to the hold must be on the hands (validator); the build moves off-hand
+  muzzles to the nearest hand pixel.
 - New SSJ head art: see `docs/SSJ_HEAD_ART_SPEC.md`.
