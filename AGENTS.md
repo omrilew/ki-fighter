@@ -3,7 +3,8 @@
 These instructions apply whenever creating, replacing, animating, or integrating a playable fighter, enemy, boss, mentor, merchant, or other NPC in Ki Fighter. Read this file before changing character art or character rendering. These are **production acceptance rules**, not optional suggestions.
 
 ## 1. Art direction and identity
-- Original characters only. Maintain a cohesive, detailed GBA-era 2D pixel-art look with a **top-down 3/4 camera**.
+- Cast: the owner approved the Dragon Ball cast for the story campaign (2026-11-27). Do not import ripped or official sprites, art or audio; all art is drawn for this project. Supporting enemies and incidental NPCs (random monsters, villagers) are original designs.
+- Maintain a cohesive, detailed GBA-era 2D pixel-art look with a **top-down 3/4 camera**.
 - True hard-edged pixels, limited coherent palette (target <=24 main colors per character), deliberate 3-tone shading, strong readable silhouette, no blur, anti-aliasing, photographic gradients, or inconsistent outline thickness.
 - Keep one canonical character design sheet specifying hair, face, outfit, proportions, accessories, color palette, and transformation differences. Every animation must depict **the same character**.
 - A transformation changes explicitly approved features (e.g., hair, aura, colors), not identity, body scale, costume geometry, or alignment.
