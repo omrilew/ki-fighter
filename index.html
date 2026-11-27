@@ -478,7 +478,7 @@
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
   </section>
 </dialog>
-<script src="assets/hero-animation/manifest.js?v=motion-polish-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="assets/hero-animation/manifest.js?v=aura-split-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -2210,6 +2210,7 @@ move(p,p.vx*dt,p.vy*dt);
 const travel=hyp(p.x-fromX,p.y-fromY);
 p.stride=animationDamp(p.stride,lim(travel/Math.max(dt*67,.001),0,1),dt,11);
 p.gait=(p.gait+travel*.24)%(Math.PI*2);
+if(fighterIndex===0)updatePackedHeroMotion(p,dt,travel,!!rechargeTarget);
 p.flightLift=animationDamp(p.flightLift??0,p.fly?3:0,dt,p.fly?7:11);
 if(attackBefore>0&&!p.attackHit&&p.attack<=p.attackDuration*(1-strikes[p.strike].impact)){p.attackHit=true;meleeHit(p)}
 p.faceAngle=turnToward(p.faceAngle,Math.atan2(p.fy,p.fx),dt);
@@ -3190,13 +3191,90 @@ function drawDetailedSsj(o){
   c.drawImage(art,source.x+(frame%4)*cellW,source.y+Math.floor(frame/4)*cellH,cellW,cellH,-size/2,4-size-bob,size,size);
 }
 const packedHeroAtlas=new Image();
-packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=normal-short-stride-1';
+packedHeroAtlas.src='assets/hero-animation/body-atlas.png?v=aura-split-1';
 const packedTransformationAtlas=new Image();
 packedTransformationAtlas.src='assets/hero-animation/transformation-fit.png';
 const packedHeroScale=approvedCell*approvedScale/96;
 const packedHeroHeightRatio=1.05;
 const packedHeroHeightScale=packedHeroScale*packedHeroHeightRatio;
 const packedHeroFacings=['right','downRight','down','downLeft','left','upLeft','up','upRight'];
+const packedChargeAura=new Image();
+packedChargeAura.src='assets/hero-animation/charge-aura.png?v=aura-split-1';
+// Default walk cycle length in world px (matches the original gait rate).
+const packedDefaultStride=Math.PI*2/.24;
+
+// Walk frames are chosen by distance travelled, not time, so the planted
+// foot moves with the ground. Clips may declare per-frame `gaitWeights`
+// (measured foot travel) and `strideCellPx` (cycle length in atlas px).
+function packedWalkSample(clip,distance){
+  const frames=clip.frames;
+  const weights=clip.gaitWeights||frames.map(frame=>frame.durationMs);
+  const total=weights.reduce((sum,w)=>sum+w,0);
+  const stride=clip.strideCellPx?clip.strideCellPx*packedHeroScale:packedDefaultStride;
+  let offset=((distance%stride)+stride)%stride/stride*total;
+  for(let i=0;i<frames.length;i++){
+    offset-=weights[i];
+    if(offset<0)return {index:i,frame:frames[i],stride};
+  }
+  return {index:frames.length-1,frame:frames.at(-1),stride};
+}
+
+// Cardinal used by direction-only clips, with hysteresis so diagonal input
+// does not flicker between the side and front/back artwork.
+function packedCardinal(angle,previous){
+  const s=Math.sin(angle);
+  const vertical=Math.abs(s)>(previous==='right'?.78:.64);
+  return vertical?(s<0?'up':'down'):'right';
+}
+
+function packedHeroClip(p,action,angle){
+  const clips=window.KiHeroManifest.clips[p.surge?'ssj':'normal'][action];
+  if(!clips)return null;
+  const sector=(Math.round(angle/(Math.PI/4))+8)%8;
+  const facing=packedHeroFacings[sector];
+  const mirrors=window.KiHeroManifest.renderPolicy.mirrorDirections;
+  const side=Math.cos(angle)<0?-1:1;
+  const cardinal=angle===p.faceAngle&&p.cardinal?p.cardinal:packedCardinal(angle);
+  const canonical=mirrors[facing]||facing;
+  const direction=clips.shared?'shared':clips[canonical]?canonical:clips[cardinal]?cardinal:'right';
+  const flip=direction.toLowerCase().includes('right')?side:1;
+  return {clip:clips[direction],direction,flip};
+}
+
+function packedIntroSeconds(p){
+  const clip=window.KiHeroManifest?.clips[p.surge?'ssj':'normal']?.recharge?.shared;
+  if(!clip)return 0;
+  return packedFrameDuration(clip.frames.slice(0,clip.loopStart??0))/1000;
+}
+
+// Called once per update for the main hero: walk settling, charge outro and
+// direction hysteresis. Keeps all animation bookkeeping out of the renderer.
+function updatePackedHeroMotion(p,dt,travel,charging){
+  if(!window.KiHeroManifest)return;
+  p.cardinal=packedCardinal(p.faceAngle,p.cardinal);
+  if(p.walking){
+    p.walkDistance=(p.walkDistance??0)+travel;
+    p.walkSettle=.4;
+  }else if(p.walkSettle>0){
+    // Input released: finish the current step at walking pace (the body is
+    // still coasting) and stop on a planted pose instead of freezing mid-stride.
+    const walk=packedHeroClip(p,'walk',p.faceAngle);
+    const rest=walk?.clip.restFrames||[0];
+    if(walk&&!rest.includes(packedWalkSample(walk.clip,p.walkDistance??0).index)){
+      p.walkDistance=(p.walkDistance??0)+Math.max(travel,72*dt);
+      p.walkSettle=Math.max(0,p.walkSettle-dt);
+    }else p.walkSettle=0;
+  }
+  // Releasing charge plays the crouch back up to standing.
+  if(p.wasCharging&&!charging&&!(p.surgeFlare>0))p.chargeOutro=Math.min(p.rechargeHeld??0,packedIntroSeconds(p));
+  if(charging||travel>.01||p.attack>0||p.dash>0||p.hurt>0||p.beam||p.beamCharge!==null)p.chargeOutro=0;
+  else if(p.chargeOutro>0)p.chargeOutro=Math.max(0,p.chargeOutro-dt*1.6);
+  if(p.surgeFlare>0)p.surgeEndedAt=undefined;
+  else if(p.wasTransforming)p.surgeEndedAt=now;
+  p.wasTransforming=p.surgeFlare>0;
+  p.wasCharging=charging;
+  p.rechargeHeld=charging?(p.rechargeHeld??0)+dt:0;
+}
 
 function packedFrameDuration(frames){
   return frames.reduce((sum,frame)=>sum+frame.durationMs,0);
@@ -3239,24 +3317,25 @@ function packedHeroPose(p,launch=false){
     action='recharge';elapsed=(p.rechargeElapsed??0)*1000;
   }else if(p.fly){
     action='flight';
-  }else if(p.walking||p.stride>.18){
-    action='walk';progress=p.gait/(Math.PI*2);
+  }else if(p.walking||p.walkSettle>0){
+    action='walk';
+  }else if(p.chargeOutro>0){
+    action='recharge';elapsed=p.chargeOutro*1000;
   }
 
-  const clips=manifest.clips[p.surge?'ssj':'normal'][action];
-  const sector=(Math.round(angle/(Math.PI/4))+8)%8;
-  const facing=packedHeroFacings[sector];
-  const mirrors=manifest.renderPolicy.mirrorDirections;
-  const side=Math.cos(angle)<0?-1:1;
-  const cardinal=Math.abs(Math.sin(angle))>.707?(Math.sin(angle)<0?'up':'down'):'right';
-  const canonical=mirrors[facing]||facing;
-  const direction=clips.shared?'shared':clips[canonical]?canonical:clips[cardinal]?cardinal:'right';
-  const flip=direction.toLowerCase().includes('right')?side:1;
-  const clip=clips[direction];
+  const {clip,direction,flip}=packedHeroClip(p,action,angle);
   const frames=clip.frames;
   const hold=clip.holdFrame;
   let frame;
-  if(launch||action==='kiBlast'){
+  if(action==='walk'){
+    const sample=packedWalkSample(clip,p.walkDistance??0);
+    if(!p.walking&&(clip.restFrames||[0]).includes(sample.index)){
+      // Step finished: hand over to idle on a planted pose.
+      const idle=packedHeroClip(p,'idle',angle);
+      return {frame:samplePackedFrames(idle.clip.frames,elapsed%packedFrameDuration(idle.clip.frames)),flip:idle.flip,idle:true};
+    }
+    frame=sample.frame;
+  }else if(launch||action==='kiBlast'){
     const release=frames.slice(clip.launchFrame);
     frame=samplePackedFrames(release,lim(progress??0,0,1)*packedFrameDuration(release));
   }else if(action==='beamRelease'&&!p.beam){
@@ -3294,26 +3373,63 @@ function packedHeroOrigin(p,pose){
   return {x:p.x+(x-footX)*packedHeroScale*flip,y:p.y+(y-footY)*packedHeroHeightScale+3-(p.flightLift??0)};
 }
 
+// Device-pixel snapping keeps hard pixel edges steady while the hero moves.
+function packedSnap(value,axis){
+  const density=axis==='y'?cv.height/H:cv.width/W;
+  return Math.round(value*density)/density;
+}
+const packedFlashCanvas=document.createElement('canvas');
+const packedFlashContext=packedFlashCanvas.getContext('2d');
+// Short white flash that masks the cut into and out of the transformation
+// sheet. One body draw, tinted: never a second stacked character.
+function drawPackedFlash(atlas,x,y,w,h,dx,dy,dw,dh,amount){
+  if(packedFlashCanvas.width!==w||packedFlashCanvas.height!==h){packedFlashCanvas.width=w;packedFlashCanvas.height=h}
+  const f=packedFlashContext;
+  f.globalCompositeOperation='source-over';
+  f.clearRect(0,0,w,h);
+  f.imageSmoothingEnabled=false;
+  f.drawImage(atlas,x,y,w,h,0,0,w,h);
+  f.globalCompositeOperation='source-atop';
+  f.fillStyle=`rgba(255,250,226,${lim(amount,0,1).toFixed(3)})`;
+  f.fillRect(0,0,w,h);
+  c.drawImage(packedFlashCanvas,0,0,w,h,dx,dy,dw,dh);
+}
 function drawPackedHero(p){
   const pose=packedHeroPose(p);
   const landing=p.hp<=0?animationEase(lim((now-(p.fallStarted??now))/.24,0,1)):0;
   const lift=(p.flightLift??0)*(1-landing);
   c.save();
-  c.translate(p.x,p.y);
+  c.translate(packedSnap(p.x,'x'),packedSnap(p.y,'y'));
   c.fillStyle='#16291f90';
   c.beginPath();
   c.ellipse(0,3,8-lift*.35,3-lift*.15,0,0,Math.PI*2);
   c.fill();
   c.imageSmoothingEnabled=false;
-  const {frame,flip,idle}=pose;
+  const {frame,flip}=pose;
   const atlas=frame.sheet==='transformation-fit.png'?packedTransformationAtlas:packedHeroAtlas;
   if(atlasReady(atlas)){
     const [x,y,w,h]=frame.rect,[footX,footY]=frame.feet;
-    c.translate(0,3-lift);
+    c.translate(0,packedSnap(3-lift,'y'));
     c.scale(flip,1);
-    if(idle)c.transform(1,0,Math.sin(storyClock*3.4)*.014,1,0,0);
-    c.drawImage(atlas,x,y,w,h,-footX*packedHeroScale,-footY*packedHeroHeightScale,
-      w*packedHeroScale,h*packedHeroHeightScale);
+    const aura=frame.aura;
+    if(aura&&aura.alpha>0&&atlasReady(packedChargeAura)){
+      // Charge aura is a separate effect layer behind the body; it fades and
+      // grows from the feet during the charge intro and outro.
+      const [ax,ay,aw,ah]=aura.rect,[afx,afy]=aura.feet,k=aura.scale;
+      c.save();
+      c.globalAlpha*=aura.alpha;
+      c.drawImage(packedChargeAura,ax,ay,aw,ah,
+        packedSnap(-afx*packedHeroScale*k,'x'),packedSnap(-afy*packedHeroHeightScale*k,'y'),
+        aw*packedHeroScale*k,ah*packedHeroHeightScale*k);
+      c.restore();
+    }
+    const dx=packedSnap(-footX*packedHeroScale,'x'),dy=packedSnap(-footY*packedHeroHeightScale,'y');
+    const dw=w*packedHeroScale,dh=h*packedHeroHeightScale;
+    let flash=0;
+    if(p.surge&&p.surgeFlare>0)flash=1-(1-p.surgeFlare/surgeIgnitionTime)/.12;
+    if(p.surgeEndedAt!==undefined)flash=Math.max(flash,1-(now-p.surgeEndedAt)/.12);
+    if(flash>0)drawPackedFlash(atlas,x,y,w,h,dx,dy,dw,dh,flash*.85);
+    else c.drawImage(atlas,x,y,w,h,dx,dy,dw,dh);
   }
   c.restore();
 }
@@ -4011,7 +4127,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=lim(px-W/2,0,MW-W),y=lim(py-H/2,0,MH-H);c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)renderBeam(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');

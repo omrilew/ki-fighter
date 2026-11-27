@@ -36,7 +36,28 @@ for(const form of ['normal','ssj']){
   const recharge=clips[form].recharge.shared;
   assert(recharge.loop&&recharge.loopStart>0);
   assert(recharge.frames.length>16);
-  assert.equal(recharge.effectOwnership,'body-and-aura');
+  // The charge aura is a separate effect layer (charge-aura.png), not baked into the body.
+  assert.equal(recharge.effectOwnership,'separate-aura');
+  const auraPng=fs.readFileSync(directory+'charge-aura.png');
+  let previousAlpha=-1;
+  for(const {aura} of recharge.frames){
+    assert(aura&&aura.sheet==='charge-aura.png');
+    const [ax,ay,aw,ah]=aura.rect;
+    assert(ax>=0&&ay>=0&&ax+aw<=auraPng.readUInt32BE(16)&&ay+ah<=auraPng.readUInt32BE(20));
+    assert(aura.alpha>=previousAlpha&&aura.alpha<=1&&aura.scale>0&&aura.scale<=1);
+    previousAlpha=aura.alpha;
+  }
+  for(const frame of recharge.frames.slice(recharge.loopStart))assert.equal(frame.aura.alpha,1);
+
+  // Walk clips: distance-driven gait and planted rest frames for stopping.
+  for(const facing of ['right','down','up']){
+    const walk=clips[form].walk[facing];
+    assert(walk.restFrames.length&&walk.restFrames.every(i=>i>=0&&i<walk.frames.length));
+  }
+  const side=clips[form].walk.right;
+  assert.equal(side.gaitWeights.length,side.frames.length);
+  assert(side.gaitWeights.every(w=>w>0));
+  assert(side.strideCellPx>=side.gaitWeights.reduce((a,b)=>a+b,0));
   const intro=new Set(recharge.frames.slice(0,recharge.loopStart).map(f=>f.rect.join(',')));
   for(const frame of recharge.frames.slice(recharge.loopStart))assert(!intro.has(frame.rect.join(',')));
 
