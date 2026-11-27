@@ -19,14 +19,20 @@ test('topic ids are unique and every line is written', () => {
 });
 
 test('story beats advance the chapter in order, one per stage', () => {
-  const beats = Object.values(Talk.characters).flatMap(w => w.topics).filter(t => t.main);
+  // Each stage up to the fight is advanced by exactly one story beat:
+  // a main topic, the impact site, or Raditz's challenge ("fight" choice).
+  const topics = Object.values(Talk.characters).flatMap(w => w.topics);
+  const beats = topics.filter(t => t.main && t.next);
   beats.push({...Talk.places['inspect-pod'], when: {from: 'investigate'}});
+  beats.push(...topics.filter(t => t.fight));
   const order = Talk.stages;
-  for (let i = 0; i < order.length - 1; i++) {
-    const due = beats.filter(b => (b.when.from) === order[i]);
+  for (let i = 0; i < order.indexOf('fight'); i++) {
+    const due = beats.filter(b => b.when.from === order[i]);
     assert.equal(due.length, 1, 'beats at ' + order[i]);
     assert.equal(due[0].next, order[i + 1]);
   }
+  // the fight itself ends by defeating Raditz (story-mode.js), then victory
+  assert.ok(topics.some(t => t.main && t.when.from === 'victory'), 'a victory beat');
 });
 
 test('every character has something to say at every stage', () => {
@@ -54,7 +60,17 @@ test('side quests: offer, progress, ready, hand-in', () => {
   assert.ok(Talk.topicsFor('piccolo', state('meet-piccolo')).some(t => t.start === 'ki-focus'));
 });
 
-test('Raditz has nothing to discuss before the standoff', () => {
+test('Raditz talks only at the standoff, and the challenge starts the fight', () => {
   assert.equal(Talk.topicsFor('raditz', state('meet-piccolo')).length, 0);
-  assert.ok(Talk.topicsFor('raditz', state('encounter-ready')).length >= 3);
+  const challenge = Talk.topicsFor('raditz', state('challenge'));
+  assert.ok(challenge.length >= 3);
+  assert.ok(challenge.some(t => t.fight && t.next === 'fight'));
+  assert.equal(Talk.topicsFor('raditz', state('victory')).length, 0);
+});
+
+test('raider bounty quest', () => {
+  const s = state('investigate');
+  assert.ok(Talk.topicsFor('bulma', s).some(t => t.start === 'raider-bounty'));
+  s.quests['raider-bounty'] = {count: 4};
+  assert.ok(Talk.topicsFor('bulma', s).some(t => t.finish === 'raider-bounty'));
 });
