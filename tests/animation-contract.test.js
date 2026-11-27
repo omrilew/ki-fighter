@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const context={};
 vm.runInNewContext(fs.readFileSync('animation.js','utf8'),context);
 const {animationCatalog,resolveClip,validateAtlasManifest}=context.KiAnimation;
-assert.equal(Object.values(animationCatalog.clips).reduce((a,b)=>a+b,0),118);
+assert.equal(Object.values(animationCatalog.clips).reduce((a,b)=>a+b,0),120);
 assert.equal(Object.values(animationCatalog.effects).reduce((a,b)=>a+b,0),64);
 assert.equal(animationCatalog.transformationFrames,12);
 assert.equal(resolveClip('normal','walk','up').clip,'walkUp');

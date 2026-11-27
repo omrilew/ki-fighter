@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ki Fighter · Story Preview</title>
+  <link rel="stylesheet" href="campaign/story.css">
+  <script src="area-loader.js" defer></script>
+  <script src="assets/hero-animation/manifest.js" defer></script>
+  <script src="campaign-cast.js?v=detailed-npcs-1" defer></script>
+  <script src="campaign/story.js" defer></script>
+</head>
+<body>
+  <main class="story">
+    <header class="story-header">
+      <div>
+        <p class="chapter">Chapter One</p>
+        <h1>The Brother from Space</h1>
+      </div>
+      <a href="index.html">Back to Ki Fighter</a>
+    </header>
+    <section class="stage" aria-label="Story preview">
+      <canvas id="world" width="360" height="216" aria-label="Top-down chapter map"></canvas>
+      <div class="hud">
+        <h2 id="area-name">Loading</h2>
+        <p id="objective" aria-live="polite"></p>
+      </div>
+      <div class="notice" id="notice" role="status">Loading the coast…</div>
+      <button id="retry" type="button" hidden>Retry loading</button>
+    </section>
+    <div class="controls">
+      <div id="stick" class="stick" aria-label="Virtual movement stick" aria-hidden="true"><span></span></div>
+      <p class="keyboard">Move with WASD or arrows. Press E to interact.</p>
+      <button id="interact" type="button" disabled>Interact</button>
+    </div>
+    <dialog id="dialog" aria-labelledby="speaker">
+      <h2 id="speaker"></h2>
+      <p id="line"></p>
+      <form method="dialog"><button id="dismiss" type="submit">Continue</button></form>
+    </dialog>
+  </main>
+</body>
+</html>

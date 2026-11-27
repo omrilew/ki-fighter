@@ -2,7 +2,7 @@ name: Game smoke checks
 on:
   pull_request:
   push:
-    branches: [main, feature/forest-trial-vertical-slice]
+    branches: [main, feature/story-campaign]
 jobs:
   smoke:
     runs-on: ubuntu-latest
@@ -16,10 +16,8 @@ jobs:
           python-version: '3.12'
       - name: Check HTML script syntax and integration invariants
         run: node tests/smoke.cjs
-      - name: Hero atlas manifest, anchors and gait metadata
-        run: node tests/hero-atlas.test.cjs
-      - name: World content kit
-        run: node tests/world-content-kit.test.cjs
+      - name: Check character and area data contracts
+        run: node --test tests/area-loader.test.cjs tests/campaign-cast.test.cjs tests/hero-atlas.test.cjs tests/animation-contract.test.js tests/world-content-kit.test.cjs
       - name: Hero atlas pixel validation
         run: |
           pip install pillow numpy
