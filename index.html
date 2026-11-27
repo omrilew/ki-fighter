@@ -555,7 +555,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="story-mode.js?v=1"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=2"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -2368,13 +2368,16 @@ function advanceEnemy(e,p,dt){
   if(e.hurt>0){e.hurt=Math.max(0,e.hurt-dt);e.stride=animationDamp(e.stride||0,0,dt,16);return}
   const dx=p.x-e.x,dy=p.y-e.y,distance=hyp(dx,dy);
   if(!campAllowsCombat(e,p,distance,dt))return;
-  const ranged=e.kind==='ninja',reach=e.boss?32:23;
+  // Raditz picks per attack: ki shot from range, lunging rush up close.
+  const ranged=e.kind==='ninja'||(e.kind==='raditz'&&(e.attack?e.attack.ranged:distance>70));
+  const reach=e.kind==='raditz'?40:e.boss?32:23;
   if(e.attack){
     const attack=e.attack;
     const elapsed=attack.time;
     attack.time+=dt;
+    if(e.kind==='raditz'&&!attack.ranged&&attack.time>attack.windup&&attack.time<attack.windup+.16)move(e,attack.x*190*dt,attack.y*190*dt);
     if(elapsed<attack.windup&&attack.time>=attack.windup){
-      if(ranged)enemyShots.push({x:e.x,y:e.y-12,dx:attack.x,dy:attack.y,time:2});
+      if(ranged){enemyShots.push({x:e.x+attack.x*10,y:e.y-22+attack.y*4,dx:attack.x,dy:attack.y,time:2});if(e.kind==='raditz')window.KiAudio?.sfx('kiBlast')}
       else{
         const edge=Math.cos(e.boss?1.03:.86);
         const damage=e.boss?9:4;
@@ -2397,8 +2400,8 @@ function advanceEnemy(e,p,dt){
   e.faceAngle=turnToward(e.faceAngle,Math.atan2(dy,dx),dt);
   if(e.cd<=0&&(ranged?distance<160:distance<reach&&!p.fly)){
     const windup=ranged?.31:e.boss?.36:.25;
-    e.attack={time:0,windup,x:e.fx,y:e.fy};
-    e.cd=ranged?1.7:e.boss?1.1:1.4;
+    e.attack={time:0,windup,x:e.fx,y:e.fy,ranged};
+    e.cd=e.kind==='raditz'?(ranged?1.25:.95):ranged?1.7:e.boss?1.1:1.4;
     e.walking=false;
     e.stride=animationDamp(e.stride||0,0,dt,14);
     return;
@@ -2658,8 +2661,7 @@ function drawEnemyPose(image,frame,o){
 }
 const enemyActions=new Image();
 enemyActions.src='assets/enemy-actions.webp';
-const enemyActionRows={bandit:0,thug:1,ninja:2,soldier:3,brute:4,raditz:0};
-const raditzActions=new Image();raditzActions.src='assets/raditz-actions.png?v=1';
+const enemyActionRows={bandit:0,thug:1,ninja:2,soldier:3,brute:4};
 const enemyIdleClip=[[0,0],[.33,1],[.66,2],[1,0]];
 const enemyWalkClip=[[0,3],[.2,4],[.4,5],[.6,6],[.8,7],[1,3]];
 const enemyAttackClip=[[0,0],[.23,8],[.38,9],[.54,10],[.7,11],[.86,12],[1,0]];
@@ -2667,8 +2669,7 @@ const ninjaAttackClip=[[0,0],[.23,8],[.38,9],[.54,10],[.72,9],[1,0]];
 function drawEnemyAction(o){
   const row=enemyActionRows[o.kind];
   const size=o.boss?65:52;
-  const sheet=o.kind==='raditz'&&atlasReady(raditzActions)?raditzActions:enemyActions;
-  const draw=frame=>drawActionCell(sheet,row,frame,-size/2,-size*.875,size,size);
+  const draw=frame=>drawActionCell(enemyActions,row,frame,-size/2,-size*.875,size,size);
   if(o.koTime){
     draw(o.koTime>.225?13:14);
   }else if(o.hurt){
@@ -2706,6 +2707,7 @@ function drawTrainingDummy(o){
 }
 function enemyArt(o){
   if(o.kind==='dummy'){drawTrainingDummy(o);return}
+  if(o.kind==='raditz'&&window.KiStory?.drawRaditz(c,o))return;
   const newArt=atlasReady(enemyActions);
   if(!newArt&&!atlasReady(combatAtlas))return;
   const frame=enemyFrames[o.kind];

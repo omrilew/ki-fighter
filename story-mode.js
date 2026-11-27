@@ -25,7 +25,7 @@ const art={
  buildings:img('assets/campaign-buildings.png?v=3'),
  forest:img('assets/forest-detail.webp'),
  npcs:img('assets/campaign-cast/npc-atlas.png'),
- raditz:img('assets/raditz-actions.png?v=1'),
+ raditz:img('assets/campaign-cast/raditz/raditz-atlas.png?v=1'),
 };
 const ready=i=>i.complete&&i.naturalWidth>0;
 
@@ -178,15 +178,60 @@ function marker(n){
  if(topics.some(t=>!t.repeat&&!state.seen.has(t.id)))return '…';
  return '';
 }
+// ---- Raditz sprite pack (KiRaditzManifest): 4 directions, feet at (32,88)
+const RADITZ_SCALE=.6;
+function dir4(angle){
+ const x=Math.cos(angle),y=Math.sin(angle);
+ return Math.abs(x)>Math.abs(y)*1.15?(x<0?'left':'right'):(y<0?'up':'down');
+}
+function raditzFrame(action,direction,t,progress){
+ const clip=root.KiRaditzManifest?.clips?.[action]?.[direction];
+ if(!clip)return null;
+ const frames=clip.frames;
+ if(progress!==undefined)return frames[Math.min(frames.length-1,Math.floor(progress*frames.length))];
+ const total=frames.reduce((a,f)=>a+f.durationMs,0);
+ let left=clip.loop?(t*1000)%total:Math.min(t*1000,total-1);
+ for(const f of frames){left-=f.durationMs;if(left<0)return f}
+ return frames[frames.length-1];
+}
+function blitRaditz(c,frame,x,y,alpha=1,flash=0){
+ if(!frame||!ready(art.raditz))return false;
+ const [sx,sy,w,h]=frame.rect,[fx,fy]=frame.feet,k=RADITZ_SCALE;
+ c.save();c.translate(Math.round(x),Math.round(y));c.imageSmoothingEnabled=false;c.globalAlpha*=alpha;
+ c.fillStyle='#203e2c9e';c.beginPath();c.ellipse(0,2,12,3,0,0,Math.PI*2);c.fill();
+ if(flash>0)c.filter='brightness(1.7)';
+ c.drawImage(art.raditz,sx,sy,w,h,-fx*k,-fy*k,w*k,h*k);
+ c.restore();
+ return true;
+}
+// Boss rendering, called by the engine for enemies of kind 'raditz'.
+function drawRaditz(c,o){
+ const direction=dir4(o.faceAngle??Math.atan2(o.fy||0,o.fx||-1));
+ let frame;
+ if(o.koTime)frame=raditzFrame('knockdown',direction,0,Math.min(.99,1-o.koTime/.29));
+ else if(o.hurt)frame=raditzFrame('hurt',direction,0,.5);
+ else if(o.attack){
+  const {time,windup,ranged}=o.attack;
+  frame=time<windup?raditzFrame('rushTell',direction,0,time/windup)
+   :raditzFrame(ranged?'kiShot':'rush',direction,0,Math.min(.99,(time-windup)/.22));
+ }else if(o.stride>.15)frame=raditzFrame('walk',direction,clock);
+ else frame=raditzFrame('idle',direction,clock+(o.phase||0));
+ if(!blitRaditz(c,frame,o.x,o.y,1,o.flash))return false;
+ return true;
+}
+
 function drawNpc(c,n){
  const p=G()?.player;
  if(n.actor==='raditz'){
+  if(state.stage==='victory'){
+   // he stays down where the fight ended
+   const at=state.raditzAt||raditzHome;
+   blitRaditz(c,raditzFrame('knockdown','right',0,.99),at[0]??at.x,at[1]??at.y);
+   return;
+  }
   if(stageAtLeast('fight'))return;
-  if(!ready(art.raditz))return;
-  const face=p&&p.x<n.x?-1:1,size=65,frame=Math.floor(clock*2.4)%3;
-  c.save();c.translate(n.x,n.y);c.imageSmoothingEnabled=false;
-  c.fillStyle='#203e2c9e';c.beginPath();c.ellipse(0,2,16,2.6,0,0,Math.PI*2);c.fill();
-  c.scale(face,1);c.drawImage(art.raditz,frame*128,0,128,128,-size/2,-size*.875,size,size);c.restore();
+  const dir=!p?'left':dir4(Math.atan2(p.y-n.y,p.x-n.x));
+  blitRaditz(c,raditzFrame(talking===n?'talk':'idle',dir,clock),n.x,n.y);
  }else{
   const sprite=root.KFCampaignCast?.getSprite(n.actor);
   if(!sprite||!ready(art.npcs))return;
@@ -197,7 +242,8 @@ function drawNpc(c,n){
   c.fillStyle='#16291f90';c.beginPath();c.ellipse(0,3,8,3,0,0,Math.PI*2);c.fill();
   c.drawImage(art.npcs,sx,sy,w,h,-frame.feet[0]*scale,-frame.feet[1]*scale,w*scale,h*scale);c.restore();
  }
- const top=n.y-(n.actor==='raditz'?62:54);
+ if(n.actor==='raditz'&&state.stage==='victory')return;
+ const top=n.y-(n.actor==='raditz'?60:54);
  label(c,n.name,n.x,top);
  const m=marker(n);if(m)bang(c,m,n.x,top+11);
 }
@@ -358,6 +404,7 @@ function onDefeat(e){
  if(e.id==='raditz'){
   raditzDown=true;
   state.stage='victory';
+  state.raditzAt=[Math.round(e.x),Math.round(e.y)];
   if(!state.rewards.has('raditz')){state.rewards.add('raditz');G().grantExperience(300);G().collectItem('saiyan_scouter')}
   root.KiAudio?.sfx('levelUp');
   G().notice('RADITZ DEFEATED · +300 XP · SAIYAN SCOUTER');
@@ -442,7 +489,7 @@ function targets(){
 function region(x){return regionAt(x)?.name||null}
 
 // ------------------------------------------------------------- save / load
-function save(){return {stage:state.stage,seen:[...state.seen],quests:state.quests,collected:[...state.collected],rewards:[...state.rewards]}}
+function save(){return {raditzAt:state.raditzAt,stage:state.stage,seen:[...state.seen],quests:state.quests,collected:[...state.collected],rewards:[...state.rewards]}}
 function load(data){
  state.stage=Talk.stages.includes(data?.stage)?data.stage:'briefing';
  state.seen=new Set(Array.isArray(data?.seen)?data.seen:[]);
@@ -451,10 +498,11 @@ function load(data){
  state.quests={};
  for(const [id,q] of Object.entries(data?.quests||{}))if(Talk.quests[id]&&Number.isInteger(q?.count))state.quests[id]={count:q.count,done:!!q.done};
  raditzDown=state.stage==='victory';
+ state.raditzAt=Array.isArray(data?.raditzAt)&&data.raditzAt.length===2?data.raditzAt:null;
  lastRegion=null;
  for(const k of Object.keys(respawn))delete respawn[k];
 }
 
-root.KiStory={paintGround,clear,solid,objects,nearby,interact,update,onDefeat,spawn,objective,targets,region,save,load,
+root.KiStory={drawRaditz,paintGround,clear,solid,objects,nearby,interact,update,onDefeat,spawn,objective,targets,region,save,load,
  get stage(){return state.stage}, regions:REGIONS};
 })(typeof window!=='undefined'?window:globalThis);
