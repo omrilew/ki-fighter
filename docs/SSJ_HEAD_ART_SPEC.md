@@ -42,3 +42,14 @@ Also needed: SSJ iris colour for the front, 3/4 and side faces (teal-green,
 4. Rebuild the transformation from the charge crouch (normal → SSJ hair) so
    it no longer needs `transformation-fit.png`.
 5. `scripts/validate_hero_atlas.py` + gameplay capture on desktop and mobile.
+
+## Also needed for combat (found in the combat review)
+- SSJ Kamehameha mixes three SSJ drawings: side frames (red boots, sash
+  tails), smaller front/back frames, and diagonals on the normal body. Redraw
+  the side and front/back SSJ `beamGather`/`beamRelease`/`kiBlast` frames on
+  the normal body (stamp the SSJ hair, as above).
+- SSJ `punch.up`/`kick.up` strike sideways; they must strike upward like the
+  normal-form uppercut and high kick.
+- SSJ `punch.right`/`kick.right` have 4 frames (normal has 6); SSJ follow-up
+  frames are drawn ~15% larger and are currently unused.
+- Ki-blast hand glow is cyan while the projectile is gold: pick one colour.
