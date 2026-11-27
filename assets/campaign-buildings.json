@@ -30,5 +30,21 @@
   "h": 82,
   "solidW": 32,
   "solidH": 16
+ },
+ "cliff": {
+  "frame": 4,
+  "cell": 224,
+  "w": 54,
+  "h": 52,
+  "solidW": 42,
+  "solidH": 20
+ },
+ "pod": {
+  "frame": 5,
+  "cell": 224,
+  "w": 52,
+  "h": 50,
+  "solidW": 42,
+  "solidH": 16
  }
 }

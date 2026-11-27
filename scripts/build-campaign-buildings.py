@@ -5,7 +5,7 @@ Original buildings in a rounded, retro-futuristic adventure style, drawn as
 hard-edged pixel art at 112x112 and upscaled 2x so each cell matches the
 224x224 cells of assets/world-props.webp. Deterministic: rerun to rebuild.
 
-Cells (left to right): dome-home, dome-hut, sea-house, round-tower.
+Cells (left to right): dome-home, dome-hut, sea-house, round-tower, cliff, pod.
 Usage: python3 scripts/build-campaign-buildings.py
 """
 import json
@@ -393,6 +393,163 @@ def round_tower():
     return cv, {'w': 46, 'h': 82, 'solidW': 32, 'solidH': 16}
 
 
+def cliff():
+    """Rock outcrop from overlapping lumpy boulders, lit from the upper left."""
+    cv = Canvas()
+    base = 104
+    rnd = random.Random(31)
+    ROCK = ramp('#3a2f2a', '#5c4a3f', '#86705a', '#b19878')
+    # (centre x, ground y, radius x, radius y), back to front
+    boulders = [(64, base - 6, 26, 56), (38, base - 2, 24, 44), (86, base - 2, 20, 36),
+                (54, base, 18, 24), (24, base, 14, 18)]
+    for bi, (bx, by, rx, ry) in enumerate(boulders):
+        phase = rnd.random() * 6
+        for y in range(int(by - ry * 1.1), by + 1):
+            for x in range(int(bx - rx * 1.15), int(bx + rx * 1.15) + 1):
+                u, v = (x + .5 - bx) / rx, (by - (y + .5)) / ry
+                ang = math.atan2(v, u)
+                lump = 1 + .09 * math.sin(ang * 5 + phase) + .05 * math.sin(ang * 11 + phase * 2)
+                r = math.hypot(u, v * 1.0)
+                if v < 0 or r > lump:
+                    continue
+                nz = math.sqrt(max(0, 1 - (r / lump) ** 2))
+                # flattened facets: quantise the normal a little
+                fu, fv = round(u * 3) / 3, round(v * 3) / 3
+                k = shade(fu, -fv, nz, x=x, y=y)
+                if (x * 7 + y * 3 + bi) % 29 == 0:
+                    k = max(0, k - 1)
+                if v < .08:
+                    k = max(0, k - 1)
+                cv.put(x, y, ROCK[k])
+        # crack line
+        cx0 = bx + rnd.randint(-rx // 3, rx // 4)
+        y = int(by - ry * .75)
+        x = cx0
+        while y < by - 2:
+            if 0 <= x < N and cv.mask[y, x]:
+                cv.put(x, y, ROCK[0])
+            y += 1
+            x += rnd.choice((-1, 0, 0, 1))
+        # moss on the upper surface
+        for x in range(int(bx - rx * .7), int(bx + rx * .3)):
+            ys = [yy for yy in range(N) if cv.mask[yy, x]]
+            if not ys:
+                continue
+            for d in range(rnd.randint(1, 3)):
+                cv.put(x, ys[0] + d, GRASS[3 if d == 0 else 2])
+    outline(cv)
+    grass_tufts(cv, 56, base + 1, 100, 6)
+    return cv, {'w': 54, 'h': 52, 'solidW': 42, 'solidH': 20}
+
+
+def pod():
+    """Crashed space capsule, rendered as a lit 3D model then pixelised.
+
+    Ray-traced at 4x the authoring size (sphere shell, tinted window, metal
+    belt, antenna, crater lip), averaged down, quantised to a small palette
+    and outlined, so the shading reads as one solid form.
+    """
+    S = 4
+    R = N * S
+    yy, xx = np.mgrid[0:R, 0:R].astype(float)
+    yy = (yy + .5) / S
+    xx = (xx + .5) / S
+    cx, cy, r = 56.0, 60.0, 34.0
+    tilt = math.radians(28)          # camera looks slightly down (3/4 view)
+    # view-space sphere hit
+    u = (xx - cx) / r
+    v = (yy - cy) / r
+    d2 = u * u + v * v
+    hit = d2 <= 1
+    nzv = np.sqrt(np.clip(1 - d2, 0, 1))
+    # view-space normal (x right, y down, z toward camera) -> object space
+    nx, ny, nz = u, v, nzv
+    oy = ny * math.cos(tilt) - nz * math.sin(tilt)      # object up/down
+    oz = ny * math.sin(tilt) + nz * math.cos(tilt)      # object front/back
+    ox = nx
+    light = np.array([-.5, -.62, .6]); light /= np.linalg.norm(light)
+    lam = np.clip(nx * light[0] + ny * light[1] + nz * light[2], 0, 1)
+    half = light + np.array([0, 0, 1.0]); half /= np.linalg.norm(half)
+    spec = np.clip(nx * half[0] + ny * half[1] + nz * half[2], 0, 1) ** 40
+    rim = np.clip(1 - nz, 0, 1) ** 3 * np.clip(nx * .7 + ny * .3, 0, 1)   # bounce light
+    ao = np.clip(1.05 - np.clip(v, 0, 1) * .45, .55, 1)                                 # darker underside
+    shell = np.array([236, 233, 228.0])
+    col = shell * (0.58 + 0.48 * lam[..., None]) * ao[..., None] + np.array([60, 80, 110]) * .10
+    col += rim[..., None] * np.array([120, 110, 95]) * .35
+    # equatorial belt (object-space latitude band), slightly darker metal
+    belt = (np.abs(oy - .06) < .065)
+    seam = (np.abs(np.abs(oy - .06) - .065) < .012)
+    rivet = belt & (np.abs(oy - .06) < .02) & (np.abs(((np.arctan2(ox, oz) * 7) % 1) - .5) < .07)
+    metal = np.array([120, 124, 140.0]) * (0.35 + 0.75 * lam[..., None])
+    col = np.where(belt[..., None], metal, col)
+    col = np.where(seam[..., None], col * .55, col)
+    col = np.where(rivet[..., None], np.array([200, 202, 214.0]) * (0.5 + .6 * lam[..., None]), col)
+    # panel seams: two meridians and an upper latitude
+    mer = (np.abs(ox + .45) < .012) & (oy < -.01) & (oz > 0)
+    lat = np.abs(oy + .55) < .012
+    col = np.where((mer | lat)[..., None], col * .72, col)
+    # large round window on the front, facing the camera and to the right
+    wdir = np.array([.46, -.36, .81]); wdir /= np.linalg.norm(wdir)
+    cosw = nx * wdir[0] + ny * wdir[1] + nz * wdir[2]   # view space: window faces the viewer
+    glass = cosw > .935
+    frame = (cosw > .895) & ~glass
+    t = np.clip((cosw - .935) / .065, 0, 1)
+    gcol = np.array([40, 22, 70.0]) * (0.75 + .5 * t[..., None]) + np.array([190, 60, 110]) * (.45 * (1 - t))[..., None]
+    # diagonal reflection streak across the glass
+    gx, gy = nx - .37, ny + .29
+    refl = glass & (np.abs(gx + gy * .9) < .035) & (np.hypot(gx, gy) < .2)
+    gcol = np.where(refl[..., None], np.array([210, 220, 240.0]), gcol)
+    col = np.where(glass[..., None], gcol, col)
+    col = np.where(frame[..., None], np.array([90, 92, 108.0]) * (0.5 + .7 * lam[..., None]), col)
+    col += spec[..., None] * 255 * (~glass)[..., None] * .55
+    # antenna stub on top
+    ant = (np.abs(xx - (cx + 12)) < 1.1) & (yy > cy - r - 7) & (yy < cy - r + 4) & ~hit
+    tip = ((xx - (cx + 12)) ** 2 + (yy - (cy - r - 8)) ** 2) < 2.4
+    alpha = hit | ant | tip
+    col = np.where(ant[..., None], np.array([110, 110, 120.0]), col)
+    col = np.where(tip[..., None], np.array([240, 80, 64.0]), col)
+    # crater lip in front hides the lower shell: rough dirt berm
+    rnd = np.random.default_rng(9)
+    noise = rnd.normal(0, 1, R)
+    noise = np.convolve(noise, np.ones(9) / 9, mode='same') * 2.2
+    lipx = (xx[0] - cx) / 58
+    crest = cy + 20 + 10 * lipx ** 2 + noise
+    lip = (np.abs(lipx) < 1)[None, :] & (yy >= crest[None, :]) & (yy <= crest[None, :] + 12 * np.sqrt(np.clip(1 - lipx ** 2, 0, 1))[None, :] + 2)
+    depth = np.clip((yy - crest[None, :]) / 12, 0, 1)
+    dirt = np.array([168, 128, 88.0]) * (1 - .55 * depth[..., None]) - np.array([10, 10, 6.0]) * (noise[None, :, None] > 1)
+    col = np.where(lip[..., None], dirt, col)
+    # the crater itself is painted on the ground: no lip sprite, the shell
+    # is simply cut where it sinks below the crater floor
+    lip = np.zeros_like(lip)
+    # hide the shell below the lip
+    below = (yy > cy + 22 - 3 * ((xx - cx) / r) ** 2) & hit
+    alpha = alpha & ~below
+    # downsample (box filter) to authoring size
+    col = np.clip(col, 0, 255)
+    a4 = alpha.astype(float)
+    cs = (col * a4[..., None]).reshape(N, S, N, S, 3).sum((1, 3))
+    asum = a4.reshape(N, S, N, S).sum((1, 3))
+    small = np.where(asum[..., None] > 0, cs / np.maximum(asum[..., None], 1), 0)
+    mask = asum >= S * S * .5
+    # quantise to a compact palette (median-cut on the visible pixels)
+    img = Image.fromarray(small.astype(np.uint8), 'RGB')
+    pal = img.quantize(colors=18, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')
+    q = np.array(pal)
+    cv = Canvas()
+    cv.px[mask, :3] = q[mask]
+    cv.px[mask, 3] = 255
+    cv.mask = mask.copy()
+    outline(cv)
+    # pebbles thrown onto the lip
+    prng = random.Random(3)
+    for i in range(16):
+        x = prng.randint(10, 102)
+        y = int(cy + 20 + 10 * ((x - cx) / 58) ** 2) + prng.randint(0, 5)
+        if 0 <= y < N and cv.mask[y, x]:
+            cv.put(x, y, STONE[prng.choice((2, 3))])
+            cv.put(x + 1, y, STONE[1])
+    return cv, {'w': 52, 'h': 50, 'solidW': 42, 'solidH': 16}
+
 # Plants from assets/forest-detail.webp (x, width, height of the source cell),
 # placed at a fraction of the cell width, at a scale; same art as the world.
 BUSH, ROCK, GRASS_TUFT, FLOWERS = (452, 100, 80), (554, 75, 55), (631, 50, 45), (745, 50, 40)
@@ -407,7 +564,8 @@ PLANTS = {
 def main():
     forest = Image.open('assets/forest-detail.webp').convert('RGBA')
     builders = [('dome-home', dome_home), ('dome-hut', dome_hut),
-                ('sea-house', sea_house), ('round-tower', round_tower)]
+                ('sea-house', sea_house), ('round-tower', round_tower),
+                ('cliff', cliff), ('pod', pod)]
     sheet = Image.new('RGBA', (len(builders) * N * SCALE, N * SCALE), (0, 0, 0, 0))
     meta = {}
     for i, (name, fn) in enumerate(builders):

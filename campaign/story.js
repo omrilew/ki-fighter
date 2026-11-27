@@ -3,7 +3,9 @@
   const scriptUrl = document.currentScript.src;
   const canvas = document.querySelector('#world');
   const context = canvas.getContext('2d', {alpha: false});
-  const [viewWidth, viewHeight] = [canvas.width, canvas.height];
+  const viewWidth = canvas.width, baseViewHeight = canvas.height;
+  let viewHeight = baseViewHeight;
+  let currentArea = null;  // set on area entry; read by resizeCanvas before `area` exists
   // Rendered at device resolution like the main game (not a 360x216 bitmap
   // stretched with pixelated CSS): sprites keep hard pixels, the painted
   // ground stays detailed.
@@ -12,6 +14,10 @@
     const box = canvas.getBoundingClientRect();
     if (box.width < 10) return;
     pixelRatio = Math.min(4, Math.max(1, Math.round(box.width * (window.devicePixelRatio || 1)) / viewWidth));
+    // Like the main game, the view grows taller on tall screens (phones)
+    // instead of letterboxing a fixed 5:3 strip.
+    const wanted = Math.round(viewWidth * box.height / box.width);
+    viewHeight = Math.max(150, Math.min(wanted, currentArea ? currentArea.height : 300, 300));
     const width = Math.round(viewWidth * pixelRatio), height = Math.round(viewHeight * pixelRatio);
     if (canvas.width !== width || canvas.height !== height) [canvas.width, canvas.height] = [width, height];
   }
@@ -23,7 +29,7 @@
   const forestArt = new Image();
   forestArt.src = 'assets/forest-detail.webp';
   const buildingArt = new Image();
-  buildingArt.src = 'assets/campaign-buildings.png?v=1';
+  buildingArt.src = 'assets/campaign-buildings.png?v=3';
   // Footprints (world px) of the original campaign buildings sheet; see
   // assets/campaign-buildings.json and scripts/build-campaign-buildings.py.
   const buildings = {
@@ -31,6 +37,8 @@
     'dome-hut': {frame: 1, w: 60, h: 58, solidW: 52, solidH: 22},
     'sea-house': {frame: 2, w: 84, h: 80, solidW: 74, solidH: 26},
     'round-tower': {frame: 3, w: 46, h: 82, solidW: 32, solidH: 16},
+    cliff: {frame: 4, w: 54, h: 52, solidW: 42, solidH: 20},
+    pod: {frame: 5, w: 52, h: 50, solidW: 42, solidH: 16, sink: 8},
     cottage: {sheet: 'world', frame: 0, w: 64, h: 58, solidW: 52, solidH: 22}
   };
   buildings.house = buildings['sea-house'];
@@ -99,7 +107,7 @@
       if (!response.ok) throw new Error(`Could not load ${id} (${response.status})`);
       const data = await response.json();
       if (data.id !== id || !themes[data.theme] || !Number.isInteger(data.width) || !Number.isInteger(data.height)
-        || data.width < viewWidth || data.height < viewHeight || data.width > 1000 || data.height > 1000) {
+        || data.width < viewWidth || data.height < baseViewHeight || data.width > 1000 || data.height > 1000) {
         throw new Error('Invalid campaign area');
       }
       const ground = document.createElement('canvas');
@@ -247,13 +255,48 @@
       return Math.hypot(x - ax - (bx - ax) * t, y - ay - (by - ay) * t) < 22;
     }));
     const decor = [];
-    const kinds = themes[data.theme].decor;
-    for (let i = 0; i < data.width * data.height / 1400; i++) {
-      const x = 10 + random() * (data.width - 20), y = 14 + random() * (data.height - 20);
-      if (nearPath(x, y) || (data.theme === 'coast' && x < shoreEdge(y) + 18)) continue;
-      if ([...data.props, ...data.points].some(o => Math.hypot(o.x - x, (o.y - y) * 1.6) < 34)) continue;
-      if (Math.hypot(data.spawn[0] - x, data.spawn[1] - y) < 26) continue;
-      decor.push({decor: kinds[i % kinds.length], x, y, scale: .75 + random() * .4});
+    const theme = data.theme;
+    const blocked = (x, y, room) => nearPath(x, y) || (theme === 'coast' && x < shoreEdge(y) + 20)
+      || [...data.props, ...data.points].some(o => {
+        const b = buildings[o.kind], wide = b ? b.w * .7 : 0;
+        // buildings: keep their whole front and sides clear
+        if (b && Math.abs(o.x - x) < wide + 14 && y > o.y - b.h && y < o.y + 30) return true;
+        return Math.hypot(o.x - x, (o.y - y) * 1.5) < room;
+      })
+      || Math.hypot(data.spawn[0] - x, data.spawn[1] - y) < 30
+      || decor.some(d => d.solid && Math.hypot(d.x - x, (d.y - y) * 1.4) < 26);
+    // Trees and rock clusters: a few large anchors, then clumps around them.
+    const anchorKinds = {coast: ['oak', 'oak', 'rock', 'oak'], ravine: ['rock', 'rock', 'oak', 'rock'],
+      ridge: ['pine', 'pine', 'oak', 'rock', 'pine']}[theme];
+    const anchors = Math.round(data.width * data.height / 9000);
+    for (let i = 0, tries = 0; i < anchors && tries < 400; tries++) {
+      const x = 14 + random() * (data.width - 28), y = 30 + random() * (data.height - 40);
+      if (blocked(x, y, 40)) continue;
+      const kind = anchorKinds[i % anchorKinds.length];
+      if (kind === 'rock') decor.push({rock: true, solid: true, x, y, scale: .8 + random() * .45, layout: i % 5});
+      else decor.push({decor: kind, solid: true, x, y, scale: .9 + random() * .35});
+      // a second tree often grows beside the first
+      if (kind !== 'rock' && random() < .55) {
+        const x2 = x + (random() < .5 ? -1 : 1) * (16 + random() * 10), y2 = y + 6 + random() * 10;
+        if (!blocked(x2, y2, 36)) decor.push({decor: kind, solid: true, x: x2, y: y2, scale: .8 + random() * .3});
+      }
+      i++;
+    }
+    // Small plants grow in clumps at the feet of trees and rocks and in a few
+    // open patches, not evenly sprinkled.
+    const small = {coast: ['grass', 'flowers', 'bush', 'grass'], ravine: ['grass', 'log', 'grass'],
+      ridge: ['grass', 'bush', 'flowers', 'grass']}[theme];
+    const seeds = decor.filter(d => d.solid).map(d => [d.x, d.y + 4]);
+    for (let i = 0; i < anchors * .6; i++) seeds.push([14 + random() * (data.width - 28), 30 + random() * (data.height - 40)]);
+    for (const [sx, sy] of seeds) {
+      const count = 2 + Math.floor(random() * 3);
+      for (let j = 0; j < count; j++) {
+        const x = sx + (random() - .5) * 30, y = sy + (random() - .2) * 12;
+        if (nearPath(x, y) || (theme === 'coast' && x < shoreEdge(y) + 18)) continue;
+        if ([...data.props, ...data.points].some(o => Math.hypot(o.x - x, (o.y - y) * 1.6) < 30)) continue;
+        if (Math.hypot(data.spawn[0] - x, data.spawn[1] - y) < 22) continue;
+        decor.push({decor: small[(j + Math.floor(random() * 4)) % small.length], x, y, scale: .75 + random() * .35});
+      }
     }
     return decor;
   }
@@ -279,70 +322,51 @@
     context.drawImage(forestArt, sx, 0, sw, sh, -w / 2, -h + 2, w, h);
     context.restore();
   }
+  // Natural rocks are built from the main game's own faceted stone sprite:
+  // a few stones of different sizes, mirrored and overlapped, so every
+  // cluster looks hand placed and matches the rest of the world.
+  const rockLayouts = [
+    [[-7, 0, 1.5, 0], [6, 1, 1.15, 1], [0, 3, .8, 0]],
+    [[-4, 0, 1.7, 1], [9, 2, .9, 0]],
+    [[-8, 1, 1.1, 0], [3, -1, 1.55, 1], [11, 3, .7, 0], [-1, 4, .65, 1]],
+    [[0, 0, 1.6, 0], [-9, 3, .75, 1]],
+    [[-5, 0, 1.3, 1], [7, 0, 1.3, 0], [1, 4, .8, 0]]
+  ];
+  function drawRockCluster(x, y, scale, layout) {
+    if (!ready(forestArt)) return;
+    const [sx, sw, sh, w, h] = forestCells.rock;
+    context.save();
+    context.translate(x, y);
+    context.scale(scale, scale);
+    drawShadow(30, .12);
+    const stones = [...rockLayouts[layout]].sort((a, b) => a[1] - b[1]);
+    for (const [ox, oy, k, flip] of stones) {
+      context.save();
+      context.translate(ox, oy);
+      context.scale(flip ? -k : k, k);
+      context.drawImage(forestArt, sx, 0, sw, sh, -w / 2, -h + 2, w, h);
+      context.restore();
+    }
+    context.restore();
+  }
   function drawProp(prop) {
     const {x, y, kind} = prop;
-    const building = buildings[kind];
+    const building = kind !== 'cliff' && buildings[kind];
     if (building) {
       const art = building.sheet === 'world' ? worldProps : buildingArt;
       if (!ready(art)) return;
       context.save();
       context.translate(x, y);
       drawShadow(building.w, .09);
-      context.drawImage(art, building.frame * 224, 0, 224, 224, -building.w / 2, -building.h * 224 / 200 + 4,
+      context.drawImage(art, building.frame * 224, 0, 224, 224, -building.w / 2, -building.h * 224 / 200 + 4 + (building.sink || 0),
         building.w, building.h * 224 / 200);
       context.restore();
       return;
     }
-    if (kind === 'palm' || kind === 'tree') return drawForest('oak', x, y, .72);
-    if (kind === 'pine') return drawForest('pine', x, y, .9);
-    if (kind === 'rock') return drawForest('rock', x, y, 1.85);
-    context.save();
-    context.translate(x, y);
-    if (kind === 'pod') {
-      // Crashed capsule: shaded sphere, open hatch, scorched halo.
-      drawShadow(46, .12);
-      const shell = context.createRadialGradient(-8, -30, 3, 0, -21, 24);
-      shell.addColorStop(0, '#fbf7ee'); shell.addColorStop(.55, '#cfc6b6'); shell.addColorStop(1, '#6e6762');
-      context.fillStyle = '#2b2528';
-      context.beginPath(); context.arc(0, -20, 21.5, 0, Math.PI * 2); context.fill();
-      context.fillStyle = shell;
-      context.beginPath(); context.arc(0, -20, 20, 0, Math.PI * 2); context.fill();
-      context.fillStyle = '#2b2528';
-      context.beginPath(); context.ellipse(1, -22, 12, 9, 0, 0, Math.PI * 2); context.fill();
-      const glass = context.createLinearGradient(-8, -30, 10, -14);
-      glass.addColorStop(0, '#5a6a7a'); glass.addColorStop(1, '#1d2430');
-      context.fillStyle = glass;
-      context.beginPath(); context.ellipse(1, -22, 10, 7, 0, 0, Math.PI * 2); context.fill();
-      context.fillStyle = '#d65a4c';
-      context.fillRect(14, -26, 3, 3);
-      context.strokeStyle = '#8f8780'; context.lineWidth = 1;
-      context.beginPath(); context.arc(0, -20, 20, Math.PI * .1, Math.PI * .9); context.stroke();
-    } else {
-      // Cliff / boulder: painted stone with a lit top and dark base.
-      const [w, h] = naturalSizes.cliff;
-      drawShadow(w, .12);
-      const stone = context.createLinearGradient(-w / 2, -h, w / 2, 0);
-      stone.addColorStop(0, '#c2a98a'); stone.addColorStop(.45, '#8c7459'); stone.addColorStop(1, '#4d3f35');
-      context.fillStyle = '#2f2622';
-      context.beginPath();
-      context.moveTo(-w / 2 - 1, 1); context.lineTo(-w / 2 + 3, -h * .62); context.lineTo(-w / 6, -h - 1);
-      context.lineTo(w / 4, -h + 2); context.lineTo(w / 2 + 1, -h * .45); context.lineTo(w / 2 - 2, 1);
-      context.closePath(); context.fill();
-      context.fillStyle = stone;
-      context.beginPath();
-      context.moveTo(-w / 2 + 1, 0); context.lineTo(-w / 2 + 4, -h * .6); context.lineTo(-w / 6, -h + 1);
-      context.lineTo(w / 4, -h + 3); context.lineTo(w / 2 - 1, -h * .45); context.lineTo(w / 2 - 3, 0);
-      context.closePath(); context.fill();
-      context.strokeStyle = '#3e322b99'; context.lineWidth = 1;
-      context.beginPath();
-      context.moveTo(-w / 6, -h + 3); context.lineTo(-w / 10, -h * .4); context.lineTo(-w / 5, -2);
-      context.moveTo(w / 5, -h + 5); context.lineTo(w / 8, -h * .5);
-      context.stroke();
-      context.fillStyle = '#5f7a3c';
-      context.fillRect(-w / 6 - 2, -h, 9, 2);
-      context.fillRect(w / 4 - 3, -h + 2, 6, 2);
-    }
-    context.restore();
+    if (kind === 'palm' || kind === 'tree') return drawForest('oak', x, y, prop.scale || 1.05);
+    if (kind === 'pine') return drawForest('pine', x, y, prop.scale || 1);
+    if (kind === 'rock') return drawRockCluster(x, y, prop.scale || 1, (x * 7 + y * 13) % 5);
+    if (kind === 'cliff') return drawRockCluster(x, y, prop.scale || 2.1, 2 + (x + y) % 3);
   }
 
   function drawSprite(image, frame, x, y, scale, heightRatio = 1) {
@@ -423,7 +447,8 @@
         drawHero(time);
         heroShown = true;
       }
-      if (object.decor) drawForest(object.decor, object.x, object.y, object.scale);
+      if (object.rock) drawRockCluster(object.x, object.y, object.scale, object.layout);
+      else if (object.decor) drawForest(object.decor, object.x, object.y, object.scale);
       else if (object.kind) drawProp(object);
       else drawPoint(object, time);
     }
@@ -507,6 +532,7 @@
       const next = await loader.activate(id);
       const [x, y] = arrival?.length === 2 && arrival.every(Number.isFinite) ? arrival : next.spawn;
       area = next;
+      currentArea = next;
       [player.x, player.y] = canMove(x, y) ? [x, y] : next.spawn;
       player.gait = 0;
       areaName.textContent = area.name;
