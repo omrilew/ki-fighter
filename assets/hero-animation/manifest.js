@@ -12,6 +12,7 @@ window.KiHeroManifest = {
       walk: {
         down: {
           loop: true,
+          restFrames: [0, 3],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [0, 0, 64, 96], "durationMs": 105, "feet": [32, 86]},
@@ -24,6 +25,9 @@ window.KiHeroManifest = {
         },
         right: {
           loop: true,
+          gaitWeights: [4, 7, 7, 7, 4, 8, 4, 6],
+          strideCellPx: 55,
+          restFrames: [0, 4],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [0, 2976, 64, 96], "durationMs": 90, "feet": [32, 86]},
@@ -38,6 +42,7 @@ window.KiHeroManifest = {
         },
         up: {
           loop: true,
+          restFrames: [0, 3],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [0, 192, 64, 96], "durationMs": 105, "feet": [32, 86]},
@@ -315,10 +320,8 @@ window.KiHeroManifest = {
         down: {
           loop: false,
           effectOwnership: "separate",
-          holdFrame: 2,
+          holdFrame: 0,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [0, 960, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 60]},
-            {"sheet": "body-atlas.png", "rect": [64, 960, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 60]},
             {"sheet": "body-atlas.png", "rect": [128, 960, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 58]},
             {"sheet": "body-atlas.png", "rect": [192, 960, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 58]},
             {"sheet": "body-atlas.png", "rect": [256, 960, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 60]},
@@ -328,10 +331,8 @@ window.KiHeroManifest = {
         up: {
           loop: false,
           effectOwnership: "separate",
-          holdFrame: 2,
+          holdFrame: 0,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [384, 1056, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 54]},
-            {"sheet": "body-atlas.png", "rect": [448, 1056, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 50]},
             {"sheet": "body-atlas.png", "rect": [512, 1056, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 48]},
             {"sheet": "body-atlas.png", "rect": [576, 1056, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 48]},
             {"sheet": "body-atlas.png", "rect": [640, 1056, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 50]},
@@ -409,26 +410,26 @@ window.KiHeroManifest = {
       recharge: {
         shared: {
           loop: true,
-          effectOwnership: "body-and-aura",
+          effectOwnership: "separate-aura",
           loopStart: 9,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [512, 2976, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 2976, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 2976, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 2976, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [0, 3072, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [64, 3072, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [128, 3072, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [192, 3072, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [512, 3072, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86]},
+            {"sheet": "body-atlas.png", "rect": [512, 2976, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 0, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [576, 2976, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [64, 0, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [640, 2976, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [128, 0, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [704, 2976, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [192, 0, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [0, 3072, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [256, 0, 64, 96], "feet": [32, 86], "alpha": 0.22, "scale": 0.6}},
+            {"sheet": "body-atlas.png", "rect": [64, 3072, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [320, 0, 64, 96], "feet": [32, 86], "alpha": 0.42, "scale": 0.68}},
+            {"sheet": "body-atlas.png", "rect": [128, 3072, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [384, 0, 64, 96], "feet": [32, 86], "alpha": 0.62, "scale": 0.77}},
+            {"sheet": "body-atlas.png", "rect": [192, 3072, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [448, 0, 64, 96], "feet": [32, 86], "alpha": 0.8, "scale": 0.86}},
+            {"sheet": "body-atlas.png", "rect": [512, 3072, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 0, 64, 96], "feet": [32, 86], "alpha": 0.93, "scale": 0.94}},
+            {"sheet": "body-atlas.png", "rect": [576, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [64, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [704, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [128, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [192, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [576, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [256, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [320, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [704, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [384, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3072, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [448, 0, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
           ],
         },
       },
@@ -469,32 +470,33 @@ window.KiHeroManifest = {
       recharge: {
         shared: {
           loop: true,
-          effectOwnership: "body-and-aura",
+          effectOwnership: "separate-aura",
           loopStart: 9,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [512, 3168, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 3168, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3168, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 3168, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [0, 3264, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [64, 3264, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [128, 3264, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [192, 3264, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [512, 3264, 64, 96], "durationMs": 62, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [256, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [704, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [576, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
-            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86]},
+            {"sheet": "body-atlas.png", "rect": [512, 3168, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 96, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [576, 3168, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [64, 96, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [640, 3168, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [128, 96, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [704, 3168, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [192, 96, 64, 96], "feet": [32, 86], "alpha": 0, "scale": 0.55}},
+            {"sheet": "body-atlas.png", "rect": [0, 3264, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [256, 96, 64, 96], "feet": [32, 86], "alpha": 0.22, "scale": 0.6}},
+            {"sheet": "body-atlas.png", "rect": [64, 3264, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [320, 96, 64, 96], "feet": [32, 86], "alpha": 0.42, "scale": 0.68}},
+            {"sheet": "body-atlas.png", "rect": [128, 3264, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [384, 96, 64, 96], "feet": [32, 86], "alpha": 0.62, "scale": 0.77}},
+            {"sheet": "body-atlas.png", "rect": [192, 3264, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [448, 96, 64, 96], "feet": [32, 86], "alpha": 0.8, "scale": 0.86}},
+            {"sheet": "body-atlas.png", "rect": [512, 3264, 64, 96], "durationMs": 62, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 96, 64, 96], "feet": [32, 86], "alpha": 0.93, "scale": 0.94}},
+            {"sheet": "body-atlas.png", "rect": [576, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [0, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [64, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [704, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [128, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [256, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [192, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [704, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [256, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [320, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [576, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [384, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
+            {"sheet": "body-atlas.png", "rect": [640, 3264, 64, 96], "durationMs": 85, "feet": [32, 86], "aura": {"sheet": "charge-aura.png", "rect": [448, 96, 64, 96], "feet": [32, 86], "alpha": 1, "scale": 1}},
           ],
         },
       },
       walk: {
         down: {
           loop: true,
+          restFrames: [0, 3],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [512, 1344, 64, 96], "durationMs": 105, "feet": [32, 86]},
@@ -507,6 +509,9 @@ window.KiHeroManifest = {
         },
         right: {
           loop: true,
+          gaitWeights: [4, 8, 7, 14, 4, 11, 5, 6],
+          strideCellPx: 59,
+          restFrames: [0, 4],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [0, 3168, 64, 96], "durationMs": 90, "feet": [32, 86]},
@@ -521,6 +526,7 @@ window.KiHeroManifest = {
         },
         up: {
           loop: true,
+          restFrames: [0, 3],
           effectOwnership: "separate",
           frames: [
             {"sheet": "body-atlas.png", "rect": [640, 1440, 64, 96], "durationMs": 105, "feet": [32, 86]},
@@ -793,8 +799,7 @@ window.KiHeroManifest = {
           frames: [
             {"sheet": "body-atlas.png", "rect": [0, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 61]},
             {"sheet": "body-atlas.png", "rect": [64, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 64]},
-            {"sheet": "body-atlas.png", "rect": [128, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 67]},
-            {"sheet": "body-atlas.png", "rect": [192, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [29, 67]},
+            {"sheet": "body-atlas.png", "rect": [128, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [29, 68]},
           ],
         },
         up: {
@@ -804,7 +809,6 @@ window.KiHeroManifest = {
             {"sheet": "body-atlas.png", "rect": [384, 2400, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 58]},
             {"sheet": "body-atlas.png", "rect": [448, 2400, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 61]},
             {"sheet": "body-atlas.png", "rect": [512, 2400, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 64]},
-            {"sheet": "body-atlas.png", "rect": [576, 2400, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [36, 62]},
           ],
         },
         downRight: {
@@ -843,10 +847,8 @@ window.KiHeroManifest = {
         down: {
           loop: false,
           effectOwnership: "separate",
-          holdFrame: 2,
+          holdFrame: 0,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [384, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 59]},
-            {"sheet": "body-atlas.png", "rect": [448, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 57]},
             {"sheet": "body-atlas.png", "rect": [512, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 56]},
             {"sheet": "body-atlas.png", "rect": [576, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 56]},
             {"sheet": "body-atlas.png", "rect": [640, 2304, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 57]},
@@ -856,10 +858,8 @@ window.KiHeroManifest = {
         up: {
           loop: false,
           effectOwnership: "separate",
-          holdFrame: 2,
+          holdFrame: 0,
           frames: [
-            {"sheet": "body-atlas.png", "rect": [0, 2496, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 53]},
-            {"sheet": "body-atlas.png", "rect": [64, 2496, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 50]},
             {"sheet": "body-atlas.png", "rect": [128, 2496, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 47]},
             {"sheet": "body-atlas.png", "rect": [192, 2496, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 46]},
             {"sheet": "body-atlas.png", "rect": [256, 2496, 64, 96], "durationMs": 82, "feet": [32, 86], "muzzle": [32, 51]},
