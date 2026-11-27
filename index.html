@@ -4,7 +4,7 @@
 #kfg .minimap canvas{width:100%;height:auto;border-radius:4px;aspect-ratio:13/7}
 @media(max-height:420px){#kfg .minimap{width:106px}}
 @media(max-width:640px){#kfg .world-objective{top:125px;max-width:calc(100% - 150px)}}
-#kfg #kfg:has(.world-interact:not([hidden])) .notice{translate:0 -56px}.world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
+#kfg #kfg:has(.world-interact:not([hidden])) .notice{translate:0 -56px}#kfg .boss-bar{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(56%,360px);z-index:3;padding:5px 9px 7px;border:2px solid var(--ui-edge);border-radius:2px;background:linear-gradient(180deg,#3a1d24,#1d0e14);box-shadow:inset 0 0 0 2px #5a2a33,2px 3px 0 #0b1420;color:#ffe3c2;font:700 11px Verdana,system-ui;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}#kfg .boss-bar[hidden]{display:none}#kfg .boss-meter{margin-top:4px;height:8px;border:1px solid #c9a46a;background:#140a0e}#kfg .boss-meter i{display:block;height:100%;background:linear-gradient(180deg,#ff8a6a,#c22d2d);transform-origin:left;transition:transform .15s}.world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
 #kfg .world-interact[hidden],#kfg .world-objective[hidden],#kfg #kfdojo-shortcut[hidden]{display:none!important}
 #kfstory{max-width:min(410px,calc(100% - 32px));box-sizing:border-box;padding:22px;border:1px solid #a38a58;border-radius:12px;color:#f7e6ca;background:#202d2b;box-shadow:0 14px 50px #000b}
 #kfstory::backdrop{background:#0c1616ad}
@@ -453,7 +453,7 @@
       <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
     </nav>
     <div class="hud-utilities" aria-label="Fighter and equipment"></div>
-    <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
+    <div class="boss-bar" id="kfboss" hidden><span id="kfboss-name"></span><div class="boss-meter"><i id="kfboss-meter"></i></div></div><div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
     <div id="kfminimap" class="minimap" hidden>
       <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
     </div>
@@ -4425,6 +4425,14 @@ function renderHUD(){
   const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:window.KiStory?.region(player?.x??0)||(player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village'),ko:`${kills} KO`,notice:msg};
   for(const [key,value] of Object.entries(labels)){
     if(hud[key].textContent!==value)hud[key].textContent=value;
+  }
+  const boss=player&&enemies.find(e=>e.boss&&e.hp>0&&hyp(e.x-player.x,e.y-player.y)<260);
+  const bossBar=root.querySelector('#kfboss');
+  bossBar.hidden=!boss||mode==='title';
+  if(boss){
+    const name=boss.kind==='raditz'?'Raditz':'Forest Guardian';
+    if(root.querySelector('#kfboss-name').textContent!==name)root.querySelector('#kfboss-name').textContent=name;
+    root.querySelector('#kfboss-meter').style.transform=`scaleX(${Math.max(0,boss.hp/boss.max)})`;
   }
   const instruction=player?journeyObjective():'';
   if(objective.textContent!==instruction)objective.textContent=instruction;
