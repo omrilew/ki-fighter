@@ -15,7 +15,7 @@ What it does (no new character art is drawn):
      owns the build-up.
   5. Writes manifest.js with an `aura` reference on every recharge frame.
 
-Usage:  python3 scripts/build_hero_cleanup.py [--rev 8841d58]
+Usage:  python3 scripts/build_hero_cleanup.py [--rev 3b6655d]
 Requires Pillow, numpy and node (to read the JS manifest).
 """
 import argparse, io, json, re, subprocess
@@ -307,7 +307,7 @@ def frame_line_pattern(rect):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--rev', default='8841d58', help='source revision of the original atlas + manifest')
+    ap.add_argument('--rev', default='3b6655d', help='source revision of the original atlas + manifest')
     args = ap.parse_args()
 
     src = np.array(Image.open(io.BytesIO(git_bytes(args.rev, DIR + 'body-atlas.png'))).convert('RGBA')).astype(int)

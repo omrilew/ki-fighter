@@ -1,0 +1,21 @@
+{
+  "id": "landing-ravine",
+  "name": "Landing Ravine",
+  "width": 512,
+  "height": 316,
+  "spawn": [38, 165],
+  "theme": "ravine",
+  "paths": [[[12, 168], [116, 165], [199, 218], [305, 213], [399, 170], [501, 143]],[[296,213],[300,154]]],
+  "props": [
+    {"kind":"cliff","x":109,"y":128}, {"kind":"cliff","x":134,"y":128},
+    {"kind":"rock","x":64,"y":233}, {"kind":"rock","x":194,"y":142},
+    {"kind":"pod","x":304,"y":151}, {"kind":"cliff","x":366,"y":117},
+    {"kind":"cliff","x":393,"y":117}, {"kind":"rock","x":451,"y":214}
+  ],
+  "points": [
+    {"id":"ravine-west","name":"Kame Coast","x":27,"y":163,"portal":"kame-coast","arrival":[441,154]},
+    {"id":"inspect-pod","name":"Impact site","x":304,"y":176,"stage":"investigate",
+     "line":"The pod is empty. It tore through the ravine wall on impact. A trail climbs toward the ridge.", "next":"meet-piccolo"},
+    {"id":"ravine-east","name":"Ridge ascent","x":485,"y":144,"portal":"standoff-ridge","arrival":[40,202],"requires":"meet-piccolo","locked":"Inspect the impact site before following the trail."}
+  ]
+}
