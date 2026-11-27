@@ -1,0 +1,34 @@
+{
+ "dome-home": {
+  "frame": 0,
+  "cell": 224,
+  "w": 78,
+  "h": 72,
+  "solidW": 66,
+  "solidH": 24
+ },
+ "dome-hut": {
+  "frame": 1,
+  "cell": 224,
+  "w": 60,
+  "h": 58,
+  "solidW": 52,
+  "solidH": 22
+ },
+ "sea-house": {
+  "frame": 2,
+  "cell": 224,
+  "w": 84,
+  "h": 80,
+  "solidW": 74,
+  "solidH": 26
+ },
+ "round-tower": {
+  "frame": 3,
+  "cell": 224,
+  "w": 46,
+  "h": 82,
+  "solidW": 32,
+  "solidH": 16
+ }
+}
