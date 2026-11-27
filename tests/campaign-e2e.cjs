@@ -26,12 +26,15 @@ const campaignUrl=new URL('campaign.html',url).href;
       await page.keyboard.up(key);
     };
     const activate = async name => {
-      await page.waitForFunction(name => document.querySelector('#notice').textContent === name, name);
+      await page.waitForFunction(name => [name, `Talk to ${name}`].includes(document.querySelector('#notice').textContent), name);
       await page.keyboard.press('e');
     };
     const close = async speaker => {
       assert.equal(await page.locator('#speaker').textContent(), speaker);
-      await page.getByRole('button', {name:'Continue'}).click();
+      // Step through the typed lines, then leave the conversation.
+      const next = page.locator('#next');
+      for (let i = 0; i < 12 && await next.isVisible(); i++) await next.click();
+      await page.getByRole('button', {name:'Goodbye'}).click();
     };
     await page.goto(campaignUrl);
     await page.waitForFunction(() => document.querySelector('#area-name').textContent === 'Kame Coast');
@@ -82,7 +85,7 @@ const campaignUrl=new URL('campaign.html',url).href;
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await phone.getByRole('button',{name:'Interact'}).tap();
     assert.equal(await phone.locator('#speaker').textContent(), 'Bulma');
-    await phone.getByRole('button',{name:'Continue'}).tap();
+    await phone.getByRole('button',{name:'Goodbye'}).tap();
     await phone.screenshot({path:'/tmp/ki-campaign-mobile.png'});
     console.log('Campaign loads three areas on demand, resumes progress, and accepts touch movement and dialogue.');
   } finally { await browser.close(); }

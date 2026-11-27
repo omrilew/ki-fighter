@@ -551,9 +551,10 @@
 <section id="kfmenu-settings" class="menu-panel" hidden>
     <label><input id="kfsetting-shake" type="checkbox"> Screen shake</label>
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
+    <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=1460,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -745,7 +746,7 @@ bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
   if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
-function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,hyper:0,hyperReady:false,hyperWave:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE')}
+function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,hyper:0,hyperReady:false,hyperWave:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE');window.KiAudio?.music('village')}
 function end(win){if(!win)player.fallStarted=now;summaryCharacter.hidden=false;resetStick();stopKi();resetBeam(player);setPowers(false);mode='end';title.textContent=win?'VICTORY!':'GAME OVER';desc.textContent=win?'The forest guardian is defeated. '+kills+' enemies defeated!':'Return to Cedar Village and continue your journey.';playButton.textContent='↻ RETRY JOURNEY';playButton.disabled=false;modal.style.display='flex'}const playButton=root.querySelector('#kfplay'),newButton=root.querySelector('#kfnew'),titleOptions=root.querySelector('#kftitle-options');
 function hasJourneySave(){try{const data=JSON.parse(localStorage.getItem(journeyKey));return !!data&&journeySteps.includes(data.step)}catch{return false}}
 function refreshTitleActions(){playButton.disabled=!hasJourneySave();playButton.textContent=hasJourneySave()?'Continue':'Continue — No Save'}
@@ -1027,6 +1028,7 @@ function applyLevelUps(p){
     syncLevelResources(p,true);
   }
   const earned=p.points-initial;
+  if(earned)window.KiAudio?.sfx('levelUp');
   if(earned)notice('LEVEL '+p.level+' · HP '+p.max+' · KI '+p.mki+' · +'+earned+' '+(earned===1?'POINT':'POINTS'));
 }
 const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
@@ -1044,6 +1046,7 @@ function punch(){
   const p=player;
   if(p.hurt>0||p.cd>0||p.beam||p.beamCharge!==null)return;
   p.combo=p.link>0?p.combo%3+1:1;
+  window.KiAudio?.sfx(p.combo===3?'kick':'punch');
   const finisher=p.combo===3;
   const choices=strikeCombos[p.combo-1].filter(name=>name!==p.strike);
   p.strike=choices[Math.floor(Math.random()*choices.length)];
@@ -1078,6 +1081,7 @@ function fire(){
   if(p.ki<2){notice('NOT ENOUGH KI');return}
   if(p.beam||p.beamCharge!==null)return;
   spendKi(p,2);
+  window.KiAudio?.sfx('kiBlast');
   p.blastPose=.15;
   p.blastAngle=Math.atan2(p.fy,p.fx);
   const direction=castDirection(p);
@@ -1267,6 +1271,7 @@ function beamCastOrigin(p){
 }
 function beginBeam(p,source){
   if(p.beam||p.beamCharge!==null||p.ki<2)return;
+  window.KiAudio?.sfx('charge');
   p.beamRecoveryUntil=0;
   p.beamCharge=0;
   p.beamChargeSource=source;
@@ -1283,6 +1288,7 @@ function fireChargedBeam(p){
   spendKi(p,2);
   p.beam=1;
   p.beamAge=0;
+  window.KiAudio?.sfx('beam');
   p.beamReach=Infinity;
   // Pulse where the beam leaves the hands (release hold pose), so no ghost
   // ring is left at the gather position while the arms push forward.
@@ -2104,6 +2110,15 @@ for(const button of disciplineButtons){
 }
 const menuCharacterButton=root.querySelector('#kfmenu-character');
 menuCharacterButton.onclick=()=>openCharacter(menuCharacterButton);
+{
+  // Music and sound: shared with the story page through KiAudio.
+  const input=root.querySelector('#kfsetting-audio');
+  if(input&&window.KiAudio){
+    input.checked=KiAudio.enabled;
+    input.onchange=()=>KiAudio.setEnabled(input.checked);
+    KiAudio.onChange(on=>{input.checked=on});
+  }else if(input)input.closest('label').hidden=true;
+}
 for(const [key,id] of [['screenShake','kfsetting-shake'],['minimap','kfsetting-minimap']]){
   const input=root.querySelector('#'+id);
   input.checked=settings[key];
@@ -2122,6 +2137,7 @@ const hyperChargeSeconds=2.4;
 const hyperShockwaveRadius=118;
 function hyperTransform(p){
   if(p.surge||p.hyper<1)return;
+  window.KiAudio?.sfx('transform');
   p.hyper=1;p.hyperReady=true;p.surge=true;p.surgeFlare=surgeIgnitionTime;
   const mainHero=fighterIndex===0;
   p.hyperWave=.7;shake=mainHero?.12:.34;
@@ -2342,6 +2358,7 @@ function hurtReaction(fighter,dx,dy){
   fighter.hurtY=dy/distance;
 }
 function damagePlayer(amount,dx=0,dy=0){
+  if(!(player.inv>0))window.KiAudio?.sfx('hurt');
   player.hp=Math.max(0,player.hp-amount);
   player.healDelay=healingDelay;
   player.kiDelay=healingDelay;

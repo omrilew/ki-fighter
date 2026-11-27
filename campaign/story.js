@@ -64,7 +64,7 @@
     'encounter-ready': 'Chapter preview complete.'
   };
   const stages = Object.keys(objectives);
-  const stageMessages = {'encounter-ready': 'The standoff is set. The battle continues in a future build.'};
+  const stageMessages = {'encounter-ready': 'The standoff is set. The fight with Raditz comes in the next update.'};
   const themes = {
     coast: {base: ['#1d3a30', '#4f6a38', '#2a4a3a'], tufts: ['#8ea25370', '#183d3e80', '#b5a76b38'],
       blades: ['#b9bf7855', '#142f2d4d'], specks: ['#c2ad7935', '#17382e4b', '#80905132'],
@@ -94,6 +94,25 @@
   const touch = {id: null, x: 0, y: 0};
   const player = {x: 0, y: 0, facing: 'down', gait: 0, moving: false};
   let area = null, loading = false, pending = null, currentStage = 'briefing';
+  // Conversation and side-quest state (saved with the story stage).
+  const story = {seen: new Set(), quests: {}, collected: new Set()};
+  const storyState = () => ({stage: currentStage, quests: story.quests});
+  const Talk = window.KFDialogue;
+  const audio = window.KiAudio || {music() {}, sfx() {}, setEnabled() {}, enabled: false, onChange() {}};
+  // Short-lived messages (quest updates, welcome back) win over the
+  // "what is near me" prompt until they expire.
+  let toastText = '', toastUntil = 0;
+  function toast(text, ms = 2600) {
+    toastText = text;
+    toastUntil = performance.now() + ms;
+    notice.textContent = text;
+    notice.dataset.hint = '';
+  }
+  const touchUi = matchMedia('(pointer: coarse)').matches;
+  // Which area holds the current story goal, and the order of areas.
+  const route = ['kame-coast', 'landing-ravine', 'standoff-ridge'];
+  const goalArea = {briefing: 'kame-coast', investigate: 'landing-ravine', 'meet-piccolo': 'standoff-ridge',
+    confront: 'standoff-ridge', 'encounter-ready': null};
   let nearby = null, lastTime = 0;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -381,12 +400,38 @@
     return true;
   }
 
+  // Pod plating: a small curved metal shard with a travelling glint.
+  function drawPickup(point, time) {
+    const glint = (Math.sin(time / 260 + point.x) + 1) / 2;
+    context.save();
+    context.translate(Math.round(point.x), Math.round(point.y));
+    context.fillStyle = '#14282155';
+    context.beginPath(); context.ellipse(0, 1, 6, 2, 0, 0, Math.PI * 2); context.fill();
+    const shard = [[-5, 0], [-3, -4], [3, -5], [6, -2], [4, 1]];
+    context.fillStyle = '#2b2930';
+    context.beginPath(); shard.forEach(([x, y], i) => i ? context.lineTo(x, y + 1) : context.moveTo(x - 1, y + 1)); context.closePath(); context.fill();
+    context.fillStyle = '#d9d4cc';
+    context.beginPath(); shard.forEach(([x, y], i) => i ? context.lineTo(x, y) : context.moveTo(x, y)); context.closePath(); context.fill();
+    context.fillStyle = '#9d97a0';
+    context.fillRect(-3, -1, 7, 1);
+    context.fillStyle = `rgba(255,255,255,${.35 + .65 * glint})`;
+    context.fillRect(-1 + Math.round(glint * 3), -4, 2, 1);
+    context.fillRect(Math.round(glint * 3), -5, 1, 3);
+    context.restore();
+  }
+
   function drawPoint(point, time) {
     const sprite = point.actor && window.KFCampaignCast?.getSprite(point.actor);
     const frame = sprite && window.KFCampaignCast.resolveFrame(sprite, 'down', dialog.open && nearby === point ? 'talk' : 'idle', time);
     const shown = sprite && drawSprite(castArt.get(sprite.src), frame, point.x, point.y, sprite.scale);
-    const active = isAvailable(point);
-    const done = point.stage && stages.indexOf(currentStage) > stages.indexOf(point.stage);
+    if (point.pickup) {
+      if (!isAvailable(point)) return;
+      return drawPickup(point, time);
+    }
+    if (!point.actor && !point.portal && !isAvailable(point) && !point.stage) return;
+    const mark = marker(point);
+    const active = !!mark;
+    const done = !point.actor && point.stage && stages.indexOf(currentStage) > stages.indexOf(point.stage);
     const top = point.y - (shown ? 50 : 16);
     context.save();
     context.textAlign = 'center';
@@ -401,12 +446,12 @@
     }
     if (active && !done) {
       const bob = Math.sin(time / 180) * 1.5;
-      context.font = 'bold 13px system-ui, sans-serif';
+      context.font = mark === '!' ? 'bold 13px system-ui, sans-serif' : 'bold 11px system-ui, sans-serif';
       context.lineWidth = 3;
       context.strokeStyle = '#1c271f';
-      context.fillStyle = '#ffd36b';
-      context.strokeText('!', point.x, top + 9 + bob);
-      context.fillText('!', point.x, top + 9 + bob);
+      context.fillStyle = mark === '!' ? '#ffd36b' : '#cfe3ff';
+      context.strokeText(mark, point.x, top + 9 + bob);
+      context.fillText(mark, point.x, top + 9 + bob);
     }
     context.restore();
   }
@@ -424,6 +469,51 @@
     context.ellipse(player.x, player.y, 7, 3, 0, 0, Math.PI * 2);
     context.fill();
     drawSprite(heroArt, {...frame, flip}, player.x, player.y, heroScale, heroHeightRatio);
+  }
+
+  // Where the player should head next: a story or quest point here, or the
+  // trail toward the area that holds the goal.
+  function goalTarget() {
+    const here = area.points.filter(point => !point.portal && marker(point) === '!');
+    if (here.length) return here.sort((a, b) => distance(player, a) - distance(player, b))[0];
+    const target = goalArea[currentStage];
+    const questHere = area.points.find(point => (point.pickup || point.quest) && isAvailable(point));
+    if (questHere) return questHere;
+    if (!target || target === area.id) return null;
+    const step = route.indexOf(target) > route.indexOf(area.id) ? 1 : -1;
+    const toward = route[route.indexOf(area.id) + step];
+    return area.points.find(point => point.portal === toward && isAvailable(point)) || null;
+  }
+
+  function drawGoalPointer(time, camX, camY) {
+    const goal = goalTarget();
+    if (!goal || dialog.open) return;
+    const sx = goal.x - camX, sy = goal.y - 20 - camY;
+    const margin = 14;
+    const inside = sx > margin && sx < viewWidth - margin && sy > margin + 26 && sy < viewHeight - margin;
+    if (inside) return;   // the bobbing marker above it is enough
+    const cx = viewWidth / 2, cy = viewHeight / 2;
+    const angle = Math.atan2(sy - cy, sx - cx);
+    const reach = Math.min((viewWidth / 2 - margin) / Math.abs(Math.cos(angle) || 1e-6),
+      (viewHeight / 2 - margin) / Math.abs(Math.sin(angle) || 1e-6));
+    const pulse = 1 + Math.sin(time / 220) * .12;
+    context.save();
+    context.translate(cx + Math.cos(angle) * reach, cy + Math.sin(angle) * reach);
+    context.rotate(angle);
+    context.scale(pulse, pulse);
+    context.fillStyle = '#0d1b31cc';
+    context.strokeStyle = '#d6b475';
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.moveTo(8, 0); context.lineTo(-5, -6); context.lineTo(-2, 0); context.lineTo(-5, 6);
+    context.closePath();
+    context.fill(); context.stroke();
+    context.fillStyle = '#f6d77d';
+    context.beginPath();
+    context.moveTo(5, 0); context.lineTo(-2, -3); context.lineTo(-1, 0); context.lineTo(-2, 3);
+    context.closePath();
+    context.fill();
+    context.restore();
   }
 
   function render(time) {
@@ -454,6 +544,7 @@
     }
     if (!heroShown) drawHero(time);
     context.restore();
+    drawGoalPointer(time, snapX, snapY);
   }
 
   function canMove(x, y) {
@@ -466,8 +557,22 @@
   }
 
   function isAvailable(point) {
-    return point.portal ? !point.requires || stages.indexOf(currentStage) >= stages.indexOf(point.requires)
-      : point.stage === currentStage;
+    if (point.portal) return !point.requires || stages.indexOf(currentStage) >= stages.indexOf(point.requires);
+    if (point.actor) return true;   // characters can always be talked to
+    if (point.pickup) return Talk.questState(storyState(), point.pickup) === 'active' && !story.collected.has(point.id);
+    if (point.quest) return Talk.questState(storyState(), point.quest) === 'active';
+    return point.stage === currentStage;
+  }
+  // '!' for a story beat or a quest hand-in/offer, '…' for unread chat.
+  function marker(point) {
+    if (point.portal) return isAvailable(point) ? '' : '';
+    if (point.actor) {
+      const topics = Talk.topicsFor(point.actor, storyState()).filter(t => !story.seen.has(t.id) || t.repeat);
+      if (topics.some(t => t.main || t.finish || (t.start && !story.seen.has(t.id)))) return '!';
+      if (topics.some(t => !t.repeat && !story.seen.has(t.id))) return '…';
+      return '';
+    }
+    return isAvailable(point) ? '!' : '';
   }
 
   function update(dt) {
@@ -488,17 +593,22 @@
     player.gait = (player.gait + traveled * .29) % 24;
     nearby = null;
     for (const point of area.points) {
-      if (!point.portal && point.stage !== currentStage) continue;
+      if (!point.portal && !point.actor && !isAvailable(point)) continue;
       if (distance(player, point) <= 23 && (!nearby || distance(player, point) < distance(player, nearby))) nearby = point;
     }
     interactButton.disabled = !nearby;
-    const message = nearby ? nearby.name : (stageMessages[currentStage] || '');
+    if (performance.now() < toastUntil) return;
+    const message = nearby ? (nearby.actor ? `Talk to ${nearby.name}` : nearby.name) : (stageMessages[currentStage] || '');
+    // Key hint lives in a data attribute (rendered by CSS) so the label stays plain text.
+    const hint = nearby ? (touchUi ? 'Interact' : 'E') : '';
     if (notice.textContent !== message) notice.textContent = message;
+    if (notice.dataset.hint !== hint) notice.dataset.hint = hint;
   }
 
   function save() {
     try {
-      localStorage.setItem(saveKey, JSON.stringify({area: area.id, point: [player.x, player.y], stage: currentStage}));
+      localStorage.setItem(saveKey, JSON.stringify({area: area.id, point: [player.x, player.y], stage: currentStage,
+        seen: [...story.seen], quests: story.quests, collected: [...story.collected]}));
     } catch {}
   }
 
@@ -536,7 +646,8 @@
       [player.x, player.y] = canMove(x, y) ? [x, y] : next.spawn;
       player.gait = 0;
       areaName.textContent = area.name;
-      objective.textContent = objectives[currentStage];
+      updateHud();
+      audio.music(area.theme);
       notice.textContent = '';
       pending = null;
       save();
@@ -548,23 +659,231 @@
     }
   }
 
+  // ------------------------------------------------------------ conversations
+  const speakerEl = document.querySelector('#speaker');
+  const roleEl = document.querySelector('#role');
+  const lineEl = document.querySelector('#line');
+  const topicsEl = document.querySelector('#topics');
+  const nextButton = document.querySelector('#next');
+  const byeButton = document.querySelector('#dismiss');
+  const portrait = document.querySelector('#portrait');
+  const talk = {point: null, lines: [], index: 0, shown: 0, typing: null, after: null};
+
+  function updateHud() {
+    objective.textContent = objectives[currentStage];
+    document.querySelector('#quests').textContent = Talk.questLines(storyState()).join(' ');
+  }
+
+  function drawPortrait(point) {
+    const sprite = point.actor && window.KFCampaignCast?.getSprite(point.actor);
+    const image = sprite && castArt.get(sprite.src);
+    const frame = sprite && window.KFCampaignCast.resolveFrame(sprite, 'down', 'idle', 0);
+    portrait.hidden = !frame || !image?.naturalWidth;
+    if (portrait.hidden) return;
+    const ink = portrait.getContext('2d');
+    ink.imageSmoothingEnabled = false;
+    ink.clearRect(0, 0, 48, 48);
+    // Head and shoulders: find the top of the drawn figure in its cell and
+    // frame a 26 px square from just above it.
+    const [sx, sy, w, h] = frame.rect;
+    if (!drawPortrait.tops) drawPortrait.tops = new Map();
+    const key = sx + ',' + sy;
+    if (!drawPortrait.tops.has(key)) {
+      const probe = document.createElement('canvas');
+      [probe.width, probe.height] = [w, h];
+      const pc = probe.getContext('2d', {willReadFrequently: true});
+      pc.drawImage(image, sx, sy, w, h, 0, 0, w, h);
+      const data = pc.getImageData(0, 0, w, h).data;
+      let top = 0, left = w, right = 0;
+      for (let y = 0; y < h && !top; y++) for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 128) { top = y; break; }
+      for (let y = top; y < Math.min(h, top + 26); y++) for (let x = 0; x < w; x++) {
+        if (data[(y * w + x) * 4 + 3] > 128) { left = Math.min(left, x); right = Math.max(right, x); }
+      }
+      drawPortrait.tops.set(key, {top, center: (left + right) / 2});
+    }
+    const {top, center} = drawPortrait.tops.get(key);
+    const size = 26;
+    ink.drawImage(image, sx + Math.round(center - size / 2), sy + Math.max(0, top - 2), size, size, 0, 0, 48, 48);
+  }
+
+  function typeLine(text) {
+    clearInterval(talk.typing);
+    talk.shown = 0;
+    lineEl.textContent = '';
+    nextButton.hidden = false;
+    nextButton.textContent = 'Next';
+    talk.typing = setInterval(() => {
+      talk.shown = Math.min(text.length, talk.shown + 2);
+      lineEl.textContent = text.slice(0, talk.shown);
+      if (talk.shown % 6 === 0) audio.sfx('blip');
+      if (talk.shown >= text.length) { clearInterval(talk.typing); talk.typing = null; }
+    }, 28);
+  }
+
+  function playLines(lines, after) {
+    talk.lines = lines;
+    talk.index = 0;
+    talk.after = after;
+    topicsEl.replaceChildren();
+    typeLine(lines[0]);
+  }
+
+  function advance() {
+    if (talk.typing) {
+      clearInterval(talk.typing);
+      talk.typing = null;
+      lineEl.textContent = talk.lines[talk.index];
+      return;
+    }
+    if (talk.index < talk.lines.length - 1) {
+      talk.index++;
+      audio.sfx('select');
+      typeLine(talk.lines[talk.index]);
+      return;
+    }
+    const after = talk.after;
+    talk.after = null;
+    nextButton.hidden = true;
+    if (after) after();
+  }
+
+  function applyEffects(effect) {
+    if (effect.next) {
+      currentStage = effect.next;
+      audio.sfx('quest');
+      toast(`New objective · ${objectives[currentStage]}`, 3200);
+    }
+    if (effect.start) {
+      story.quests[effect.start] = {count: 0};
+      toast(`New quest · ${Talk.quests[effect.start].title}`);
+      audio.sfx('quest');
+    }
+    if (effect.finish) {
+      story.quests[effect.finish].done = true;
+      toast(`Quest complete · ${Talk.quests[effect.finish].title}`);
+      audio.sfx('levelUp');
+    }
+    updateHud();
+    save();
+  }
+
+  function showTopics() {
+    const point = talk.point;
+    const topics = Talk.topicsFor(point.actor, storyState()).filter(t => !t.main || !story.seen.has(t.id));
+    topicsEl.replaceChildren(...topics.map(topic => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = topic.label;
+      if (topic.main) button.classList.add('main');
+      else if (topic.start || topic.finish) button.classList.add('quest');
+      if (story.seen.has(topic.id) && !topic.main) button.classList.add('seen');
+      button.addEventListener('click', () => {
+        audio.sfx('confirm');
+        playTopic(topic);
+      });
+      return button;
+    }));
+    nextButton.hidden = true;
+    (topicsEl.querySelector('button:not(.seen)') || byeButton).focus();
+  }
+
+  function playTopic(topic) {
+    story.seen.add(topic.id);
+    playLines(topic.lines, () => {
+      applyEffects(topic);
+      showTopics();
+    });
+  }
+
+  function openConversation(point) {
+    const who = Talk.characters[point.actor];
+    talk.point = point;
+    speakerEl.textContent = who.name;
+    roleEl.textContent = who.role;
+    drawPortrait(point);
+    const due = Talk.topicsFor(point.actor, storyState()).find(t => t.main && !story.seen.has(t.id));
+    if (due) playTopic(due);
+    else playLines(Talk.greetingFor(point.actor, storyState()), showTopics);
+  }
+
+  function openPlace(point) {
+    talk.point = point;
+    portrait.hidden = true;
+    speakerEl.textContent = point.name;
+    roleEl.textContent = '';
+    let entry = Talk.places[point.pickup ? 'pickup' : point.id];
+    let lines = entry ? entry.lines : [point.line];
+    playLines(lines, () => {
+      if (point.pickup) {
+        story.collected.add(point.id);
+        story.quests[point.pickup].count++;
+        audio.sfx('pickup');
+        const left = Talk.quests[point.pickup].goal - story.quests[point.pickup].count;
+        toast(left > 0 ? `Pod plating · ${left} more to find` : 'All the plating found · Head back to Bulma');
+      } else if (point.quest) {
+        story.quests[point.quest].count = Talk.quests[point.quest].goal;
+        audio.sfx('quest');
+        toast('You sensed his energy · Tell Piccolo');
+      } else if (entry?.next || point.next) {
+        applyEffects({next: entry?.next || point.next});
+      }
+      updateHud();
+      save();
+      byeButton.focus();
+    });
+  }
+
   function interact() {
     if (loading || dialog.open || !nearby) return;
-    if (nearby.portal && isAvailable(nearby)) {
-      enter(nearby.portal, nearby.arrival);
+    if (nearby.portal) {
+      if (isAvailable(nearby)) {
+        audio.sfx('portal');
+        enter(nearby.portal, nearby.arrival);
+        return;
+      }
+      audio.sfx('denied');
+      held.clear();
+      resetTouch();
+      talk.point = nearby;
+      portrait.hidden = true;
+      speakerEl.textContent = nearby.name;
+      roleEl.textContent = '';
+      dialog.showModal();
+      playLines([nearby.locked], () => byeButton.focus());
       return;
     }
     held.clear();
     resetTouch();
-    document.querySelector('#speaker').textContent = nearby.name;
-    document.querySelector('#line').textContent = nearby.portal ? nearby.locked : nearby.line;
-    if (!nearby.portal && nearby.next) {
-      currentStage = nearby.next;
-      objective.textContent = objectives[currentStage];
-      save();
-    }
+    audio.sfx('select');
     dialog.showModal();
+    if (nearby.actor) openConversation(nearby);
+    else openPlace(nearby);
   }
+
+  nextButton.addEventListener('click', advance);
+  byeButton.addEventListener('click', () => { clearInterval(talk.typing); talk.typing = null; dialog.close(); });
+  dialog.addEventListener('keydown', event => {
+    if ((event.code === 'KeyE' || event.code === 'Space' || event.code === 'Enter') && !nextButton.hidden
+      && !(event.target instanceof HTMLButtonElement && event.target !== nextButton)) {
+      event.preventDefault();
+      advance();
+    }
+  });
+
+  // ------------------------------------------------------------ sound toggle
+  const soundButton = document.querySelector('#sound');
+  function showSound(on) {
+    soundButton.setAttribute('aria-pressed', String(on));
+    soundButton.setAttribute('aria-label', on ? 'Music and sound on' : 'Music and sound off');
+    soundButton.textContent = on ? '♪' : '♪̸';
+    soundButton.style.opacity = on ? 1 : .6;
+  }
+  soundButton.addEventListener('click', () => audio.setEnabled(!audio.enabled));
+  audio.onChange(showSound);
+  showSound(audio.enabled);
+  window.addEventListener('keydown', event => {
+    if (event.code === 'KeyM' && !event.repeat && !event.ctrlKey && !event.metaKey) audio.setEnabled(!audio.enabled);
+  });
 
   function loop(time) {
     const dt = lastTime ? clamp((time - lastTime) / 1000, 0, .05) : 0;
@@ -606,12 +925,33 @@
   window.addEventListener('blur', () => { held.clear(); resetTouch(); });
   interactButton.addEventListener('click', interact);
   dialog.addEventListener('close', () => {
+    clearInterval(talk.typing);
+    talk.typing = null;
+    if (talk.after && talk.point && !talk.point.actor) {
+      // Leaving a narration early still completes it (pickup, discovery).
+      const after = talk.after;
+      talk.after = null;
+      after();
+    }
     if (!interactButton.disabled) interactButton.focus();
   });
   retryButton.addEventListener('click', () => { if (pending) enter(pending.id, pending.arrival); });
 
   const saved = readSave();
   currentStage = saved?.stage || 'briefing';
-  enter(saved?.area || 'kame-coast', saved?.point);
+  for (const id of saved?.seen || []) story.seen.add(id);
+  for (const id of saved?.collected || []) story.collected.add(id);
+  for (const [id, quest] of Object.entries(saved?.quests || {})) {
+    if (Talk.quests[id] && Number.isInteger(quest?.count)) story.quests[id] = {count: quest.count, done: !!quest.done};
+  }
+  // Saves from before conversations existed: mark past story beats as seen.
+  for (const who of Object.values(Talk.characters)) {
+    for (const topic of who.topics) {
+      if (topic.main && stages.indexOf(currentStage) > stages.indexOf(topic.when.to)) story.seen.add(topic.id);
+    }
+  }
+  enter(saved?.area || 'kame-coast', saved?.point).then(() => {
+    if (saved && (saved.stage !== 'briefing' || saved.seen?.length)) toast('Welcome back · Progress restored', 2200);
+  });
   requestAnimationFrame(loop);
 })();
