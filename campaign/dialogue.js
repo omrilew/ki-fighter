@@ -15,13 +15,15 @@
  */
 (function(root){
 'use strict';
-const stages=['briefing','investigate','meet-piccolo','confront','encounter-ready'];
+const stages=['briefing','investigate','meet-piccolo','confront','challenge','fight','victory'];
 
 const quests={
  'pod-scrap':{title:'Plating from the sky',goal:3,
   hint:count=>`Collect pod plating in the ravine (${count}/3).`,ready:'Bring the plating to Bulma.'},
  'ki-focus':{title:'Feel his energy',goal:1,
-  hint:()=>'Focus your ki at the ridge lookout.',ready:'Tell Piccolo what you sensed.'}
+  hint:()=>'Focus your ki at the ridge lookout.',ready:'Tell Piccolo what you sensed.'},
+ 'raider-bounty':{title:'Raiders in the ravine',goal:4,
+  hint:count=>`Defeat raiders in Landing Ravine (${count}/4).`,ready:'Tell Bulma the ravine is clear.'}
 };
 
 const characters={
@@ -40,19 +42,29 @@ const characters={
     'Everyone’s at the house for the reunion. Krillin, Master Roshi, the whole crowd.',
     'I was showing off my new tracker when it started beeping like crazy.',
     'Gohan’s inside with them. Don’t worry, nobody’s letting him near a crater.']},
-   {id:'bulma-signal',when:{from:'investigate',to:'encounter-ready'},label:'About the signal',lines:[
+   {id:'bulma-signal',when:{from:'investigate',to:'victory'},label:'About the signal',lines:[
     'The reading doesn’t look like metal. It looks like energy, a lot of it, packed into something small.',
     'If it’s a ship, somebody built it to cross a very long distance. Alone.']},
-   {id:'bulma-quest',when:{from:'investigate',to:'encounter-ready',quest:{id:'pod-scrap',is:'none'}},start:'pod-scrap',label:'Need anything from the ravine?',lines:[
+   {id:'bulma-quest',when:{from:'investigate',to:'victory',quest:{id:'pod-scrap',is:'none'}},start:'pod-scrap',label:'Need anything from the ravine?',lines:[
     'Actually, yes! If that thing came in hard, pieces of it must be lying around.',
     'Bring me three bits of the plating. I want to know what it’s made of.']},
-   {id:'bulma-quest-progress',when:{from:'investigate',to:'encounter-ready',quest:{id:'pod-scrap',is:'active'}},label:'About the plating',repeat:true,lines:[
+   {id:'bulma-quest-progress',when:{from:'investigate',to:'victory',quest:{id:'pod-scrap',is:'active'}},label:'About the plating',repeat:true,lines:[
     'Three pieces of plating, Goku. Look around the impact site in the ravine.']},
-   {id:'bulma-quest-done',when:{from:'investigate',to:'encounter-ready',quest:{id:'pod-scrap',is:'ready'}},finish:'pod-scrap',label:'Here’s the plating',lines:[
+   {id:'bulma-quest-done',when:{from:'investigate',to:'victory',quest:{id:'pod-scrap',is:'ready'}},finish:'pod-scrap',label:'Here’s the plating',lines:[
     'Let me see... It’s lighter than anything we make, and there isn’t a single scratch on it.',
     'It survived falling out of the sky. Whoever built that pod is way ahead of us.',
     'Goku, whatever was inside it, be careful. I mean it.']},
-   {id:'bulma-standoff',when:{from:'confront',to:'encounter-ready'},label:'There’s a stranger on the ridge',lines:[
+   {id:'bulma-bounty',when:{from:'investigate',to:'victory',quest:{id:'raider-bounty',is:'none'}},start:'raider-bounty',label:'Anything else going on?',lines:[
+    'Raiders have been camping in the ravine since the crash. They think the pod is treasure.',
+    'If you knock four of them out, I can get my equipment in there safely. Good practice for you, too.']},
+   {id:'bulma-bounty-progress',when:{from:'investigate',to:'victory',quest:{id:'raider-bounty',is:'active'}},label:'About the raiders',repeat:true,lines:[
+    'Four raiders in the ravine, Goku. They come back if you leave them alone, so don’t dawdle.']},
+   {id:'bulma-bounty-done',when:{from:'investigate',to:'victory',quest:{id:'raider-bounty',is:'ready'}},finish:'raider-bounty',label:'The ravine is clear',lines:[
+    'Nice work! Here, I found this charm in the house. It’s supposed to make you lighter on your feet.']},
+   {id:'bulma-victory',when:{from:'victory',to:'victory'},label:'It’s over',lines:[
+    'You beat him? A real alien, from another planet... and he was your brother?',
+    'I need a minute. And then I need everything you can tell me about that scouter.']},
+   {id:'bulma-standoff',when:{from:'confront',to:'fight'},label:'There’s a stranger on the ridge',lines:[
     'Piccolo AND a visitor from space on the same afternoon? Some reunion.',
     'If he really came in that pod, he didn’t come to sightsee.']}
   ]},
@@ -66,18 +78,24 @@ const characters={
     'Don’t get the wrong idea, Goku. I’m not here to help you.',
     'That traveler crossed the ravine like the ground meant nothing to him. His energy is enormous.',
     'He’s waiting further along the ridge. Find out what he wants. I’ll hold the edge.']},
-   {id:'piccolo-why',when:{from:'meet-piccolo',to:'encounter-ready'},label:'Why are you here?',lines:[
+   {id:'piccolo-why',when:{from:'meet-piccolo',to:'victory'},label:'Why are you here?',lines:[
     'This planet is mine to conquer. I won’t let some outsider take it first.',
     'When this is over, you and I still have a score to settle. Don’t forget it.']},
-   {id:'piccolo-quest',when:{from:'meet-piccolo',to:'encounter-ready',quest:{id:'ki-focus',is:'none'}},start:'ki-focus',label:'How strong is he?',lines:[
+   {id:'piccolo-quest',when:{from:'meet-piccolo',to:'victory',quest:{id:'ki-focus',is:'none'}},start:'ki-focus',label:'How strong is he?',lines:[
     'You rely on your eyes too much. Go to the lookout, close your eyes, and feel for him.',
     'Ki has weight. Learn to read it and nobody will ever catch you off guard.']},
-   {id:'piccolo-quest-progress',when:{from:'meet-piccolo',to:'encounter-ready',quest:{id:'ki-focus',is:'active'}},label:'The lookout?',repeat:true,lines:[
+   {id:'piccolo-quest-progress',when:{from:'meet-piccolo',to:'victory',quest:{id:'ki-focus',is:'active'}},label:'The lookout?',repeat:true,lines:[
     'Up at the lookout. Stop talking and start feeling.']},
-   {id:'piccolo-quest-done',when:{from:'meet-piccolo',to:'encounter-ready',quest:{id:'ki-focus',is:'ready'}},finish:'ki-focus',label:'I felt it',lines:[
+   {id:'piccolo-quest-done',when:{from:'meet-piccolo',to:'victory',quest:{id:'ki-focus',is:'ready'}},finish:'ki-focus',label:'I felt it',lines:[
     'Cold and heavy, wasn’t it? Now you know what we’re up against.',
     'Remember that feeling. The next time it gets close, you won’t need your eyes.']},
-   {id:'piccolo-brother',when:{from:'encounter-ready',to:'encounter-ready'},label:'He called me his brother',lines:[
+   {id:'piccolo-ready',when:{from:'challenge',to:'fight'},label:'Can we beat him?',lines:[
+    'Not as we are. Get stronger first: hit the dummies on the coast, clear the raiders, meditate at the lookout.',
+    'When you’re ready, he’s waiting. I won’t wait forever.']},
+   {id:'piccolo-victory',when:{from:'victory',to:'victory'},main:true,label:'We did it',lines:[
+    'Hmph. Not bad. That scouter of his was reading our power the whole fight.',
+    'He said more of them are coming. Stronger ones. Train, Goku. We’ll need it.']},
+   {id:'piccolo-brother',when:{from:'challenge',to:'victory'},label:'He called me his brother',lines:[
     'Brother... So you aren’t from this world either. That explains a few things.',
     'Family or not, he didn’t cross space to talk. Get ready.']}
   ]},
@@ -88,20 +106,20 @@ const characters={
    'meet-piccolo':['He glances at you, then smirks, as if he already knows your name.'],
    default:['Well? I’m waiting, little brother.']},
   topics:[
-   {id:'raditz-standoff',main:true,when:{from:'confront',to:'confront'},next:'encounter-ready',label:'Who are you?',lines:[
+   {id:'raditz-standoff',main:true,when:{from:'confront',to:'confront'},next:'challenge',label:'Who are you?',lines:[
     'So this is where you’ve been hiding, Kakarot. This planet has made you soft.',
     'You don’t remember? You were sent here as a baby to clear this world for our people.',
     'I am Raditz, your elder brother. We are Saiyans, and there is work waiting for warriors like us.',
     'Leave this planet with me, and the people here can stay out of it.']},
-   {id:'raditz-name',when:{from:'encounter-ready',to:'encounter-ready'},label:'Why call me Kakarot?',lines:[
+   {id:'raditz-name',when:{from:'challenge',to:'challenge'},label:'Why call me Kakarot?',lines:[
     'It’s the name you were born with. “Goku” is something these Earthlings gave you.',
     'A Saiyan’s strength, and you spent it farming and playing with children.']},
-   {id:'raditz-saiyans',when:{from:'encounter-ready',to:'encounter-ready'},label:'What happened to our people?',lines:[
+   {id:'raditz-saiyans',when:{from:'challenge',to:'challenge'},label:'What happened to our people?',lines:[
     'Our home world is gone. Only a handful of Saiyans are left, and every one of them is needed.',
     'You should be grateful I came all this way for you.']},
-   {id:'raditz-refuse',when:{from:'encounter-ready',to:'encounter-ready'},label:'I’m not going anywhere',lines:[
+   {id:'raditz-refuse',when:{from:'challenge',to:'challenge'},next:'fight',fight:true,label:'I’m not going anywhere (fight)',lines:[
     'Then you leave me no choice.',
-    'I’ll take something you care about. Maybe then you’ll remember who you really are.']}
+    'Let’s see what this planet taught you, Kakarot!']}
   ]}
 };
 

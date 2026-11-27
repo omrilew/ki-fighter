@@ -4,13 +4,13 @@
 #kfg .minimap canvas{width:100%;height:auto;border-radius:4px;aspect-ratio:13/7}
 @media(max-height:420px){#kfg .minimap{width:106px}}
 @media(max-width:640px){#kfg .world-objective{top:125px;max-width:calc(100% - 150px)}}
-#kfg .world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
+#kfg #kfg:has(.world-interact:not([hidden])) .notice{translate:0 -56px}#kfg .boss-bar{position:absolute;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(56%,360px);z-index:3;padding:5px 9px 7px;border:2px solid var(--ui-edge);border-radius:2px;background:linear-gradient(180deg,#3a1d24,#1d0e14);box-shadow:inset 0 0 0 2px #5a2a33,2px 3px 0 #0b1420;color:#ffe3c2;font:700 11px Verdana,system-ui;letter-spacing:.08em;text-transform:uppercase;pointer-events:none}#kfg .boss-bar[hidden]{display:none}#kfg .boss-meter{margin-top:4px;height:8px;border:1px solid #c9a46a;background:#140a0e}#kfg .boss-meter i{display:block;height:100%;background:linear-gradient(180deg,#ff8a6a,#c22d2d);transform-origin:left;transition:transform .15s}.world-interact{position:absolute;bottom:26%;left:50%;transform:translateX(-50%);z-index:3;padding:.62rem .95rem;color:#ffecd1;background:#38493b;border-color:#b99a6b;box-shadow:0 3px 12px #0008}
 #kfg .world-interact[hidden],#kfg .world-objective[hidden],#kfg #kfdojo-shortcut[hidden]{display:none!important}
 #kfstory{max-width:min(410px,calc(100% - 32px));box-sizing:border-box;padding:22px;border:1px solid #a38a58;border-radius:12px;color:#f7e6ca;background:#202d2b;box-shadow:0 14px 50px #000b}
 #kfstory::backdrop{background:#0c1616ad}
 #kfstory h2{margin:0;color:#ffe1a3;font-size:20px}
 #kfstory p{line-height:1.55;margin:10px 0 20px}
-#kfstory .story-actions{display:flex;justify-content:flex-end;gap:8px}
+#kfstory .story-actions{display:flex;justify-content:flex-end;gap:8px}#kfstory .story-choices{display:grid;gap:7px;margin-top:-6px}#kfstory .story-choices button{min-height:42px;padding:9px 14px;text-align:left}#kfstory .story-choices button.primary{justify-self:end;text-align:center;min-width:120px;border-color:#d6b475}#kfstory .story-choices button.seen{opacity:.6}#kfstory .story-choices[hidden]{display:none}
 #kfstory button{padding:8px 12px;border:1px solid #96794c;border-radius:6px;background:#33453d;color:#fff0d1;cursor:pointer}
 #kfstory button[hidden]{display:none}
 #kfmenu{width:min(570px,calc(100% - 24px));max-height:calc(100dvh - 24px);box-sizing:border-box;overflow:auto;padding:18px;border:1px solid #ae9564;border-radius:13px;color:#f3e7ce;background:#202d2b;box-shadow:0 16px 55px #000b}
@@ -453,7 +453,7 @@
       <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
     </nav>
     <div class="hud-utilities" aria-label="Fighter and equipment"></div>
-    <div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
+    <div class="boss-bar" id="kfboss" hidden><span id="kfboss-name"></span><div class="boss-meter"><i id="kfboss-meter"></i></div></div><div class="counters"><span id="kfregion">Cedar Village</span><span id="kfko">0 KO</span></div>
     <div id="kfminimap" class="minimap" hidden>
       <canvas id="kfminimap-view" width="312" height="168" role="img" aria-label="World minimap. White arrow marks your position and facing. Gold diamonds mark story objectives. Orange squares mark nearby camps."></canvas>
     </div>
@@ -482,7 +482,7 @@
     </div>
   </div>
 </div>
-<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><div class="title-subtitle">Cedar Village · Action RPG</div><div class="title-actions"><button id="kfnew" type="button">New Game</button><button id="kfplay" type="button">Continue</button><button id="kftitle-options" type="button">Options</button></div><a class="title-campaign" href="campaign.html">Story Preview</a><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
+<div class="modal" id="kfmodal"><h2 id="kftitle">KI FIGHTER</h2><p id="kfdesc">Follow the eastern trail from Cedar Village. Use the joystick or WASD to move and E or Interact to talk. Tap Ki to blast or hold to charge a beam.</p><div class="title-subtitle">Cedar Village · Action RPG</div><div class="title-actions"><button id="kfnew" type="button">New Game</button><button id="kfplay" type="button">Continue</button><button id="kftitle-options" type="button">Options</button></div><button id="kfcharacter-summary" type="button" aria-haspopup="dialog" hidden>Character</button></div><dialog id="kfcharacter" aria-labelledby="kfcharacter-title">
   <header class="character-head">
     <h2 id="kfcharacter-title">Character</h2>
     <button id="kfcharacter-close" type="button" autofocus>Back</button>
@@ -504,6 +504,7 @@
 <dialog id="kfstory" aria-labelledby="kfstory-title">
   <h2 id="kfstory-title"></h2>
   <p id="kfstory-text"></p>
+  <div class="story-choices" id="kfstory-choices" hidden></div>
   <div class="story-actions"><button id="kfstory-close" type="button">Close</button><button id="kfstory-continue" type="button">Continue</button></div>
 </dialog>
 <dialog id="kfmenu" aria-labelledby="kfmenu-heading">
@@ -554,9 +555,9 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=2"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
-(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=1460,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
+(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
@@ -587,6 +588,7 @@ const worldObjects=[
   shrine,dojoMaster,dojoGate,
 ];
 function worldClearance(x,y){
+  if(window.KiStory?.clear(x,y))return true;
   return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
     encounters.some(e=>hyp(x-e.x,y-e.y)<34)||
     worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
@@ -637,7 +639,8 @@ for(let i=0;i<3500;i++){
   const size=terrainBetween(.5,2);
   fill(x,y,size,terrainBetween(.5,1.45),i%3===0?'#c2ad7935':i%2===0?'#17382e4b':'#80905132',bg);
 }
-const mainTrail=new Path2D('M -20 279 C 220 267 390 282 540 270 S 826 276 1460 268');
+window.KiStory?.paintGround(bg);
+const mainTrail=new Path2D('M -20 279 C 220 267 390 282 540 270 S 826 276 1460 268 C 1700 262 1900 284 2100 276 S 2500 262 2780 270');
 const northTrail=new Path2D('M 357 -20 C 335 200 376 330 350 580');
 const branchTrails=new Path2D('M 151 278 Q 130 321 113 365 M 157 274 Q 202 259 211 216 M 421 275 Q 436 240 462 219 M 620 272 Q 628 228 645 206 M 758 270 Q 742 313 767 349 M 802 274 Q 815 214 825 175');
 
@@ -743,7 +746,7 @@ for(const x of [1123,1403])for(const y of [211,350,410]){bg.fillStyle='#284936';
 bg.fillStyle='#a77e4c';bg.fillRect(987,262,136,26);
 bg.fillStyle='#f3d98b';bg.font='bold 13px sans-serif';bg.fillText('DOJO →',950,244);
 bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);
-function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;
+function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(window.KiStory?.solid(x,y))return true;
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
   if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
 function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,hyper:0,hyperReady:false,hyperWave:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE');window.KiAudio?.music('village')}
@@ -793,7 +796,10 @@ const itemCatalog=Object.freeze({
  iron_weights:{name:'Iron Weights',slot:'training',speed:.67,xp:1.55},
  wind_charm:{name:'Wind Charm',slot:'charm',speed:1.12,xp:1},
  scholar_charm:{name:'Scholar Charm',slot:'charm',speed:1,xp:1.12},
- cedar_token:{name:'Cedar Token',slot:null,speed:1,xp:1}
+ cedar_token:{name:'Cedar Token',slot:null,speed:1,xp:1},
+ capsule_band:{name:'Capsule Band',slot:'training',speed:.9,xp:1.2},
+ weighted_cape:{name:'Weighted Cape',slot:'training',speed:.75,xp:1.45},
+ saiyan_scouter:{name:'Saiyan Scouter',slot:'charm',speed:1.05,xp:1.15}
 });
 let inventory=new Set(),equipment={training:null,charm:null};
 function itemEffects(){
@@ -852,7 +858,7 @@ function saveJourney(){
   try{
     localStorage.setItem(journeyKey,JSON.stringify({
       version:3,step:journeyStep,cleared:[...clearedCamps],items:[...inventory],equipment:{...equipment},discipline,activeFighter:fighterIndex,party:(captureParty(),partyStats),
-      stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]]))
+      stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]])),story:window.KiStory?.save()
     }));
   }catch{}
 }
@@ -860,9 +866,11 @@ function loadJourney(){
   journeyStep='meet';
   discipline='balanced';
   clearedCamps=new Set();inventory=new Set();equipment={training:null,charm:null};
+  window.KiStory?.load(null);
   try{
     const data=JSON.parse(localStorage.getItem(journeyKey));
     if(!data)return;
+    window.KiStory?.load(data.story);
     if(Array.isArray(data.items))inventory=new Set(data.items.filter(id=>Object.hasOwn(itemCatalog,id)));
     for(const slot of ['training','charm']){const id=data.equipment?.[slot];if(inventory.has(id)&&itemCatalog[id]?.slot===slot)equipment[slot]=id}
     if(Object.hasOwn(disciplines,data.discipline))discipline=data.discipline;
@@ -886,7 +894,7 @@ function loadJourney(){
   }catch{}
   syncLevelResources(player,true);
 }
-const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158};
+const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158,raditz:520,dummy:24};
 function spawnJourneyEnemies(){
   const guardianOpen=journeyStep==='guardian',dojoOpen=journeyStep==='trial';
   enemies=encounters.filter(e=>(e.id!=='guardian'||guardianOpen)&&(!e.id.startsWith('trial-')||dojoOpen)&&!clearedCamps.has(e.id)).map((e,i)=>({
@@ -894,6 +902,14 @@ function spawnJourneyEnemies(){
     flank:i%2?-1:1,boss:e.kind==='brute',fx:0,fy:1,faceAngle:Math.PI/2,walking:false,
     stride:0,gait:0,hurt:0,flash:0,cd:.35,phase:i,engaged:false,returning:false,alertUntil:0
   }));
+  window.KiStory?.spawn();
+}
+// Story mode adds its own enemies (camps, training dummies, Raditz).
+function spawnStoryEnemy(e){
+  if(enemies.some(o=>o.id===e.id))return;
+  enemies.push({...e,homeX:e.x,homeY:e.y,hp:worldEnemyHealth[e.kind],max:worldEnemyHealth[e.kind],
+    flank:enemies.length%2?-1:1,boss:!!e.boss,fx:-1,fy:0,faceAngle:Math.PI,walking:false,
+    stride:0,gait:0,hurt:0,flash:0,cd:.6,phase:enemies.length,engaged:false,returning:false,alertUntil:0});
 }
 function shardCount(){return shardIds.filter(id=>clearedCamps.has(id)).length}
 function updateJourneyDefeat(enemy){
@@ -916,6 +932,8 @@ function updateJourneyDefeat(enemy){
   }
 }
 function journeyObjective(){
+  const story=window.KiStory?.objective();
+  if(story)return story;
   switch(journeyStep){
     case 'meet':return 'Speak to Master Ren in Cedar Village.';
     case 'recover':return 'Recover the Cedar Seal pieces · '+shardCount()+'/3';
@@ -948,8 +966,36 @@ function showStory(name,lines,label,action){
   storyNext.textContent=label||'Continue';
   storyPanel.showModal();
 }
+// Multi-step conversations (story mode): text plus a list of buttons. Each
+// button either runs (and may call storyDialog again) or closes the box.
+function storyDialog(name,text,buttons){
+  if(mode!=='talk'){
+    resetStick();pressed.clear();held.clear();stopKi();resetBeam(player);setPowers(false);
+    mode='talk';
+  }
+  root.querySelector('#kfstory-title').textContent=name;
+  root.querySelector('#kfstory-text').textContent=text;
+  storyAction=null;
+  storyNext.hidden=true;
+  root.querySelector('#kfstory-close').hidden=true;
+  const box=root.querySelector('#kfstory-choices');
+  box.replaceChildren(...buttons.map(b=>{
+    const button=document.createElement('button');
+    button.type='button';button.textContent=b.label;
+    if(b.primary)button.classList.add('primary');
+    if(b.seen)button.classList.add('seen');
+    button.onclick=()=>{if(b.close){closeStory();return}b.run?.()};
+    return button;
+  }));
+  box.hidden=false;
+  if(!storyPanel.open)storyPanel.showModal();
+  (box.querySelector('button.primary')||box.querySelector('button:not(.seen)')||box.querySelector('button'))?.focus();
+}
 function closeStory(){
   if(mode!=='talk')return;
+  const box=root.querySelector('#kfstory-choices');
+  if(box){box.hidden=true;box.replaceChildren()}
+  root.querySelector('#kfstory-close').hidden=false;
   storyAction=null;
   storyPanel.close();
   mode='play';
@@ -970,6 +1016,7 @@ function nearbyLandmark(){
 }
 function interact(){
   if(mode!=='play')return;
+  if(window.KiStory?.interact())return;
   const target=nearbyLandmark();
   if(!target)return;
   if(target===dojoGate){showStory('Cedar Dojo Gate','The path continues east into Cedar Dojo. Walk through the gate to reach the training court.');return;}
@@ -1017,7 +1064,21 @@ function interact(){
   }else showStory('Master Ren','Keep following the trail east. The shrine stands beyond the last camp.');
 }
 interactButton.onclick=interact;
-const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96};
+// Narrow API for story-mode.js (the engine's state stays private).
+window.KiGame={
+  get player(){return player},
+  enemies:()=>enemies,
+  spawnEnemy:spawnStoryEnemy,
+  notice:text=>notice(text),
+  grantExperience:n=>{grantExperience(n);applyLevelUps(player)},
+  collectItem:id=>collectItem(id),
+  save:()=>saveJourney(),
+  dialog:storyDialog,
+  closeDialog:closeStory,
+  charging:()=>held.has('charge'),
+  isPlaying:()=>mode==='play'
+};
+const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96,raditz:0,dummy:5};
 function xpRequired(level){return 55+(level-1)*35}
 function applyLevelUps(p){
   const initial=p.points;
@@ -1031,7 +1092,7 @@ function applyLevelUps(p){
   if(earned)window.KiAudio?.sfx('levelUp');
   if(earned)notice('LEVEL '+p.level+' · HP '+p.max+' · KI '+p.mki+' · +'+earned+' '+(earned===1?'POINT':'POINTS'));
 }
-const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29};
+const enemySpeed={bandit:56,thug:28,ninja:34,soldier:56,brute:29,raditz:64,dummy:0};
 
 const fighterFrames={guard:0,jab:1,cross:2,kick:3,gather:4,release:5,dash:11,walk:12};
 const strikes={
@@ -2307,13 +2368,16 @@ function advanceEnemy(e,p,dt){
   if(e.hurt>0){e.hurt=Math.max(0,e.hurt-dt);e.stride=animationDamp(e.stride||0,0,dt,16);return}
   const dx=p.x-e.x,dy=p.y-e.y,distance=hyp(dx,dy);
   if(!campAllowsCombat(e,p,distance,dt))return;
-  const ranged=e.kind==='ninja',reach=e.boss?32:23;
+  // Raditz picks per attack: ki shot from range, lunging rush up close.
+  const ranged=e.kind==='ninja'||(e.kind==='raditz'&&(e.attack?e.attack.ranged:distance>70));
+  const reach=e.kind==='raditz'?40:e.boss?32:23;
   if(e.attack){
     const attack=e.attack;
     const elapsed=attack.time;
     attack.time+=dt;
+    if(e.kind==='raditz'&&!attack.ranged&&attack.time>attack.windup&&attack.time<attack.windup+.16)move(e,attack.x*190*dt,attack.y*190*dt);
     if(elapsed<attack.windup&&attack.time>=attack.windup){
-      if(ranged)enemyShots.push({x:e.x,y:e.y-12,dx:attack.x,dy:attack.y,time:2});
+      if(ranged){enemyShots.push({x:e.x+attack.x*10,y:e.y-22+attack.y*4,dx:attack.x,dy:attack.y,time:2});if(e.kind==='raditz')window.KiAudio?.sfx('kiBlast')}
       else{
         const edge=Math.cos(e.boss?1.03:.86);
         const damage=e.boss?9:4;
@@ -2336,8 +2400,8 @@ function advanceEnemy(e,p,dt){
   e.faceAngle=turnToward(e.faceAngle,Math.atan2(dy,dx),dt);
   if(e.cd<=0&&(ranged?distance<160:distance<reach&&!p.fly)){
     const windup=ranged?.31:e.boss?.36:.25;
-    e.attack={time:0,windup,x:e.fx,y:e.fy};
-    e.cd=ranged?1.7:e.boss?1.1:1.4;
+    e.attack={time:0,windup,x:e.fx,y:e.fy,ranged};
+    e.cd=e.kind==='raditz'?(ranged?1.25:.95):ranged?1.7:e.boss?1.1:1.4;
     e.walking=false;
     e.stride=animationDamp(e.stride||0,0,dt,14);
     return;
@@ -2408,10 +2472,11 @@ if(b.time>0&&sceneryProjectile(b,b.damage)){
 for(let e of enemies){if(e.hp>0&&hyp(b.x-e.x,b.y-e.y+10)<(e.boss?18:13)+b.r){e.hp-=b.damage*(p.surge?1.3:1);e.flash=.18;hurtReaction(e,b.dx,b.dy);b.time=0;kiPulse(e.x,e.y-12,10,false,true);shake=.13;break}}if(b.time>0&&solid(b.x,b.y)){kiPulse(b.x,b.y,5,false,true);b.time=0}}balls=balls.filter(b=>b.time>0);
 for(const enemy of enemies){
   if(mode!=='play')break;
-  if(enemy.hp>0)advanceEnemy(enemy,p,dt);
+  if(enemy.hp>0&&enemy.kind!=='dummy')advanceEnemy(enemy,p,dt);
 }
+window.KiStory?.update(dt);
 const defeated=enemies.filter(e=>e.hp<=0);
-for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(enemyExperience[e.kind]);updateJourneyDefeat(e);
+for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(enemyExperience[e.kind]);updateJourneyDefeat(e);window.KiStory?.onDefeat(e);
  if(e.id==='ridge')collectItem('wind_charm');
  if(e.id==='watch')collectItem('scholar_charm');
  if(e.id==='trial-three')collectItem('iron_weights');if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
@@ -2499,7 +2564,7 @@ for(const button of upgradeButtons){
 const combatAtlas=new Image();
 combatAtlas.src='assets/fighter-atlas.webp';
 const combatCell=52,artScale=4;
-const enemyFrames={bandit:6,thug:7,ninja:8,soldier:9,brute:10};
+const enemyFrames={bandit:6,thug:7,ninja:8,soldier:9,brute:10,raditz:10,dummy:6};
 // Form tint targets only the hair band of selected hero frames. The same pose art
 // serves both forms, so strike, walk, and effect anchors stay aligned.
 function makeFormArt(source,slots){
@@ -2621,7 +2686,28 @@ function drawEnemyAction(o){
     paintFramePair(framesAt(enemyIdleClip,((storyClock+o.phase)*.85)%1),draw);
   }
 }
+function drawTrainingDummy(o){
+  // Wooden training dummy: post, straw body, crossbar arms, rope bands.
+  const lean=o.hurt?Math.sin(storyClock*40)*.18:0,down=o.koTime?1-o.koTime/.29:0;
+  c.save();c.translate(o.x,o.y);
+  c.fillStyle='#203e2c9e';c.beginPath();c.ellipse(0,2,9,2.4,0,0,Math.PI*2);c.fill();
+  c.rotate(lean+down*1.2);
+  c.fillStyle='#2a1a10';c.fillRect(-2.5,-30,5,30);
+  c.fillStyle='#7a5432';c.fillRect(-1.5,-30,3,29);
+  c.fillStyle='#2a1a10';c.fillRect(-8,-31,16,16);
+  c.fillStyle='#c9a45e';c.fillRect(-7,-30,14,14);
+  c.fillStyle='#a8823f';c.fillRect(1,-30,6,14);
+  c.fillStyle='#5a3a22';c.fillRect(-7,-25,14,2);c.fillRect(-7,-20,14,2);
+  c.fillStyle='#2a1a10';c.fillRect(-13,-28,26,4);
+  c.fillStyle='#8a5e36';c.fillRect(-12,-27,24,2);
+  c.fillStyle='#2a1a10';c.beginPath();c.arc(0,-35,5.5,0,Math.PI*2);c.fill();
+  c.fillStyle='#d2b06c';c.beginPath();c.arc(0,-35,4.5,0,Math.PI*2);c.fill();
+  c.fillStyle='#a8823f';c.fillRect(1,-38,3,6);
+  c.restore();
+}
 function enemyArt(o){
+  if(o.kind==='dummy'){drawTrainingDummy(o);return}
+  if(o.kind==='raditz'&&window.KiStory?.drawRaditz(c,o))return;
   const newArt=atlasReady(enemyActions);
   if(!newArt&&!atlasReady(combatAtlas))return;
   const frame=enemyFrames[o.kind];
@@ -4242,6 +4328,7 @@ for(const {x,y,solidW,solidH,world} of worldObjects){
   minimapGround.fillRect(x-solidW/2,y-solidH,solidW,solidH);
 }
 function minimapObjectives(){
+  if(player&&player.x>1300&&window.KiStory?.targets().length)return window.KiStory.targets();
   switch(journeyStep){
     case 'meet':
     case 'return':return [mentor];
@@ -4319,7 +4406,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
@@ -4335,14 +4422,22 @@ function renderHUD(){
   const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){surgeControl.disabled=!player?.surge;surgeControl.textContent=player?.surge?'Power down':'Surge locked'}
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
-  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village',ko:`${kills} KO`,notice:msg};
+  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:window.KiStory?.region(player?.x??0)||(player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village'),ko:`${kills} KO`,notice:msg};
   for(const [key,value] of Object.entries(labels)){
     if(hud[key].textContent!==value)hud[key].textContent=value;
+  }
+  const boss=player&&enemies.find(e=>e.boss&&e.hp>0&&hyp(e.x-player.x,e.y-player.y)<260);
+  const bossBar=root.querySelector('#kfboss');
+  bossBar.hidden=!boss||mode==='title';
+  if(boss){
+    const name=boss.kind==='raditz'?'Raditz':'Forest Guardian';
+    if(root.querySelector('#kfboss-name').textContent!==name)root.querySelector('#kfboss-name').textContent=name;
+    root.querySelector('#kfboss-meter').style.transform=`scaleX(${Math.max(0,boss.hp/boss.max)})`;
   }
   const instruction=player?journeyObjective():'';
   if(objective.textContent!==instruction)objective.textContent=instruction;
   objective.hidden=!player||mode==='title';
-  interactButton.hidden=mode!=='play'||!nearbyLandmark();
+  interactButton.hidden=mode!=='play'||!(nearbyLandmark()||window.KiStory?.nearby());
   hud.notice.hidden=messageTimer<=0;
   const points=player?.points??0;
   pointBadge.hidden=points===0;
