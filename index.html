@@ -480,7 +480,7 @@
 </dialog>
 <script src="assets/hero-animation/manifest.js?v=combat-fix-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
-(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),c=cv.getContext('2d'),MW=1460,MH=560;let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
+(()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=1460,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
@@ -1006,16 +1006,20 @@ function fire(){
 // The Kamehameha must reach past the farthest visible screen corner, even when
 // the player fires diagonally from a viewport edge. Rendering and hit detection
 // both consume beamShape(), so they always agree on the beam's actual reach.
-const beam={start:3,wide:19,body:Math.ceil(Math.hypot(W,H)*1.5),tip:32,chargeTime:.55,damage:56,drain:7};
-function beamShape(age){
+const beam={start:3,wide:12,body:Math.ceil(Math.hypot(W,H)*1.5),tip:18,chargeTime:.55,damage:56,drain:7};
+const beamSpeed=300;   // world px/s: full 190 px range in ~0.65 s
+const beamRange=190;
+function beamShape(age,reach=Infinity){
   // The blast has a real traveling head. It starts at the hands, advances
-  // at a fixed world-space speed and stops at a controlled maximum range.
-  // The same geometry drives rendering, collisions and the fading trace.
+  // at a fixed world-space speed and stops at a controlled maximum range,
+  // or at the first enemy in its path (reach). The same geometry drives
+  // rendering, collisions, the impact burst and the fading trace.
   const travel=Math.max(0,age-.09);
-  const total=Math.min(190,travel*112);
+  const free=Math.min(beamRange,travel*beamSpeed);
+  const total=Math.min(free,Math.max(0,reach));
   const tip=Math.min(beam.tip,total*.22);
-  const width=animationEase(Math.min(1,travel/.35));
-  return {body:Math.max(0,total-tip),tip,wide:beam.wide*(.52+.48*width)};
+  const width=animationEase(Math.min(1,travel/.2));
+  return {body:Math.max(0,total-tip),tip,wide:beam.wide*(.52+.48*width),blocked:reach<free};
 }
 const {ease:animationEase,damp:animationDamp,sample:samplePose,framesAt,actionPhase,clips:animationClips}=KiAnimation;
 const heroPose={width:.85,guardWidth:.72,height:.89,feet:4};
@@ -1194,6 +1198,7 @@ function fireChargedBeam(p){
   spendKi(p,2);
   p.beam=1;
   p.beamAge=0;
+  p.beamReach=Infinity;
   // Pulse where the beam leaves the hands (release hold pose), so no ghost
   // ring is left at the gather position while the arms push forward.
   const {x,y}=fighterIndex===0?packedBeamHoldOrigin(p):beamCastOrigin(p);
@@ -1207,7 +1212,7 @@ function finishBeam(p){
   const fired=p.beam;
   if(fired){
     const {x,y}=beamCastOrigin(p);
-    fx.push({beamTrace:true,x,y,angle:Math.atan2(p.fy,p.fx),age:p.beamAge,time:beamTraceTime});
+    fx.push({beamTrace:true,x,y,angle:Math.atan2(p.fy,p.fx),age:p.beamAge,time:beamTraceTime,reach:p.beamReach??Infinity});
   }
   resetBeam(p);
   if(fired){
@@ -1235,10 +1240,29 @@ function insideBeam(vx,vy,dx,dy,{body,tip,wide},radius){
 function beamHit(dt){
   const p=player,{fx:dx,fy:dy}=p;
   const origin=beamCastOrigin(p);
-  const shape=beamShape(p.beamAge);
+  // The beam stops at the first living enemy in its path.
+  const free=beamShape(p.beamAge);
+  let reach=Infinity,blocker=null;
+  for(const e of enemies){
+    if(e.hp<=0)continue;
+    const vx=e.x-origin.x,vy=e.y+poseHeight(-15)-origin.y;
+    const along=vx*dx+vy*dy;
+    if(along<=0)continue;
+    const radius=e.boss?11:8;
+    const side=Math.abs(vx*dy-vy*dx);
+    if(side>beamWidth(Math.min(along,free.body),free.body,free.tip,free.wide)+radius)continue;
+    const stop=Math.max(0,along-radius*.6);
+    if(stop<reach){reach=stop;blocker=e}
+  }
+  p.beamReach=reach;
+  const shape=beamShape(p.beamAge,reach);
+  // The enemy that stops the beam is hit as soon as the head arrives, even
+  // when it stands off-centre where the tapered tip is thin.
+  const arrived=blocker&&free.body+free.tip>=reach;
   const damage=dt*beam.damage*(1+(p.kistat-1)*.24)*disciplines[discipline][1];
   for(const e of enemies){
-    if(e.hp<=0||!insideBeam(e.x-origin.x,e.y+poseHeight(-15)-origin.y,dx,dy,shape,e.boss?11:8))continue;
+    if(e.hp<=0)continue;
+    if(!(arrived&&e===blocker)&&!insideBeam(e.x-origin.x,e.y+poseHeight(-15)-origin.y,dx,dy,shape,e.boss?11:8))continue;
     e.hp-=damage;
     if(!e.hurt&&e.flash<=0){
       hurtReaction(e,dx,dy);
@@ -1255,7 +1279,10 @@ function beamHit(dt){
   }
 }
 function beamWidth(distance,body,tip,wide){
-  if(distance<=body)return beam.start+(wide-beam.start)*(distance/body)**2;
+  if(distance<=body){
+    const opening=Math.min(1,distance/(wide*2.6+7));
+    return beam.start+(wide-beam.start)*opening*opening*(3-2*opening);
+  }
   return wide*Math.sqrt(Math.max(0,1-((distance-body)/tip)**2));
 }
 const storyboardAtlas=new Image();
@@ -1374,8 +1401,8 @@ function cinematicBeamDirection(p){
   if(Math.abs(y)>.82)return {x:0,y:Math.sign(y)};
   return {x:Math.sign(x)||1,y:0};
 }
-function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
-  const shape=beamShape(shapeAge);
+function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age,reach=Infinity){
+  const shape=beamShape(shapeAge,reach);
   const length=shape.body+shape.tip;
   if(length<=.5)return;
   // Cinematic energy has a narrow white-hot core, breathing cyan plasma,
@@ -1459,6 +1486,27 @@ function drawCinematicKamehameha(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
     c.drawImage(cinematicBeamAtlas,frame*64,0,64,64,
       length-head*.8,-head,head*2,head*2);
   }
+  // Impact: when an enemy stops the beam, a pulsing burst sits on the
+  // contact point and sparks spray back along the beam.
+  if(shape.blocked&&atlasReady(cinematicBeamAtlas)){
+    const pulse=(age*7)%1;
+    const burst=head*(1.5+.35*Math.sin(age*31));
+    c.globalAlpha=opacity;
+    c.drawImage(cinematicBeamAtlas,((Math.floor(age*16)+2)%4)*64,0,64,64,
+      length-burst,-burst,burst*2,burst*2);
+    c.strokeStyle='#d8fbff';c.lineWidth=1;
+    c.globalAlpha=opacity*(1-pulse)*.9;
+    c.beginPath();c.ellipse(length,0,3+burst*1.1*pulse,4+burst*1.5*pulse,0,0,Math.PI*2);c.stroke();
+    for(let i=0;i<10;i++){
+      const u=(age*2.6+i*.173)%1;
+      const a=Math.PI+(i%2?1:-1)*(.35+.9*((i*.37)%1));
+      const d=4+u*burst*2.2;
+      c.globalAlpha=opacity*(1-u);
+      c.fillStyle=i%3===0?'#ffffff':'#8ef0ff';
+      c.fillRect(Math.round(length+Math.cos(a)*d),Math.round(Math.sin(a)*d),i%4===0?2:1,1);
+    }
+  }
+  c.globalAlpha=opacity;
   // Pixel sparks peel away from the moving tip.
   for(let i=0;i<7;i++){
     const a=i*2.399+phase*.4;
@@ -1556,6 +1604,30 @@ function drawBeamEffect(x,y,angle,age,opacity=1,thin=1,shapeAge=age){
   }
   c.restore();
 }
+// Kamehameha energy is drawn on an offscreen layer at 2x the logical
+// resolution (about the hero's texel size) and scaled up with nearest-
+// neighbour, so the beam has hard pixels like the sprites around it.
+const beamLayer=document.createElement('canvas');
+const beamLayerContext=beamLayer.getContext('2d');
+const beamPixelScale=2;
+function drawOnBeamLayer(draw){
+  const lw=W*beamPixelScale,lh=H*beamPixelScale;
+  if(beamLayer.width!==lw||beamLayer.height!==lh){beamLayer.width=lw;beamLayer.height=lh}
+  const m=c.getTransform(),kx=lw/cv.width,ky=lh/cv.height;
+  const layer=beamLayerContext,main=c;
+  layer.setTransform(1,0,0,1,0,0);
+  layer.clearRect(0,0,lw,lh);
+  layer.globalAlpha=1;
+  layer.setTransform(m.a*kx,m.b*ky,m.c*kx,m.d*ky,m.e*kx,m.f*ky);
+  layer.imageSmoothingEnabled=false;
+  c=layer;
+  try{draw()}finally{c=main}
+  c.save();
+  c.setTransform(1,0,0,1,0,0);
+  c.imageSmoothingEnabled=false;
+  c.drawImage(beamLayer,0,0,lw,lh,0,0,cv.width,cv.height);
+  c.restore();
+}
 function renderBeam(p){
   const {x,y}=beamCastOrigin(p);
   const emergence=animationEase(p.beamAge/beamEmergenceTime);
@@ -1567,15 +1639,15 @@ function renderBeam(p){
     c.restore();
   }
   const facing=cinematicBeamDirection(p);
-  drawCinematicKamehameha(x,y,Math.atan2(facing.y,facing.x),p.beamAge,emergence);
+  drawCinematicKamehameha(x,y,Math.atan2(facing.y,facing.x),p.beamAge,emergence,1,p.beamAge,p.beamReach??Infinity);
 }
 function renderBeamTrace(f){
   const remaining=lim(f.time/beamTraceTime,0,1);
   const opacity=animationEase(remaining)*animationEase(f.age/beamEmergenceTime)*.78;
   // Fade the same cinematic geometry instead of snapping to old plasma art.
   drawCinematicKamehameha(f.x,f.y,f.angle,f.age+beamTraceTime-f.time,
-    opacity,.28+remaining*.72,f.age);
-  const shape=beamShape(f.age);
+    opacity,.28+remaining*.72,f.age,f.reach??Infinity);
+  const shape=beamShape(f.age,f.reach??Infinity);
   const length=shape.body+shape.tip;
   c.save();c.translate(f.x,f.y);c.rotate(f.angle);
   c.globalAlpha=opacity*(1-remaining);
@@ -4145,7 +4217,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)renderBeam(player);const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)renderBeamCharge(player);for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)renderBeam(player);else if(player?.beamCharge!=null&&!northCharge)renderBeamCharge(player);for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)renderBeamTrace(f);else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
