@@ -1,62 +1,129 @@
+/* Story page UI in the main game's style: navy panels, gold edges, inset
+   ring and hard drop shadow (see --ui-* in index.html). */
 :root {
   color-scheme: dark;
-  font: 16px system-ui, sans-serif;
-  background: #151f23;
-  color: #f6eee0;
+  --ui-edge: #d6b475;
+  --ui-highlight: #f6d77d;
+  --ui-panel: #15243c;
+  --ui-paper: #e9e4d6;
+  --ink: #f3e8d0;
+  --muted: #c3cbdb;
+  font: 15px Verdana, system-ui, sans-serif;
+  background: #0b1424;
+  color: var(--ink);
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0;
   min-height: 100dvh;
-  background: radial-gradient(ellipse at top, #344c46, #151f23 62%);
+  background: radial-gradient(ellipse at top, #1d3150, #0b1424 65%);
 }
-.story { width: min(100%, 60rem); margin: 0 auto; padding: clamp(.75rem, 2.5vw, 2rem); }
-.story-header, .controls { display: flex; justify-content: space-between; align-items: center; gap: .8rem; }
-.story-header { margin-bottom: 1rem; }
-.chapter { color: #f3bf75; margin: 0 0 .25rem; font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .13em; }
-h1 { margin: 0; font-size: clamp(1.2rem, 4vw, 2.35rem); line-height: 1; }
-a { color: #ffce8a; }
-.story-header a { font-size: .85rem; width: min-content; min-width: 5rem; text-align: right; }
-.stage { position: relative; border: 1px solid #667465; box-shadow: 0 12px 35px #08141090; border-radius: .6rem; overflow: hidden; background: #2a4842; }
+.story { width: min(100%, 60rem); margin: 0 auto; padding: clamp(.6rem, 2.2vw, 1.6rem); }
+
+.panel, .hud, .notice, dialog, .story-header .chapter-card {
+  border: 2px solid var(--ui-edge);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #1b304c, #0d1b31);
+  box-shadow: inset 0 0 0 2px #334862, 2px 3px 0 #0b1420;
+  color: var(--ink);
+}
+
+.story-header { display: flex; justify-content: space-between; align-items: center; gap: .8rem; margin-bottom: .8rem; }
+.chapter-card { padding: .45rem .8rem; }
+.chapter { color: var(--ui-highlight); margin: 0 0 .1rem; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; }
+h1 { margin: 0; font-size: clamp(1rem, 3.4vw, 1.7rem); line-height: 1.1; text-shadow: 2px 2px 0 #07101f; }
+.header-actions { display: flex; gap: .45rem; align-items: center; }
+
+.stage { position: relative; aspect-ratio: 5 / 3; overflow: hidden; border: 2px solid var(--ui-edge);
+  box-shadow: inset 0 0 0 2px #334862, 3px 4px 0 #070e1a; background: #1a2b26; }
 canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-.stage { aspect-ratio: 5 / 3; }
 .hud, .notice, #retry { position: absolute; }
-.hud { top: .58rem; left: .58rem; padding: .5rem .65rem; background: #141e21e8; border: 1px solid #858474; border-radius: .3rem; max-width: calc(100% - 1.16rem); }
-.hud h2 { font-size: clamp(.86rem, 2vw, 1rem); color: #ffd999; margin: 0 0 .12rem; }
-.hud p { font-size: clamp(.72rem, 1.7vw, .88rem); margin: 0; }
-.notice { bottom: .5rem; left: 50%; transform: translateX(-50%); padding: .34rem .65rem; background: #151b1eee; border: 1px solid #858474; border-radius: .25rem; font-size: .75rem; text-align: center; width: max-content; max-width: calc(100% - 1rem); }
+.hud { top: .5rem; left: .5rem; padding: .4rem .65rem .45rem; max-width: calc(100% - 1rem); border-left-width: 4px; }
+.hud h2 { font-size: clamp(.78rem, 1.9vw, .92rem); color: var(--ui-highlight); margin: 0 0 .12rem; letter-spacing: .04em; }
+.hud p { font-size: clamp(.68rem, 1.6vw, .8rem); margin: 0; color: var(--ink); }
+.hud .quests { margin-top: .3rem; padding-top: .3rem; border-top: 1px solid #3c5272; color: var(--muted); }
+.hud .quests:empty { display: none; }
+.notice { bottom: .5rem; left: 50%; transform: translateX(-50%); padding: .3rem .7rem; font-size: .72rem;
+  text-align: center; width: max-content; max-width: calc(100% - 1rem); }
 .notice:empty { display: none; }
+.notice[data-hint]:not([data-hint=""])::after { content: attr(data-hint); margin-left: .55rem; padding: 0 .4rem;
+  border: 1px solid #8fa5c6; border-bottom-width: 2px; border-radius: 2px; background: #1b2b45; color: var(--ui-highlight);
+  font-size: .66rem; font-weight: 700; }
 #retry { top: 65%; left: 50%; transform: translate(-50%, -50%); }
-.controls { margin-top: 1rem; min-height: 3rem; }
-.keyboard { margin: 0; color: #c4d2c9; font-size: .84rem; }
-button {
-  border: 1px solid #f4c086;
-  border-radius: .36rem;
-  padding: .58rem .9rem;
-  background: #edaa63;
-  color: #281b12;
-  font: inherit;
-  font-weight: 750;
+
+.controls { display: flex; justify-content: space-between; align-items: center; gap: .8rem; margin-top: .8rem; min-height: 3rem; }
+.keyboard { margin: 0; color: var(--muted); font-size: .78rem; }
+.keyboard kbd { display: inline-block; min-width: 1.5em; padding: 0 .3em; border: 1px solid #6c80a0; border-bottom-width: 2px;
+  border-radius: 2px; background: #1b2b45; color: var(--ink); font: inherit; font-size: .72rem; text-align: center; }
+
+button, .back {
+  border: 2px solid #8fa5c6;
+  border-radius: 2px;
+  padding: .5rem .95rem;
+  background: linear-gradient(180deg, #2a4466, #1a2c47);
+  color: #f1f5ff;
+  font: 700 .82rem Verdana, system-ui, sans-serif;
+  letter-spacing: .02em;
   min-height: 44px;
   cursor: pointer;
+  box-shadow: inset 0 1px #ffffff1c, 0 2px 0 #081121;
+  text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center;
 }
-button:disabled { opacity: .45; cursor: default; }
-:focus-visible { outline: 3px solid #fbd49e; outline-offset: 3px; }
-.stick { display: none; position: relative; width: 70px; height: 70px; flex: none; border: 1px solid #899c90; border-radius: 50%; background: #233d3f; touch-action: none; }
-.stick span { position: absolute; top: 20px; left: 20px; width: 28px; height: 28px; border: 1px solid #97bfac; border-radius: 50%; background: #456b62; pointer-events: none; }
-dialog { max-width: min(34rem, calc(100% - 1.6rem)); background: #202e30; border: 1px solid #c6ac85; border-radius: .45rem; padding: 1rem 1.2rem; color: inherit; }
-dialog::backdrop { background: #07100eb5; }
-dialog h2 { font-size: 1.13rem; color: #ffca8b; margin: 0; }
-dialog p { line-height: 1.45; }
-dialog form { text-align: right; }
+button:hover:not(:disabled), .back:hover { border-color: var(--ui-highlight); background: linear-gradient(180deg, #355580, #213656); }
+button:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px #ffffff1c; }
+button:disabled { opacity: .42; cursor: default; }
+:focus-visible { outline: 2px solid var(--ui-highlight); outline-offset: 2px; }
+#interact { border-color: var(--ui-edge); background: linear-gradient(180deg, #8a6a33, #5d4520); color: #fff4d6; min-width: 7.5rem; }
+#interact:hover:not(:disabled) { background: linear-gradient(180deg, #a07c3c, #6d5226); }
+#sound { min-width: 44px; padding: .5rem .7rem; }
+
+.stick { display: none; position: relative; width: 74px; height: 74px; flex: none; border: 2px solid #c1d0e4; border-radius: 50%;
+  background: #15243bbf; box-shadow: inset 0 0 0 3px #2c4161a6, 0 2px 5px #0008; touch-action: none; }
+.stick span { position: absolute; top: 21px; left: 21px; width: 28px; height: 28px; border: 2px solid #e5ecf6; border-radius: 50%;
+  background: #4c6488; pointer-events: none; }
+
+/* Dialogue: portrait, speaker, typed line, then topic choices. */
+/* RPG-style box anchored to the bottom so the scene and speaker stay visible. */
+dialog { width: min(40rem, calc(100% - 1.2rem)); max-width: none; padding: 0; margin: auto auto max(1rem, env(safe-area-inset-bottom)); }
+dialog::backdrop { background: #050b16a8; }
+.talk { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: .2rem .9rem; padding: .9rem 1rem 1rem; align-items: start; }
+.talk:has(.portrait[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.talk > div:first-of-type { grid-column: 2; grid-row: 1; min-width: 0; }
+.talk:has(.portrait[hidden]) > div:first-of-type { grid-column: 1; }
+.talk #line { grid-column: 2; grid-row: 2; }
+.talk:has(.portrait[hidden]) #line { grid-column: 1; }
+.talk .topics { grid-column: 1 / -1; grid-row: 3; }
+.talk .dialog-actions { grid-column: 1 / -1; grid-row: 4; }
+.portrait { grid-column: 1; grid-row: 1 / 3; width: 76px; height: 76px; border: 2px solid var(--ui-edge); background: radial-gradient(circle at 50% 35%, #2f4c72, #13213a);
+  box-shadow: inset 0 0 0 2px #334862; image-rendering: pixelated; }
+.portrait[hidden] { display: none; }
+dialog h2 { font-size: 1rem; color: var(--ui-highlight); margin: .1rem 0 0; letter-spacing: .05em; }
+dialog .role { color: var(--muted); font-size: .7rem; margin: 0; }
+#line { margin: .35rem 0 0; min-height: 3.6em; line-height: 1.55; font-size: .88rem; }
+.topics { grid-column: 1 / -1; display: grid; gap: .4rem; margin-top: .7rem; }
+.topics:empty { display: none; }
+.topics button { justify-content: flex-start; text-align: left; min-height: 40px; font-weight: 650; }
+.topics button.main { border-color: var(--ui-edge); }
+.topics button.main::before { content: '!'; color: var(--ui-highlight); margin-right: .55rem; font-weight: 800; }
+.topics button.seen { opacity: .62; }
+.topics button.quest::before { content: '◆'; color: #8fe0c9; margin-right: .55rem; font-size: .7rem; }
+.dialog-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: .5rem; margin-top: .7rem; }
+
 @media (pointer: coarse), (max-width: 620px) {
   .stick { display: block; }
   .keyboard { display: none; }
 }
 /* Phones: the map fills the screen between the title and the controls. */
 @media (max-width: 620px) {
-  .story { padding: .5rem; min-height: 100dvh; display: flex; flex-direction: column; }
-  .story-header { margin-bottom: .5rem; }
+  .story { padding: .45rem; min-height: 100dvh; display: flex; flex-direction: column; }
+  .story-header { margin-bottom: .45rem; }
+  .chapter-card { padding: .35rem .6rem; }
+  .back { padding: .4rem .6rem; font-size: .72rem; }
   .stage { aspect-ratio: auto; flex: 1; min-height: 52dvh; }
-  .controls { margin-top: .6rem; padding-bottom: env(safe-area-inset-bottom); }
+  .controls { margin-top: .55rem; padding-bottom: env(safe-area-inset-bottom); }
+  .talk { grid-template-columns: 60px minmax(0, 1fr); padding: .75rem; }
+  .portrait { width: 60px; height: 60px; }
+  #line { font-size: .84rem; }
 }
