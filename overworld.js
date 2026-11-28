@@ -269,11 +269,11 @@ function drawFaces(g,faces,sides,x0,y0,lv){
  }
 }
 function drawSides(g,sides,lv){
+ // terrace sides: a soft continuous shadow on the lower side, no hard posts
  for(let k=0;k<sides.length;k+=4){
-  const i=sides[k],j=sides[k+1],dir=sides[k+2],pal=ROCK[sides[k+3]]||ROCK.grass;
-  // a thin rock edge on the side that drops, its shadow just beyond it
-  g.fillStyle=`rgb(${pal[1].join(',')})`;g.fillRect(i*2+(dir>0?1:0),j*2,1,2);
-  g.fillStyle='#0c140c33';g.fillRect(i*2+(dir>0?2:-1),j*2,1,2);
+  const i=sides[k],j=sides[k+1],dir=sides[k+2];
+  g.fillStyle='rgba(28,22,16,.26)';g.fillRect(i*2+(dir>0?1:-1),j*2,2,2);
+  g.fillStyle='rgba(28,22,16,.12)';g.fillRect(i*2+(dir>0?3:-3),j*2,2,2);
  }
 }
 function pick(list,roll){if(!list)return null;let acc=0;for(const [k,p] of list){acc+=p;if(roll<acc)return k}return null}
@@ -324,7 +324,8 @@ function paintChunk(cx,cy){
    // terraced cliffs: the south face of a higher terrace is a low rock wall (3/4 view).
    // Here only a base colour goes in; the face itself is drawn crisp below.
    const L=lv(i,j);
-   if(L>lv(i,j+FACE)&&cliffy(x,y,s.biome)){
+   // a face only where the edge runs roughly east-west; steep north-south edges are terrace sides
+   if(L>lv(i,j+FACE)&&lv(i-2,j)>=L&&lv(i+2,j)>=L&&cliffy(x,y,s.biome)){
     let d=1;while(d<FACE&&lv(i,j+d)>=L)d++;                                  // cells down to the cliff foot
     const pal=ROCK[s.biome]||ROCK.grass;
     r=pal[2][0];g=pal[2][1];bl=pal[2][2];
