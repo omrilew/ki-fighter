@@ -500,6 +500,7 @@ function drawScenery(c,o){
 // wind: a slow gust field moving across the world; tall, leafy things bend most
 const SWAY={birch:1,birch2:1,cherry:.8,cherry2:.8,maple:.7,maple2:.7,poplar:1.1,willow:1.3,palm:1.2,fir:.45,snowfir:.4,spruce:.45,reeds:2.2,sunflowers:1.6,fern:1.4,oak:.6,pine:.45,bush:.9,tuft:1.6,flowers:1.8};
 function windAt(x,y){
+ if(root.KiQuality?.low)return 0;   // automatic quality: no sway on slow devices
  const t=performance.now()/1000;
  const gust=.5+.5*Math.sin(t*.35+x*.0016-y*.0011);                    // gusts sweep across the land
  return (Math.sin(t*1.6+x*.031+y*.017)*.6+Math.sin(t*2.7+x*.07)*.25)*.035*(.35+gust);

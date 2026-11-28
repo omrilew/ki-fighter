@@ -62,7 +62,8 @@ function draw(c,vx,vy,w,h,kind,options={}){
  if(kind!==current){mix=Math.max(0,mix-dt*1.5);if(mix===0){current=kind;parts.length=0}}
  else mix=Math.min(1,mix+dt*.8);
  if(current){
-  const K=KINDS[current],want=Math.min(MAX,K.count);
+  const K=KINDS[current],want=Math.min(MAX,root.KiQuality?.low?Math.ceil(K.count/3):K.count);
+  if(parts.length>want)parts.length=want;
   while(parts.length<want){const p={};spawn(p,current,vx,vy,w,h,true);parts.push(p)}
   for(const p of parts){
    p.age+=dt;
