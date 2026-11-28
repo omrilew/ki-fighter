@@ -558,7 +558,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=9"></script><script src="explore.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=5"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=9"></script><script src="explore.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="assets/campaign-cast/master-sora/manifest.js?v=1"></script><script src="story-mode.js?v=5"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=window.KiWorld?.W||2760,MX0=window.KiWorld?.X0||0,MY0=window.KiWorld?.Y0||0,MH=window.KiWorld?.H||560,VW=2760,VH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(170+(r.width-650)*.062,170,212));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -573,7 +573,7 @@ const inDojoRoom=(x,y)=>x>DOJO_ROOM.x-40&&x<DOJO_ROOM.x+DOJO_ROOM.w+40&&y>DOJO_R
 function dojoRoomSolid(x,y){
   const r=DOJO_ROOM;
   if(x<r.x+16||x>r.x+r.w-16||y<r.y+r.wall||y>r.y+r.h-8)return true;
-  if(Math.abs(x-(r.x+r.w/2))<34&&y<r.y+r.wall+22)return true;          // master's dais
+  if(Math.abs(x-(r.x+r.w/2))<34&&y<r.y+r.wall+46)return true;          // master's dais
   for(const [px,py] of [[r.x+46,r.y+r.wall+40],[r.x+r.w-46,r.y+r.wall+40]])if(Math.abs(x-px)<9&&Math.abs(y-py)<5)return true;   // posts
   return false;
 }
@@ -594,7 +594,7 @@ function updateDoors(dt){
   if(!indoor&&!player.fly&&Math.abs(player.x-dojoDoor.x)<16&&player.y<dojoDoor.y+6&&player.y>dojoDoor.y-14)enterDojo();
   else if(indoor&&Math.abs(player.x-dojoDoor.inX)<22&&player.y>dojoDoor.inY-4)leaveDojo();
 }
-const dojoMaster={x:9080+220,y:5990+74+30,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
+const dojoMaster={x:9080+220,y:5990+74+36,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
 const dojoGate={x:1030,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
 const encounters=[
   {id:'crossing',kind:'bandit',x:434,y:246,radius:57},
@@ -1086,7 +1086,7 @@ function interact(){
     else if(journeyStep==='trial')showStory('Master Sora','Defeat my three disciples in the outdoor court. Use melee, normal Ki and movement. Return to me for guidance.');
     else if(journeyStep==='trial-cleared')showStory('Master Sora','You defeated all three disciples. Training weights are your reward. Equip them in Items to trade speed for experience.','Claim training reward',()=>{collectItem('training_weights');collectItem('cedar_token');grantExperience(90);journeyStep='mastered';notice('TRIAL COMPLETE · WEIGHTS + XP')});
     else if(journeyStep==='mastered')showStory('Master Sora','The weights are yours to equip or remove. Harder training brings faster growth. Seek rare charms from the forest.');
-    else showStory('Dojo Master','You found the Cedar Dojo! Restore the Cedar Seal by defeating the Forest Guardian before taking the dojo trial.');
+    else showStory('Master Sora','You found the Cedar Dojo! Restore the Cedar Seal by defeating the Forest Guardian before taking the dojo trial.');
     return;
   }
   if(target===shrine){
@@ -4180,7 +4180,7 @@ function drawWorldObject(o){
   c.save();
   c.translate(o.x,o.y);
   if(o===dojoMaster||o===dojoGate){
-    c.fillStyle='#101e32';c.fillRect(-12,-3,24,5);
+    if(o===dojoGate||!window.KiMasterSora){c.fillStyle='#101e32';c.fillRect(-12,-3,24,5)}
     if(o===dojoGate){
       // Layered timber torii gate, matching the dojo's darker architectural palette.
       c.fillStyle='#302720';c.fillRect(-15,-46,7,46);c.fillRect(8,-46,7,46);
@@ -4205,7 +4205,9 @@ function drawWorldObject(o){
       const t=storyClock,gesture=Math.floor(t/3.4)%4;
       const bob=Math.sin(t*4)*.6;
       c.fillStyle='#111e24a8';c.beginPath();c.ellipse(0,2,10,3,0,0,Math.PI*2);c.fill();
-      if(atlasReady(dojoMasterFrames[gesture])){
+      const sora=drawMasterSora(o);
+      if(sora){}
+      else if(atlasReady(dojoMasterFrames[gesture])){
         c.drawImage(dojoMasterFrames[gesture],-17,-48+bob,34,48);
       }else if(atlasReady(mentorArt)){
         const frame=gesture===1?2:gesture===2?3:Math.sin(t*2)>0?0:1;
@@ -4217,8 +4219,8 @@ function drawWorldObject(o){
         c.fillStyle='#e5b98d';c.fillRect(-13+(gesture===1?3:0),-18+bob,5,11);
         c.fillRect(8,-18+bob,5,11);
       }
-      if(gesture===2){c.strokeStyle='#ffdd87';c.lineWidth=1;c.beginPath();c.arc(0,-26,17+Math.sin(t*8)*2,-1.3,-.5);c.stroke()}
-      drawWorldLabel('DOJO MASTER',0,-47);
+      if(gesture===2&&!sora){c.strokeStyle='#ffdd87';c.lineWidth=1;c.beginPath();c.arc(0,-26,17+Math.sin(t*8)*2,-1.3,-.5);c.stroke()}
+      drawWorldLabel('MASTER SORA',0,sora?-52:-47);
     }
     c.restore();return;
   }
@@ -4375,6 +4377,25 @@ function drawDojoBuilding(){
   c.restore();
 }
 // ---- Cedar Dojo hall interior (same texture sheet as the facade)
+// Master Sora atlas (assets/campaign-cast/master-sora): idle, bows once when
+// Goku first walks up, talks while his conversation is open.
+const masterSoraArt=new Image();masterSoraArt.src='assets/campaign-cast/master-sora/master-sora.png?v=1';
+const masterSoraState={near:false,bowAt:-9};
+function drawMasterSora(o){
+  const m=window.KiMasterSora;if(!m||!atlasReady(masterSoraArt))return false;
+  const near=player&&hyp(player.x-o.x,player.y-o.y)<60;
+  if(near&&!masterSoraState.near)masterSoraState.bowAt=storyClock;
+  masterSoraState.near=near;
+  const bow=m.clips.bow,bowT=storyClock-masterSoraState.bowAt,bowLen=bow.frames.length/bow.fps;
+  let clip=m.clips.idle,t=storyClock;
+  if(storyPanel.open&&near)clip=m.clips.talk;
+  else if(bowT<bowLen){clip=bow;t=bowT}
+  const i=clip.loop?Math.floor(t*clip.fps)%clip.frames.length:Math.min(clip.frames.length-1,Math.floor(t*clip.fps));
+  // his figure fills 84 px of the cell where Goku's fills 62: scale him to Goku's height (a touch shorter)
+  const f=clip.frames[i],[cw,ch]=m.cell,[fx,fy]=m.feet,k=packedHeroScale*packedHeroHeightRatio*62/84*.98;
+  c.drawImage(masterSoraArt,(f%m.columns)*cw,Math.floor(f/m.columns)*ch,cw,ch,-fx*k,-fy*k+1,cw*k,ch*k);
+  return true;
+}
 function drawDojoInterior(){
   const r=DOJO_ROOM,{x,y,w,h,wall}=r;
   if(!atlasReady(dojoArchitecture))return;
@@ -4421,7 +4442,7 @@ function dojoInteriorObjects(){
   const {x,y,w,h,wall}=DOJO_ROOM,list=[];
   const at=(ox,oy,draw)=>list.push({x:ox,y:oy,storyDraw:()=>{c.save();c.translate(ox,oy);c.imageSmoothingEnabled=false;draw();c.restore()}});
   // master's dais with a small shrine shelf
-  at(x+w/2,y+wall+20,()=>{
+  at(x+w/2,y+wall+34,()=>{
     c.fillStyle='#1d1513';c.fillRect(-36,-8,72,12);c.fillStyle='#7a5034';c.fillRect(-34,-8,68,8);c.fillStyle='#b07c4c';c.fillRect(-34,-8,68,2);
   });
   // carved posts holding the roof beam
@@ -4602,7 +4623,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   ink.restore();
 }
 function cameraX(px){return indoor?lim(px-W/2,DOJO_ROOM.x-24,DOJO_ROOM.x+DOJO_ROOM.w+24-W):lim(px-W/2,MX0,MW-W)}
-function cameraY(py){return indoor?lim(py-H/2,DOJO_ROOM.y-18,DOJO_ROOM.y+DOJO_ROOM.h+18-H):lim(py-H/2,MY0,MH-H)}
+function cameraY(py){return indoor?lim(py-H*.66,DOJO_ROOM.y-18,DOJO_ROOM.y+DOJO_ROOM.h+18-H):lim(py-H/2,MY0,MH-H)}
 function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(cameraX(px),'x'),y=packedSnap(cameraY(py),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;if(indoor){c.fillStyle='#0c0a0c';c.fillRect(0,0,W,H)}else drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);if(indoor)drawDojoInterior();else{drawWorldWater(x);drawDojoCourtyard();drawDojoTrainingProps()}const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],window.KiWorld?.objects(x,y,W,H)||[],window.KiExplore?.objects(x,y,W,H)||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(indoor)objects=dojoInteriorObjects().concat(dojoMaster,enemies.concat(fallen).filter(e=>inDojoRoom(e.x,e.y)).map(e=>({...e,enemy:true})));else objects.push({x:1269,y:196,storyDraw:drawDojoBuilding});if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();if(doorFade>0){c.fillStyle=`rgba(8,6,10,${Math.min(1,doorFade*1.4)})`;c.fillRect(0,0,W,H)}drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
