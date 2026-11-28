@@ -59,9 +59,16 @@
 #kfg .notice{position:absolute;left:50%;transform:translateX(-50%);bottom:clamp(119px,28vw,164px);padding:6px 12px;text-align:center;font-size:12px;font-weight:750;max-width:90%}
 #kfg .top{position:absolute;top:73px;right:12px;display:flex;gap:6px;align-items:flex-start}
 #kfg .top button{padding:8px 13px;min-height:44px}
-#kfg .powers{position:relative}
-#kfg .power-menu{position:absolute;right:0;top:calc(100% + 6px);width:max-content;display:flex;gap:6px}
-#kfg .power-menu[hidden]{display:none}
+#kfg .action-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#kfg .power-row{display:flex;gap:8px;justify-content:flex-end;padding-right:4px}
+#kfg .power-row .power{display:grid;place-content:center;width:42px;height:42px;padding:0;border-radius:50%;border:2px solid #b9c7dc;background:radial-gradient(circle at 35% 25%,#2d4a6e,#122038);box-shadow:inset 0 0 0 2px #0b1628,0 2px 0 #091321;color:#eef4fc;font:800 11px/1 Verdana,system-ui;letter-spacing:.02em;cursor:pointer;pointer-events:auto}
+#kfg .power-row .power small{font-size:7px;opacity:.75;margin-top:2px}
+#kfg .power-row .power[data-a=fly][aria-pressed=true]{border-color:#9dd9ff;background:radial-gradient(circle at 35% 25%,#3e8fc4,#163a5e);box-shadow:inset 0 0 0 2px #0b1628,0 0 10px #6dd6fb88}
+#kfg .power-row .power[data-a=surge]{border-color:#f2d27a;background:radial-gradient(circle at 35% 25%,#8a6a1e,#2e2310)}
+#kfg .power-row .power[data-a=surge][aria-pressed=true]{background:radial-gradient(circle at 35% 25%,#f6c841,#8a5a10);color:#2a1a04;box-shadow:inset 0 0 0 2px #0b1628,0 0 12px #ffd35a99}
+#kfg .power-row .power:disabled{opacity:.45;cursor:not-allowed}
+#kfg .power-row .power:active:not(:disabled){transform:translateY(2px) scale(.94)}
+@media (pointer:fine) and (hover:hover){#kfg .power-row .power{width:46px;height:46px}}
 #kfg .controls{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));left:50%;width:min(calc(100% - 24px),1060px);transform:translateX(-50%);display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
 #kfg .stick{--size:clamp(96px,24vw,134px);position:relative;flex:0 0 var(--size);width:var(--size);height:var(--size);pointer-events:auto;touch-action:none;cursor:grab;border:2px solid #d0e1fa8c;border-radius:50%;background:radial-gradient(circle,#6383ac88 32%,#152638a8 33%);box-shadow:inset 0 0 0 6px #cfddff20,0 4px 16px #18263066}
 #kfg .stick-knob{position:absolute;left:30%;top:30%;width:40%;height:40%;pointer-events:none;border-radius:50%;border:2px solid #d8eaffcf;background:linear-gradient(#91aaca,#304663);box-shadow:0 3px 6px #101b35a0}
@@ -267,7 +274,7 @@
 <style id="kf-approved-dojo-ui">
 /* Approved compact action-RPG UI: small gold-trimmed navy buttons, not floating desktop controls */
 #kfg .top{top:12px;right:12px;gap:5px;align-items:center;z-index:5}
-#kfg .top>button,#kfg .top>.powers>button{min-height:34px;padding:6px 9px;font-size:11px;font-weight:800;letter-spacing:.02em;color:#f5e5b9;background:linear-gradient(#1b3555,#0e1c35);border:2px solid #d4aa61;border-radius:3px;box-shadow:inset 0 0 0 2px #172947,2px 3px #09101a}
+#kfg .top>button{min-height:34px;padding:6px 9px;font-size:11px;font-weight:800;letter-spacing:.02em;color:#f5e5b9;background:linear-gradient(#1b3555,#0e1c35);border:2px solid #d4aa61;border-radius:3px;box-shadow:inset 0 0 0 2px #172947,2px 3px #09101a}
 #kfg .top #kfdojo-shortcut{background:#ac813c;color:#15223b}
 #kfg .top #kfdojo-shortcut[hidden]{display:none!important}
 #kfg .top #kfcharacter-open{max-width:116px}
@@ -288,7 +295,7 @@
 #kfg #kfmenu #kfmap-travel-dojo{padding:9px!important;font-size:11px}
 @media(max-width:650px){
  #kfg .top{top:63px;right:8px;gap:4px}
- #kfg .top>button,#kfg .top>.powers>button{min-height:30px;padding:5px 7px;font-size:10px}
+ #kfg .top>button{min-height:30px;padding:5px 7px;font-size:10px}
  #kfg .top #kfcharacter-open{max-width:83px}
  #kfg .top #kfdojo-shortcut{max-width:67px;font-size:9px}
  #kfg .controls{bottom:12px;width:calc(100% - 16px);left:8px;transform:none}
@@ -319,7 +326,7 @@
 #kfg .world-objective{border:2px solid #bba06c;border-left:5px solid #eec67d;border-radius:2px;background:#0d1c30ed;color:#f4e9d3;box-shadow:2px 3px 0 #091320}
 #kfg .minimap{border:2px solid #d6b475;border-radius:2px;background:#101d32;box-shadow:2px 3px 0 #0b1521}
 #kfg .minimap canvas{border-radius:0}
-#kfg .top>button,#kfg .top>.powers>button{background:#182b48!important;border:2px solid #d3b16e!important;border-radius:2px!important;color:#f8e7c0!important;text-shadow:none!important;box-shadow:inset 0 0 0 2px #2d4564,2px 3px 0 #0b1420!important}
+#kfg .top>button{background:#182b48!important;border:2px solid #d3b16e!important;border-radius:2px!important;color:#f8e7c0!important;text-shadow:none!important;box-shadow:inset 0 0 0 2px #2d4564,2px 3px 0 #0b1420!important}
 #kfg #kfmenu{background:#101d33;border:3px solid #d4b575;border-radius:3px;box-shadow:0 12px 35px #030a15bb,inset 0 0 0 2px #314765}
 #kfg #kfmenu .menu-head{background:#1b304d;border-bottom:2px solid #b99a64}
 #kfg #kfmenu .menu-head h2{font-size:17px;color:#f7dfac;text-transform:uppercase;letter-spacing:.08em}
@@ -337,7 +344,7 @@
  #kfg .vitals{min-width:0}
  #kfg .vital{grid-template-columns:clamp(58px,17vw,94px) auto;gap:4px}
  #kfg .counters{font-size:10px}
- #kfg .top>button,#kfg .top>.powers>button{font-size:10px!important;padding:5px 7px!important}
+ #kfg .top>button{font-size:10px!important;padding:5px 7px!important}
  #kfg #kfmenu .menu-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}
  #kfg #kfmenu .menu-tabs button{font-size:9px!important;padding:7px 1px!important;min-height:38px!important}
  #kfg #kfmenu .menu-head h2{font-size:15px}
@@ -352,7 +359,6 @@
 #kfg.hyper-charging .hyper-meter,#kfg.super-saiyan .hyper-meter{opacity:1}
 #kfg.super-saiyan .vitals{border-color:#ffe47d;box-shadow:0 0 10px #f7c44377,inset 0 0 0 2px #695628}
 #kfg.super-saiyan #kfki{color:#ffe278}
-#kfg .power-menu button:disabled{opacity:.52;cursor:not-allowed}
 @media(max-width:650px){#kfg .ki-gauges{grid-template-rows:4px 6px;gap:2px}}
 </style>
 <style id="kf-responsive-hud">
@@ -370,12 +376,10 @@
 #kfg .hud .counters{display:flex;align-items:center;gap:9px;padding:5px 8px}
 #kfg .counters #kfko{border-left:1px solid #7186a3;padding-left:8px;color:#cdd9e9;white-space:nowrap}
 #kfg .hud .top,#kfg .hud-utilities{display:flex;justify-content:flex-end;gap:5px}
-#kfg .hud .top .powers{z-index:1}
 #kfg .hud .top button,#kfg .hud-utilities button{min-height:34px;padding:5px 9px;font-size:11px;color:#f8e7c0;text-shadow:none}
-#kfg .hud .top .power-menu button,#kfg .hud-utilities button{border-color:#8a9bb7;background:#192e49}
+#kfg .hud-utilities button{border-color:#8a9bb7;background:#192e49}
 #kfg .hud .top button:disabled,#kfg .hud-utilities button:disabled{opacity:.68}
 #kfg .hud #kfcharacter-open{max-width:none;white-space:nowrap}
-#kfg .hud .power-menu{right:auto;left:0}
 #kfg .world-interact{min-height:44px}
 #kfg .keyboard{max-width:100%;padding:5px 9px;font-size:11px;line-height:2.3;background:#101d32ed}
 #kfg .keyboard span{display:inline-block;white-space:nowrap;padding:0 4px}
@@ -442,13 +446,6 @@
   </div>
   <div class="hud-world">
     <nav class="top" aria-label="Game controls">
-      <div class="powers">
-        <button id="kfpowers" aria-expanded="false" aria-controls="kfpower-menu">Powers</button>
-        <div class="power-menu" id="kfpower-menu" hidden>
-          <button data-a="fly" aria-pressed="false">Fly</button>
-          <button data-a="surge" aria-pressed="false" disabled title="Fill the yellow Hyper bar by holding Charge at 100 Ki">Surge locked</button>
-        </div>
-      </div>
       <button id="kfcharacter-open" type="button" aria-haspopup="dialog">Character<span id="kfpoint-badge" hidden></span></button>
       <button id="kfpause" type="button" aria-haspopup="dialog">Menu</button>
     </nav>
@@ -474,11 +471,17 @@
       <span><kbd>C</kbd> Character</span>
       <span><kbd>Esc</kbd> Menu</span>
     </p>
+    <div class="action-col">
+    <div class="power-row" aria-label="Powers">
+      <button data-a="fly" class="power" aria-pressed="false" aria-label="Fly (F)" title="Fly (F)">Fly<small>F</small></button>
+      <button data-a="surge" class="power" aria-pressed="false" disabled aria-label="Super Saiyan surge (L)" title="Fill the yellow Hyper bar by holding Charge at 100 Ki">SSJ<small>L</small></button>
+    </div>
     <div class="acts">
       <button data-a="dash">Dash</button>
       <button data-a="charge">Charge</button>
       <button data-a="ki" aria-label="Ki, tap to blast or hold to charge and fire beam">Ki<small>Tap / hold</small></button>
       <button data-a="hit">Strike</button>
+    </div>
     </div>
   </div>
 </div>
@@ -2001,7 +2004,6 @@ window.addEventListener('keydown',e=>{
     if(e.repeat)return;
     if(mode==='character'){e.preventDefault();closeCharacter();return}
     if(mode==='paused'||mode==='title-options'){e.preventDefault();closeJourneyMenu()}
-    else if(!powersMenu.hidden)setPowers(false);
     else pauseButton.click();
     return;
   }
@@ -2103,7 +2105,7 @@ for(const btn of btns){
   const action=btn.dataset.a;
   if(btn===kiButton)continue;
   if(action==='fly'||action==='surge'){
-    btn.addEventListener('click',()=>{act(action,true);setPowers(false)});
+    btn.addEventListener('click',()=>{act(action,true);setPowers()});
     continue;
   }
   let pointer=null;
@@ -2126,17 +2128,12 @@ for(const btn of btns){
   }
   btn.addEventListener('click',e=>{if(e.detail===0)act(action,true)});
 }
-const powersButton=root.querySelector('#kfpowers'),powersMenu=root.querySelector('#kfpower-menu');
+const powerButtons=Array.from(root.querySelectorAll('.power-row [data-a]'));
 const pauseButton=root.querySelector('#kfpause');
-function setPowers(open){
-  powersMenu.hidden=!open;
-  powersButton.setAttribute('aria-expanded',String(open));
-  if(open&&player){
-    for(const btn of powersMenu.querySelectorAll('button'))btn.setAttribute('aria-pressed',String(player[btn.dataset.a]));
-  }
+// Fly and Surge are small round buttons above the actions; this keeps their lit state current.
+function setPowers(){
+  for(const btn of powerButtons){const on=!!player?.[btn.dataset.a];if(btn.getAttribute('aria-pressed')!==String(on))btn.setAttribute('aria-pressed',String(on))}
 }
-powersButton.onclick=()=>setPowers(powersMenu.hidden);
-root.addEventListener('pointerdown',e=>{if(!e.target.closest('.powers'))setPowers(false)});
 const journeyMenu=root.querySelector('#kfmenu');
 const journeyMenuClose=root.querySelector('#kfmenu-close');
 const menuSections=Array.from(journeyMenu.querySelectorAll('[data-menu]'));
@@ -4619,7 +4616,8 @@ function renderHUD(){
   hud['hyper-meter'].style.transform=`scaleX(${player?.hyper||0})`;
   root.classList.toggle('hyper-charging',!!player&&player.ki>=player.mki-.01&&!player.surge);
   root.classList.toggle('super-saiyan',!!player?.surge);
-  const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){surgeControl.disabled=!player?.surge;surgeControl.textContent=player?.surge?'Power down':'Surge locked'}
+  const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){const ready=!!player?.surge;if(surgeControl.disabled===ready){surgeControl.disabled=!ready;surgeControl.title=ready?'Power down (L)':'Fill the yellow Hyper bar by holding Charge at 100 Ki'}}
+  setPowers();
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
   const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:indoor?'Cedar Dojo · Hall':window.KiStory?.region(player?.x??0,player?.y??0)||window.KiExplore?.region(player?.x??0,player?.y??0)||window.KiWorld?.region(player?.x??0,player?.y??0)||(player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village'),ko:`${kills} KO`,notice:msg};
