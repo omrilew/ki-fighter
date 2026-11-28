@@ -74,7 +74,8 @@ let clock=0,lastRegion=null,raditzDown=false;
 const storyState=()=>({stage:state.stage,quests:state.quests});
 const G=()=>root.KiGame;
 
-function regionAt(x){return REGIONS.find(r=>x>=r.from&&x<r.to)||null}
+const VALLEY_H=560;   // story regions are the east end of the Cedar valley strip
+function regionAt(x,y=0){return y>=0&&y<VALLEY_H?REGIONS.find(r=>x>=r.from&&x<r.to)||null:null}
 function inStory(){const p=G()?.player;return !!p&&p.x>STORY_START}
 function stageAtLeast(stage){return Talk.stages.indexOf(state.stage)>=Talk.stages.indexOf(stage)}
 
@@ -126,6 +127,7 @@ function paintGround(bg){
 
 // keep trees away from the story spots, the sea and most of the ravine
 function clear(x,y){
+ if(y>=VALLEY_H||y<0)return false;
  if(x<STORY_START-20)return false;
  if(inCoast(x)&&y>shore(x)-30)return true;
  if(x>=2000&&x<2340&&((x*7+y*13)%10)<6)return true;          // ravine: sparser trees
@@ -138,6 +140,7 @@ function clear(x,y){
 }
 
 function solid(x,y){
+ if(y>=VALLEY_H||y<0)return false;
  if(x<STORY_START)return false;
  if(inCoast(x)&&y>shore(x)-2)return true;
  for(const b of [...buildings,pod])if(Math.abs(x-b.x)<b.solidW/2&&y>b.y-b.solidH&&y<b.y+2)return true;
@@ -187,7 +190,7 @@ function marker(n){
  return '';
 }
 // ---- Raditz sprite pack (KiRaditzManifest): 4 directions, feet at (32,88)
-const RADITZ_SCALE=.6;
+const RADITZ_SCALE=.63;
 function dir4(angle){
  const x=Math.cos(angle),y=Math.sin(angle);
  return Math.abs(x)>Math.abs(y)*1.15?(x<0?'left':'right'):(y<0?'up':'down');
@@ -249,7 +252,7 @@ function drawNpc(c,n){
   if(!sprite||!ready(art.npcs))return;
   const dir=!p?'down':Math.abs(p.x-n.x)>Math.abs(p.y-n.y)*1.3?(p.x<n.x?'left':'right'):(p.y<n.y?'up':'down');
   const frame=root.KFCampaignCast.resolveFrame(sprite,dir,talking===n?'talk':'idle',clock*1000);
-  const [sx,sy,w,h]=frame.rect,scale=.56;
+  const [sx,sy,w,h]=frame.rect,scale=.59;
   c.save();c.translate(n.x,n.y);c.imageSmoothingEnabled=false;
   c.fillStyle='#16291f90';c.beginPath();c.ellipse(0,3,8,3,0,0,Math.PI*2);c.fill();
   c.drawImage(art.npcs,sx,sy,w,h,-frame.feet[0]*scale,-frame.feet[1]*scale,w*scale,h*scale);c.restore();
@@ -510,7 +513,7 @@ function onDefeat(e){
  if(e.id==='raditz'){finishRaditz(e.x,e.y);return}
  if(e.storyCamp){
   respawn[e.id]=clock+(e.kind==='dummy'?6:28);
-  if(e.storyCamp!=='training'&&regionAt(e.homeX)?.id===RAIDER_REGION){
+  if(e.storyCamp!=='training'&&regionAt(e.homeX,e.homeY)?.id===RAIDER_REGION){
    const q=state.quests['raider-bounty'];
    if(q&&!q.done&&q.count<Talk.quests['raider-bounty'].goal){
     q.count++;
@@ -528,8 +531,8 @@ function update(dt){
  if(!g?.player)return;
  const p=g.player;
  // music follows the region (battle while Raditz is up)
- const region=regionAt(p.x);
- const theme=state.stage==='fight'&&g.enemies().some(e=>e.id==='raditz')&&region?.id==='ridge'?'battle':region?region.music:'village';
+ const region=regionAt(p.x,p.y);
+ const theme=state.stage==='fight'&&g.enemies().some(e=>e.id==='raditz')&&region?.id==='ridge'?'battle':region?region.music:root.KiWorld?.music(p.x,p.y)||'village';
  if(theme!==lastRegion){lastRegion=theme;root.KiAudio?.music(theme)}
  if(!g.isPlaying())return;
  if(state.stage==='fight'&&!scene){
@@ -543,7 +546,7 @@ function update(dt){
  for(const camp of camps)camp.kinds.forEach((kind,i)=>want.push({id:camp.id+'-'+i,kind,variant:VARIANT[kind],level:camp.level,x:camp.x+(i-1)*22,y:camp.y+(i%2)*14,radius:70,storyCamp:camp.id}));
  for(const w of want){
   if(live.has(w.id)||(respawn[w.id]||0)>clock)continue;
-  if(Math.abs(p.x-w.x)>420)continue;
+  if(Math.abs(p.x-w.x)>420||Math.abs(p.y-w.y)>420)continue;
   if(Math.hypot(p.x-w.x,p.y-w.y)<120)continue;     // never pop in next to the player
   g.spawnEnemy(w);
  }
@@ -587,7 +590,7 @@ function targets(){
  if(s==='fight')return [raditzHome];
  return [];
 }
-function region(x){return regionAt(x)?.name||null}
+function region(x,y=0){return regionAt(x,y)?.name||null}
 
 // ------------------------------------------------------------- save / load
 function save(){return {raditzAt:state.raditzAt,stage:state.stage,seen:[...state.seen],quests:state.quests,collected:[...state.collected],rewards:[...state.rewards]}}
