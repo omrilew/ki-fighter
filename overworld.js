@@ -471,10 +471,21 @@ function sprite(c,name,flip=false){
  const [sx,sw,sh,w,h]=CELL[name];
  c.save();if(flip)c.scale(-1,1);c.drawImage(forest,sx,0,sw,sh,-w/2,-h+2,w,h);c.restore();
 }
+// a fighter standing behind tall scenery shows through it
+function hides(o,w,h){
+ if(h<28)return false;
+ const g=root.KiGame,list=g?.player?[g.player,...(g.enemies?.()||[])]:[];
+ for(const f of list){
+  if(f.hp<=0||f.y>=o.y||o.y-f.y>h*o.scale*.85||Math.abs(f.x-o.x)>w*o.scale*.42)continue;
+  if(f===g.player||Math.hypot(f.x-g.player.x,f.y-g.player.y)<110)return true;
+ }
+ return false;
+}
 function drawScenery(c,o){
  const m=SCN[o.kind];if(!m||!ready(sceneryArt))return;
  const [sx,sy,sw,sh]=m.rect,w=sw/SCN_PX,h=sh/SCN_PX;
- c.save();c.translate(Math.round(o.x),Math.round(o.y));c.scale(o.scale,o.scale);c.imageSmoothingEnabled=false;
+ c.save();
+ if(hides(o,w,h))c.globalAlpha=.45;c.translate(Math.round(o.x),Math.round(o.y));c.scale(o.scale,o.scale);c.imageSmoothingEnabled=false;
  if(m.solid||w>14)shadow(c,Math.min(w,m.solid*4+16));
  const sway=SWAY[o.kind];
  if(sway)c.transform(1,0,windAt(o.x,o.y)*sway,1,0,0);
@@ -506,7 +517,7 @@ function drawObject(c,o){
    c.restore();
   }
  }else{
-  if(o.kind==='oak'||o.kind==='pine')shadow(c,CELL[o.kind][3]);
+  if(o.kind==='oak'||o.kind==='pine'){shadow(c,CELL[o.kind][3]);if(hides(o,CELL[o.kind][3],CELL[o.kind][4]))c.globalAlpha=.45}
   if(SWAY[o.kind])c.transform(1,0,windAt(o.x,o.y)*SWAY[o.kind],1,0,0);
   sprite(c,o.kind,o.flip);
  }
