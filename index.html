@@ -563,10 +563,11 @@
 <section id="kfmenu-settings" class="menu-panel" hidden>
     <label><input id="kfsetting-shake" type="checkbox"> Screen shake</label>
     <label><input id="kfsetting-minimap" type="checkbox"> Show minimap</label>
+    <label><input id="kfsetting-daynight" type="checkbox"> Day &amp; night cycle</label>
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=2"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=13"></script><script src="explore.js?v=2"></script><script src="atmosphere.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="assets/campaign-cast/master-sora/manifest.js?v=1"></script><script src="story-mode.js?v=6"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=2"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=15"></script><script src="explore.js?v=2"></script><script src="atmosphere.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="assets/campaign-cast/master-sora/manifest.js?v=1"></script><script src="story-mode.js?v=6"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=window.KiWorld?.W||2760,MX0=window.KiWorld?.X0||0,MY0=window.KiWorld?.Y0||0,MH=window.KiWorld?.H||560,VW=2760,VH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(170+(r.width-650)*.062,170,212));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -2163,7 +2164,7 @@ const disciplineButtons=Array.from(journeyMenu.querySelectorAll('[data-disciplin
 const menuMapCanvas=root.querySelector('#kfmenu-map-view');
 const menuMap=menuMapCanvas.getContext('2d');
 const settingsKey='ki-fighter-settings-v1';
-const settings={screenShake:true,minimap:true};
+const settings={screenShake:true,minimap:true,daynight:true};
 try{
   const saved=JSON.parse(localStorage.getItem(settingsKey));
   for(const key of Object.keys(settings)){
@@ -2229,6 +2230,7 @@ function openTitleOptions(){
  modal.style.display='none';
  root.querySelector('#kfsetting-shake').checked=settings.screenShake;
  root.querySelector('#kfsetting-minimap').checked=settings.minimap;
+ root.querySelector('#kfsetting-daynight').checked=settings.daynight;
  selectJourneyTab('settings');
  journeyMenu.showModal();
  journeyMenuClose.textContent='Back to Title';menuSaveButton.hidden=true;menuTitleButton.hidden=true;
@@ -2287,7 +2289,7 @@ menuCharacterButton.onclick=()=>openCharacter(menuCharacterButton);
     KiAudio.onChange(on=>{input.checked=on});
   }else if(input)input.closest('label').hidden=true;
 }
-for(const [key,id] of [['screenShake','kfsetting-shake'],['minimap','kfsetting-minimap']]){
+for(const [key,id] of [['screenShake','kfsetting-shake'],['minimap','kfsetting-minimap'],['daynight','kfsetting-daynight']]){
   const input=root.querySelector('#'+id);
   input.checked=settings[key];
   input.onchange=()=>{
@@ -2541,7 +2543,7 @@ function damagePlayer(amount,dx=0,dy=0){
 function update(dt){now+=dt;
   if(stickPointer!==null&&performance.now()-stickLastEvent>8000)resetStick();
   if(mode!=='play'&&stickPointer!==null)resetStick();
-  partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(player?.hyperWave>0)player.hyperWave=Math.max(0,player.hyperWave-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(f.popup){f.x+=f.vx*dt;f.y-=22*dt*(f.time/f.max+.2)}else if(f.dust){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=1-dt*3}else if(!f.pulse&&!f.beamTrace&&!f.spark){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode==='cinematic'){window.KiStory?.cinematic(dt);return}if(mode!=='play')return;storyClock+=dt;
+  partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(player?.hyperWave>0)player.hyperWave=Math.max(0,player.hyperWave-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(f.popup){f.x+=f.vx*dt;f.y-=22*dt*(f.time/f.max+.2)}else if(f.dust){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=1-dt*3}else if(!f.pulse&&!f.beamTrace&&!f.spark){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode==='cinematic'){window.KiStory?.cinematic(dt);return}if(mode!=='play')return;storyClock+=dt;if(mode==='play')dayClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){
@@ -4647,6 +4649,47 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   ink.stroke();ink.fill();
   ink.restore();
 }
+// ---- day and night: a slow cycle (12 min) of day, golden sunset, moonlit night and pink dawn.
+// Colours are multiplied (tinted, not blacked out); lanterns, windows, ki and Goku glow at night.
+const DAY_LENGTH=720;
+let dayClock=DAY_LENGTH*.12;           // a new session starts in the morning
+const SKY=[[0,[255,214,214]],[.07,[255,255,255]],[.55,[255,255,255]],[.64,[255,206,156]],[.71,[196,150,186]],[.77,[86,98,160]],[.93,[86,98,160]],[1,[255,214,214]]];
+function daylight(){
+  if(!settings.daynight)return {tint:[255,255,255],night:0};
+  const s=(dayClock/DAY_LENGTH)%1;
+  let i=0;while(i<SKY.length-2&&s>SKY[i+1][0])i++;
+  const [s0,a]=SKY[i],[s1,b]=SKY[i+1],k=(s-s0)/(s1-s0||1),e=k*k*(3-2*k);
+  const tint=a.map((v,j)=>v+(b[j]-v)*e);
+  return {tint,night:Math.max(0,1-(tint[0]+tint[1]+tint[2])/765)/.6};
+}
+function lightsInView(vx,vy){
+  const L=[];
+  if(player)L.push([player.x,player.y-16,player.surge?70:44,player.surge?'255,210,80':'255,200,140',player.surge?.55:.2]);
+  for(const b of balls)L.push([b.x,b.y,26,'140,220,255',.7]);
+  for(const q of enemyShots)L.push([q.x,q.y,22,'255,140,120',.6]);
+  if(player?.beam||player?.beamCharge!=null)L.push([player.x,player.y-18,90,'150,220,255',.65]);
+  for(const o of worldObjects)if(o.world==='cottage'||o.world==='hall')L.push([o.x,o.y-o.h*.35,40,'255,190,110',.55]);
+  for(const o of worldObjects)if(o.world==='fire')L.push([o.x,o.y-4,58,'255,150,70',.8]);
+  for(const lx of [1136,1388])L.push([lx,150,34,'255,190,110',.6]);                 // dojo lanterns
+  for(const site of window.KiExplore?.sites()||[])L.push([site.x,site.y-20,46,'255,196,120',.5]);
+  return L.filter(([x,y,r])=>x+r>vx&&x-r<vx+W&&y+r>vy&&y-r<vy+H);
+}
+function drawDaylight(vx,vy){
+  const {tint,night}=daylight();
+  if(tint[0]>253&&tint[1]>253&&tint[2]>253)return;
+  c.save();
+  c.globalCompositeOperation='multiply';
+  c.fillStyle=`rgb(${tint.map(v=>v|0).join(',')})`;c.fillRect(vx-2,vy-2,W+4,H+4);
+  if(night>.05){
+    c.globalCompositeOperation='lighter';
+    for(const [x,y,r,col,a] of lightsInView(vx,vy)){
+      const g=c.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,`rgba(${col},${(a*night*.55).toFixed(3)})`);g.addColorStop(1,`rgba(${col},0)`);
+      c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);
+    }
+  }
+  c.restore();
+}
 // region weather and cloud shadows (atmosphere.js), chosen from the ground under the camera
 let atmosKind=null,atmosAt=0;
 function drawAtmosphere(vx,vy){
@@ -4655,6 +4698,7 @@ function drawAtmosphere(vx,vy){
     atmosAt=storyClock;
     const cx=player.x,cy=player.y;
     atmosKind=cx>=0&&cy>=0&&cx<VW&&cy<VH?(cx>1480&&cx<1960?'spray':cx>1960?null:'leaves'):KiAtmos.kindAt(window.KiWorld?.sample(cx,cy).biome);
+    if(daylight().night>.55&&(atmosKind==='leaves'||atmosKind==='petals'||atmosKind===null))atmosKind='fireflies';
   }
   KiAtmos.draw(c,vx,vy,W,H,atmosKind);
 }
@@ -4682,7 +4726,7 @@ function titleCamX(){const t=performance.now()/1000;return 520+Math.sin(t*.05)*3
 const CAMERA_LIFT=14;   // the view centres on Goku's body, where blasts leave from
 function cameraX(px){return indoor?lim(px-W/2,DOJO_ROOM.x-24,DOJO_ROOM.x+DOJO_ROOM.w+24-W):lim(px-W/2,MX0,MW-W)}
 function cameraY(py){return indoor?lim(py-H*.66,DOJO_ROOM.y-18,DOJO_ROOM.y+DOJO_ROOM.h+18-H):lim(py-H/2,MY0,MH-H)}
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:titleCamX(),py=player?player.y-CAMERA_LIFT:300,x=packedSnap(cameraX(px),'x'),y=packedSnap(cameraY(py),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;if(indoor){c.fillStyle='#0c0a0c';c.fillRect(0,0,W,H)}else drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);if(indoor)drawDojoInterior();else{drawWorldWater(x);drawDojoCourtyard();drawDojoTrainingProps()}const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],window.KiWorld?.objects(x,y,W,H)||[],window.KiExplore?.objects(x,y,W,H)||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(indoor)objects=dojoInteriorObjects().concat(dojoMaster,enemies.concat(fallen).filter(e=>inDojoRoom(e.x,e.y)).map(e=>({...e,enemy:true})));else objects.push({x:1269,y:196,storyDraw:drawDojoBuilding});if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else if(f.spark)renderSpark(f);else if(f.dust)renderDust(f);else if(!f.popup)fill(f.x,f.y,3,3,f.color)}for(const f of fx)if(f.popup)renderPopup(f);if(!indoor)drawAtmosphere(x,y);c.restore();if(doorFade>0){c.fillStyle=`rgba(8,6,10,${Math.min(1,doorFade*1.4)})`;c.fillRect(0,0,W,H)}drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:titleCamX(),py=player?player.y-CAMERA_LIFT:300,x=packedSnap(cameraX(px),'x'),y=packedSnap(cameraY(py),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;if(indoor){c.fillStyle='#0c0a0c';c.fillRect(0,0,W,H)}else drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);if(indoor)drawDojoInterior();else{drawWorldWater(x);drawDojoCourtyard();drawDojoTrainingProps()}const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],window.KiWorld?.objects(x,y,W,H)||[],window.KiExplore?.objects(x,y,W,H)||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(indoor)objects=dojoInteriorObjects().concat(dojoMaster,enemies.concat(fallen).filter(e=>inDojoRoom(e.x,e.y)).map(e=>({...e,enemy:true})));else objects.push({x:1269,y:196,storyDraw:drawDojoBuilding});if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else if(f.spark)renderSpark(f);else if(f.dust)renderDust(f);else if(!f.popup)fill(f.x,f.y,3,3,f.color)}for(const f of fx)if(f.popup)renderPopup(f);if(!indoor){drawDaylight(x,y);drawAtmosphere(x,y)}c.restore();if(doorFade>0){c.fillStyle=`rgba(8,6,10,${Math.min(1,doorFade*1.4)})`;c.fillRect(0,0,W,H)}drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');

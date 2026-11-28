@@ -117,6 +117,8 @@ function sample(x,y,f,near){
  if(e<.045)return {biome:'beach',e};
  const n=f?f[1]:fbm(x/700+40,y/700+40,3);
  if(nearRoad(x,y,near?near.segs:SEGS)<9)return {biome:'road',e};
+ // Kame Island: a sandy islet with a little grass around the house
+ {const dx=x-2150,dy=y-5250;if(dx*dx+dy*dy<300*300){const r=105+vnoise(x/38,y/38)*55;return {biome:dx*dx+(dy+20)*(dy+20)<r*r?'grass':'beach',e}}}
  // regions, with domain-warped borders so they meet in natural curves
  const wx=x+((f?f[2]:fbm(x/1300+11,y/1300+3,3))-.5)*1500,wy=y+((f?f[3]:fbm(x/1300+71,y/1300+29,3))-.5)*1500;
  if(wx>6400&&wy<3100&&e>.16)return {biome:e>.4&&n>.45?'snow':'rock',e};
@@ -369,6 +371,7 @@ function paintChunk(cx,cy){
   // shore plants: reeds by lakes and the sea, palms on warm beaches
   if(s.e<.07&&(bio==='grass'||bio==='forest'||bio==='meadow'||bio==='pinewood')&&roll<.35)kind='reeds';
   if(bio==='beach'&&y>1400&&roll<.12)kind='palm';
+  if(bio==='beach'&&Math.hypot(x-2150,y-5250)<300&&roll<.3)kind=roll<.22?'palm':'rocks';
   if(!kind)continue;
   if(kind==='mesa'&&s.e<.12)continue;
   if(RESERVED.some(([rx,ry,rr])=>Math.hypot(x-rx,y-ry)<rr))continue;
