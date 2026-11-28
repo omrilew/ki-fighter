@@ -65,7 +65,8 @@
 #kfg .power-row .power{display:grid;place-content:center;width:42px;height:42px;padding:0;border-radius:50%;border:2px solid #b9c7dc;background:radial-gradient(circle at 35% 25%,#2d4a6e,#122038);box-shadow:inset 0 0 0 2px #0b1628,0 2px 0 #091321;color:#eef4fc;font:800 11px/1 Verdana,system-ui;letter-spacing:.02em;cursor:pointer;pointer-events:auto}
 #kfg .power-row .power small{font-size:7px;opacity:.75;margin-top:2px}
 #kfg .power-row .power[data-a=fly][aria-pressed=true]{border-color:#9dd9ff;background:radial-gradient(circle at 35% 25%,#3e8fc4,#163a5e);box-shadow:inset 0 0 0 2px #0b1628,0 0 10px #6dd6fb88}
-#kfg .power-row .power[data-a=surge]{border-color:#f2d27a;background:radial-gradient(circle at 35% 25%,#8a6a1e,#2e2310)}
+#kfg .power-row .power[data-a=surge]{--hyper:0;border-color:transparent;background:radial-gradient(circle at 35% 25%,#8a6a1e,#2e2310) padding-box,conic-gradient(#ffd35a calc(var(--hyper)*360deg),#5a4a28 0) border-box}
+#kfg .power-row .power[data-a=surge].ready{box-shadow:inset 0 0 0 2px #0b1628,0 0 10px #ffd35a88}
 #kfg .power-row .power[data-a=surge][aria-pressed=true]{background:radial-gradient(circle at 35% 25%,#f6c841,#8a5a10);color:#2a1a04;box-shadow:inset 0 0 0 2px #0b1628,0 0 12px #ffd35a99}
 #kfg .power-row .power:disabled{opacity:.45;cursor:not-allowed}
 #kfg .power-row .power:active:not(:disabled){transform:translateY(2px) scale(.94)}
@@ -483,7 +484,7 @@
     <div class="action-col">
     <div class="power-row" aria-label="Powers">
       <button data-a="fly" class="power" aria-pressed="false" aria-label="Fly (F)" title="Fly (F)">Fly<small>F</small></button>
-      <button data-a="surge" class="power" aria-pressed="false" disabled aria-label="Super Saiyan surge (L)" title="Fill the yellow Hyper bar by holding Charge at 100 Ki">SSJ<small>L</small></button>
+      <button data-a="surge" class="power" aria-pressed="false" aria-label="Super Saiyan (L)" title="Super Saiyan: tap at full ki to power up and transform">SSJ<small>L</small></button>
     </div>
     <div class="acts">
       <button data-a="dash">Dash</button>
@@ -1977,7 +1978,7 @@ function renderBeamCharge(p){
  }
  c.restore();
 }
-function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;if(p.fly)kiPulse(p.x,p.y-16,6,false,false);else dustFx(p.x,p.y,8,p.fx||0)}if(a==='surge'&&down){if(p.surge){p.surge=false;p.hyper=0;notice('SUPER SAIYAN OFF')}else notice('HOLD CHARGE AT FULL KI TO TRANSFORM')}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED');landingFx(p.x,p.y,12)}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
+function act(a,down,source='keyboard'){if(mode!=='play')return;let p=player;if(down&&p.hurt>0&&['hit','ki','dash'].includes(a))return;if(a==='hit'&&down)punch();if(a==='ki'&&down)fire();if(a==='charge'){if(down)notice('CHARGING KI')}if(a==='beam'){if(down)beginBeam(p,source);else releaseBeam(p,source)}if(a==='dash'&&down&&!p.beam&&p.dashCD<=0&&p.ki>=5){spendKi(p,5);p.dash=.19;p.dashCD=.68;if(p.fly)kiPulse(p.x,p.y-16,6,false,false);else dustFx(p.x,p.y,8,p.fx||0)}if(a==='surge'&&down){if(p.surge){p.surge=false;p.hyper=0;p.autoCharge=false;notice('SUPER SAIYAN OFF')}else{p.autoCharge=true;notice(p.ki>=p.mki-.5?'POWERING UP!':'POWERING UP · FILLING KI')}}if(a==='fly'&&down){if(p.fly){if(solid(p.x,p.y))notice('CLEAR GROUND TO LAND');else{p.fly=false;notice('LANDED');landingFx(p.x,p.y,12)}}else if(p.ki>=10){p.fly=true;notice('FLIGHT MODE')}}}
 const stick=root.querySelector('.stick'),knob=stick.querySelector('.stick-knob');
 let stickPointer=null,stickX=0,stickY=0,stickLastEvent=0;
 function resetStick(){
@@ -2360,6 +2361,10 @@ function hyperTransform(p){
   }
 }
 function updateKi(p,dt){
+  if(p.autoCharge){
+    if(p.surge||p.beam||p.attack>0||p.dash>0){p.autoCharge=false;held.delete('charge')}
+    else held.add('charge');
+  }
   if(p.beam){spendKi(p,beam.drain*dt);return}
   if(held.has('charge')&&!p.surge&&p.beamCharge===null){
     const before=p.ki;
@@ -2580,7 +2585,7 @@ const animatingCharge=rechargeTarget||(fighterIndex===0&&p.surgeFlare>0);
 p.rechargeElapsed=animatingCharge?(p.rechargeElapsed??0)+dt:0;
 p.rechargeVisual=animationDamp(p.rechargeVisual,rechargeTarget,dt,rechargeTarget?18:12);
 recoverHealth(p,dt);const attackBefore=p.attack;const staggered=p.hurt>0;for(let k of ['hurt','inv','cd','attack','link','dash','dashCD','blastPose','surgeFlare'])p[k]=Math.max(0,p[k]-dt);updateKi(p,dt);if(p.beam&&p.ki<=0)finishBeam(p);if(p.ki===0){p.fly=false;if(p.surge){p.surge=false;p.hyper=0;p.hyperReady=false}}let dx=+held.has('right')-+held.has('left'),dy=+held.has('down')-+held.has('up'),m=hyp(dx,dy);if(m){dx/=m;dy/=m}else{dx=stickX;dy=stickY}m=hyp(dx,dy);p.walking=m>0;if(p.walking&&kiPointer!=='mouse'&&!p.beam){p.fx=dx/m;p.fy=dy/m;if(Math.abs(p.fx)>.16)p.facing=Math.sign(p.fx)}let speed=(p.dash>0?225:p.fly?150:p.surge?85:67)*(1+(p.dex-1)*.07)*itemEffects().speed;if(p.beamCharge!==null||held.has('charge'))speed*=.32;
-if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
+if(staggered||p.beam){speed=0;p.vx=0;p.vy=0;}if(p.autoCharge&&(dx||dy)){p.autoCharge=false;held.delete('charge')}p.vx+=(dx*speed-p.vx)*Math.min(1,dt*15);p.vy+=(dy*speed-p.vy)*Math.min(1,dt*15);const fromX=p.x,fromY=p.y;
 move(p,p.vx*dt,p.vy*dt);
 groundFx(p,fromX,fromY,dt,rechargeTarget);
 // Over open water only flight keeps you up: remember the last shore, and if
@@ -4817,7 +4822,7 @@ function renderHUD(){
   hud['hyper-meter'].style.transform=`scaleX(${player?.hyper||0})`;
   root.classList.toggle('hyper-charging',!!player&&player.ki>=player.mki-.01&&!player.surge);
   root.classList.toggle('super-saiyan',!!player?.surge);
-  const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){const ready=!!player?.surge;if(surgeControl.disabled===ready){surgeControl.disabled=!ready;surgeControl.title=ready?'Power down (L)':'Fill the yellow Hyper bar by holding Charge at 100 Ki'}}
+  const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){const h=player?.surge?1:(player?.hyper||0);const v=h.toFixed(2);if(surgeControl.style.getPropertyValue('--hyper')!==v)surgeControl.style.setProperty('--hyper',v);surgeControl.classList.toggle('ready',!!player&&!player.surge&&player.ki>=player.mki-.5)}
   setPowers();
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
