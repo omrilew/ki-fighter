@@ -250,6 +250,7 @@ function objects(vx,vy,w,h){
   }});
  }
  BALLS.forEach(([x,y],i)=>{if(!state.balls.has(i)&&inView(x,y))out.push({x,y,storyDraw:c=>drawBall(c,x,y,i+1)})});
+ for(const s of slams)if(inView(s.x,s.y))out.push({x:s.x,y:s.y-s.r,storyDraw:c=>drawSlam(c,s)});
  return out;
 }
 
@@ -323,10 +324,12 @@ function update(dt){
  place();clock+=dt;
  const g=G(),p=g?.player;if(!p||!g.isPlaying())return;
  const live=g.enemies();
+ updateSlams(dt);
  for(const b of BOSSES){
   if(state.bosses.has(b.id))continue;
   if(!b.pos){const s=SITES.find(o=>o.id===b.site);const at=b.at||(s?[s.x,s.y+(b.dy||100)]:null);if(!at)continue;b.pos=findLand(at[0],at[1],30)}
   const [bx,by]=b.pos,d=Math.hypot(p.x-bx,p.y-by),here=live.some(e=>e.id===b.id&&e.hp>0);
+  if(here)bossSlam(b,live.find(e=>e.id===b.id),p,dt);
   if(!here&&d<520&&d>140)g.spawnEnemy({id:b.id,kind:b.kind,variant:b.variant,level:b.level,hpScale:b.hpScale,x:bx,y:by,radius:150,boss:true,bossName:b.name,regionBoss:true});
   else if(here&&d>1400)g.removeEnemy(b.id);
  }
@@ -371,6 +374,46 @@ function load(d){
 function sites(){place();return SITES.map(s=>({id:s.id,name:s.name,x:s.x,y:s.y,seen:state.seen.has(s.id)}))}
 function balls(){place();return {found:state.balls.size,left:BALLS.filter((_,i)=>!state.balls.has(i)).map(([x,y])=>({x,y}))}}
 
+// Boss signature move: a telegraphed ground slam. A red ring grows on the ground,
+// then the boss slams it: shockwave, dust, and damage to anyone still inside.
+const slams=[];
+function bossSlam(b,e,p,dt){
+ if(!e||e.hp<=0)return;
+ b.slamCd=(b.slamCd??3.5)-dt;
+ const d=Math.hypot(p.x-e.x,p.y-e.y);
+ if(b.slamCd<=0&&d<170){
+  b.slamCd=4.2+Math.random()*1.5;
+  slams.push({x:p.x,y:p.y,r:30+b.level,t:0,warn:.85,done:false,dmg:10+b.level*1.6,boss:e});
+ }
+}
+function updateSlams(dt){
+ const g=G();
+ for(const s of slams){
+  s.t+=dt;
+  if(!s.done&&s.t>=s.warn){
+   s.done=true;g.shake?.(.22);g.dust?.(s.x,s.y,22);root.KiAudio?.sfx('kick');
+   const p=g.player;
+   if(p&&!p.fly&&((p.x-s.x)/s.r)**2+((p.y-s.y)/(s.r*.5))**2<1)g.hurt(s.dmg,p.x-s.x,p.y-s.y);
+  }
+ }
+ while(slams.length&&slams[0].t>s_life)slams.shift();
+}
+const s_life=1.25;
+function drawSlam(c,s){
+ c.save();c.translate(s.x,s.y);
+ if(!s.done){
+  const k=s.t/s.warn,pulse=.5+.5*Math.sin(s.t*24);
+  c.fillStyle=`rgba(220,40,30,${(.10+.12*k).toFixed(3)})`;c.beginPath();c.ellipse(0,0,s.r,s.r*.5,0,0,Math.PI*2);c.fill();
+  c.strokeStyle=`rgba(255,90,70,${(.5+.4*pulse).toFixed(3)})`;c.lineWidth=1.2;c.beginPath();c.ellipse(0,0,s.r,s.r*.5,0,0,Math.PI*2);c.stroke();
+  c.fillStyle='rgba(255,120,90,.25)';c.beginPath();c.ellipse(0,0,s.r*k,s.r*.5*k,0,0,Math.PI*2);c.fill();
+ }else{
+  const k=Math.min(1,(s.t-s.warn)/(s_life-s.warn));
+  c.globalAlpha=1-k;c.strokeStyle='#fff0c8';c.lineWidth=2.4*(1-k)+.4;
+  c.beginPath();c.ellipse(0,0,s.r*(1+k*.6),s.r*.5*(1+k*.6),0,0,Math.PI*2);c.stroke();
+  c.fillStyle='rgba(60,40,25,.35)';c.beginPath();c.ellipse(0,0,s.r*.7,s.r*.32,0,0,Math.PI*2);c.fill();
+ }
+ c.restore();
+}
 function placeBosses(){place();for(const b of BOSSES)if(!b.pos){const s=SITES.find(o=>o.id===b.site);const at=b.at||(s?[s.x,s.y+(b.dy||100)]:null);if(at)b.pos=findLand(at[0],at[1],30)}}
 root.KiExplore={bosses:()=>(placeBosses(),BOSSES).map(b=>({id:b.id,name:b.name,pos:b.pos,defeated:state.bosses.has(b.id)})),objects,nearby,interact,update,onDefeat,solid,region,sites,balls,save,load};
 })(typeof window!=='undefined'?window:globalThis);

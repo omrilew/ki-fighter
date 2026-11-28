@@ -568,7 +568,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=2"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=17"></script><script src="explore.js?v=5"></script><script src="atmosphere.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="assets/campaign-cast/master-sora/manifest.js?v=1"></script><script src="story-mode.js?v=6"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=2"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/scenery-atlas.js?v=1"></script><script src="overworld.js?v=17"></script><script src="explore.js?v=6"></script><script src="atmosphere.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="assets/campaign-cast/master-sora/manifest.js?v=1"></script><script src="story-mode.js?v=6"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=window.KiWorld?.W||2760,MX0=window.KiWorld?.X0||0,MY0=window.KiWorld?.Y0||0,MH=window.KiWorld?.H||560,VW=2760,VH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(r.width<650?lim(130+(r.width-390)*.155,130,170):lim(170+(r.width-650)*.062,170,212));/* narrow phones zoom in more */H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -1183,7 +1183,10 @@ window.KiGame={
     else if(mode==='cinematic')mode='play';
   },
   shake:s=>{shake=Math.max(shake,s)},
-  removeEnemy:id=>{enemies=enemies.filter(e=>e.id!==id)}
+  removeEnemy:id=>{enemies=enemies.filter(e=>e.id!==id)},
+  // area attacks from story/explore code: damages Goku if he is not dodging (dash, flight i-frames)
+  hurt:(amount,dx=0,dy=0)=>{if(player&&!(player.inv>0)&&!(player.dash>0)){damagePlayer(amount,dx,dy);return true}return false},
+  dust:(x,y,n)=>landingFx(x,y,n)
 };
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96,raditz:0,dummy:5};
 function xpRequired(level){return 55+(level-1)*35}
