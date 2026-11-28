@@ -31,11 +31,11 @@ const ready=i=>i.complete&&i.naturalWidth>0;
 
 // ------------------------------------------------------------- world layout
 const buildings=[
- {kind:'sea-house',frame:2,x:1575,y:214,w:84,h:80,solidW:70,solidH:24},
- {kind:'dome-hut',frame:1,x:1890,y:196,w:60,h:58,solidW:50,solidH:20},
- {kind:'round-tower',frame:3,x:2735,y:170,w:46,h:82,solidW:30,solidH:14},
+ {kind:'sea-house',frame:2,x:1575,y:214,w:113,h:108,solidW:94,solidH:30},
+ {kind:'dome-hut',frame:1,x:1890,y:196,w:81,h:78,solidW:68,solidH:26},
+ {kind:'round-tower',frame:3,x:2735,y:170,w:62,h:111,solidW:40,solidH:18},
 ];
-const pod={x:2170,y:196,w:52,h:50,solidW:40,solidH:14,frame:5};
+const pod={x:2170,y:196,w:64,h:62,solidW:48,solidH:16,frame:5};
 const npcs=[
  {id:'bulma',actor:'bulma',x:1660,y:258,name:'Bulma'},
  {id:'piccolo',actor:'piccolo',x:2470,y:236,name:'Piccolo'},

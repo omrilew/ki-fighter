@@ -555,14 +555,14 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=4"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=5"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
+function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(192+(r.width-650)*.07,192,240));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
 const dojoMaster={x:1255,y:197,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
-const dojoGate={x:948,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
+const dojoGate={x:1030,y:276,world:'dojo-gate',w:28,h:46,solidW:0,solidH:0};
 const encounters=[
   {id:'crossing',kind:'bandit',x:434,y:246,radius:57},
   {id:'ridge',kind:'thug',x:628,y:216,radius:64},
@@ -574,9 +574,9 @@ const encounters=[
   {id:'trial-three',kind:'soldier',x:1370,y:345,radius:45},
 ];
 const worldObjects=[
-  {x:97,y:226,world:'cottage',w:64,h:58,solidW:52,solidH:30},
-  {x:211,y:216,world:'hall',w:87,h:73,solidW:68,solidH:36},
-  {x:104,y:371,world:'cottage',w:67,h:61,solidW:54,solidH:30},
+  {x:92,y:226,world:'cottage',w:86,h:78,solidW:70,solidH:36},
+  {x:214,y:216,world:'hall',w:117,h:99,solidW:92,solidH:42},
+  {x:104,y:378,world:'cottage',w:90,h:82,solidW:72,solidH:36},
   {x:318,y:253,world:'sign',w:14,h:20,solidW:0,solidH:0},
   {x:464,y:213,world:'tent',w:44,h:34,solidW:36,solidH:17},
   {x:647,y:192,world:'tent',w:46,h:36,solidW:38,solidH:19},
@@ -589,7 +589,7 @@ const worldObjects=[
 ];
 function worldClearance(x,y){
   if(window.KiStory?.clear(x,y))return true;
-  return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&x<1450&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
+  return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&x<1450&&y>120&&y<485)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
     encounters.some(e=>hyp(x-e.x,y-e.y)<34)||
     worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
 }
@@ -745,9 +745,6 @@ bg.fillStyle='#8d512f';bg.fillRect(1257,125,3,24);
 for(const lx of [1136,1388]){bg.fillStyle='#412e2c';bg.fillRect(lx,139,5,23);bg.fillStyle='#e4a855';bg.fillRect(lx-5,145,15,12);bg.fillStyle='#ffe6a6';bg.fillRect(lx-2,147,9,7)}
 for(const lx of [1121,1407]){bg.fillStyle='#435147';bg.fillRect(lx-11,168,22,13);bg.fillStyle='#dfc18c';bg.fillRect(lx-6,173,12,13);bg.fillStyle='#394b51';bg.fillRect(lx-10,169,20,4);bg.fillStyle='#f7db99';bg.fillRect(lx-3,175,6,7)}
 for(const x of [1123,1403])for(const y of [211,350,410]){bg.fillStyle='#284936';bg.beginPath();bg.arc(x,y,terrainBetween(9,15),0,Math.PI*2);bg.fill();bg.fillStyle='#64834b';bg.fillRect(x-5,y-5,7,4)}
-bg.fillStyle='#a77e4c';bg.fillRect(987,262,136,26);
-bg.fillStyle='#f3d98b';bg.font='bold 13px sans-serif';bg.fillText('DOJO →',950,244);
-bg.fillStyle='#f8d16a';bg.fillRect(953,253,30,5);
 function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(window.KiStory?.solid(x,y))return true;
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
   if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
@@ -4221,52 +4218,41 @@ function drawHyperWave(p){
 }
 // Tile the training courtyard from the same high-resolution material palette
 // as the hall, replacing the old flat vector courtyard and its cartoon props.
+// Cells of assets/dojo-architecture-4x2.png (painted textures on a white sheet).
+const DOJO_CELLS={
+  planks:[4,7,105,132],boards:[122,7,100,132],tatamiA:[234,8,92,128],tatamiB:[348,8,98,128],
+  plainWall:[2,146,67,138],windowWall:[79,146,156,138],door:[241,146,137,138],roundWindow:[386,146,123,138]
+};
+function dojoCell(name,dx,dy,dw,dh){
+  const [sx,sy,sw,sh]=DOJO_CELLS[name];
+  c.drawImage(dojoArchitecture,sx,sy,sw,sh,dx,dy,dw,dh);
+}
 function drawDojoCourtyard(){
-  // Outdoor dojo: stable world-space footprint and collision layout.
-  // Native-pixel geometric materials avoid stretched mixed-size atlas crops.
+  // Outdoor dojo court: plank deck from the dojo texture sheet with a framed
+  // 2x2 tatami ring in the middle. Same footprint and collisions as before.
   const x=1105,y=139,w=316,h=308;
-  c.save();c.imageSmoothingEnabled=false;
+  if(!atlasReady(dojoArchitecture))return;
+  c.save();
   c.fillStyle='#1c322c';c.fillRect(x-10,y-10,w+20,h+20);
-  c.fillStyle='#977454';c.fillRect(x-7,y-7,w+14,h+14);
-  c.fillStyle='#382b28';c.fillRect(x-4,y-4,w+8,h+8);
-  c.fillStyle='#76543b';c.fillRect(x,y,w,h);
+  c.fillStyle='#2a201b';c.fillRect(x-5,y-5,w+10,h+10);
   c.beginPath();c.rect(x,y,w,h);c.clip();
-  // Continuous wood planks: deterministic knots, joints and highlights.
-  for(let row=0;row<22;row++){
-    const py=y+row*14,offset=row%2?33:0;
-    c.fillStyle=row%3===0?'#876044':row%3===1?'#9a7150':'#79573f';
-    c.fillRect(x,py,w,13);
-    c.fillStyle='#b68c5d';c.fillRect(x,py,w,1);
-    c.fillStyle='#493b32';c.fillRect(x,py+13,w,1);
-    for(let col=-1;col<7;col++){
-      const px=x+col*66+offset;
-      c.fillStyle='#5d4536';c.fillRect(px,py+1,1,12);
-      c.fillStyle='#b78a5c';c.fillRect(px+3,py+4,20,1);
-      c.fillStyle='#6d503a';c.fillRect(px+29,py+9,14,1);
-      if((row+col)%4===0){c.fillStyle='#5b4537';c.fillRect(px+39,py+6,5,2)}
-    }
-  }
-  // Dark walnut mat frame and six woven tatami panels.
-  const mx=x+56,my=y+78,mw=204,mh=152;
-  c.fillStyle='#201f23';c.fillRect(mx-8,my-8,mw+16,mh+16);
-  c.fillStyle='#bd8b50';c.fillRect(mx-6,my-6,mw+12,mh+12);
-  c.fillStyle='#2e493d';c.fillRect(mx-3,my-3,mw+6,mh+6);
-  for(let row=0;row<2;row++)for(let col=0;col<3;col++){
-    const px=mx+col*68,py=my+row*76;
-    c.fillStyle=(row+col)%2?'#c8b68a':'#d8c59a';
-    c.fillRect(px+2,py+2,64,72);
-    c.fillStyle='#4c6753';c.fillRect(px,py,2,76);c.fillRect(px+66,py,2,76);
-    c.fillStyle='#b2a17d';
-    for(let i=0;i<17;i++)c.fillRect(px+4,py+5+i*4,60,1);
-    c.fillStyle='#e9d9b0';
-    for(let i=0;i<15;i++)c.fillRect(px+7+(i%2)*3,py+7+i*4,44,1);
-  }
-  c.strokeStyle='#d1a269';c.lineWidth=2;c.strokeRect(x+8,y+8,w-16,h-16);
-  c.strokeStyle='#302923';c.lineWidth=1;c.strokeRect(mx-7,my-7,mw+14,mh+14);
-  for(const [px,py] of [[x+14,y+14],[x+w-14,y+14],[x+14,y+h-14],[x+w-14,y+h-14]]){
-    c.fillStyle='#342e2a';c.fillRect(px-7,py-7,14,14);
-    c.fillStyle='#b48c56';c.fillRect(px-5,py-5,10,10);
-    c.fillStyle='#f6d68b';c.fillRect(px-2,py-2,4,4);
+  c.imageSmoothingEnabled=true;
+  const tw=54,th=67;
+  for(let ty=y;ty<y+h;ty+=th)for(let tx=x-((ty-y)/th%2?tw/2:0);tx<x+w;tx+=tw)dojoCell('planks',tx,ty,tw,th);
+  // tatami ring with a dark wooden frame
+  const mx=x+58,my=y+80,mw=200,mh=148;
+  c.fillStyle='#1d1715';c.fillRect(mx-8,my-8,mw+16,mh+16);
+  c.fillStyle='#8a5a34';c.fillRect(mx-5,my-5,mw+10,mh+10);
+  for(let row=0;row<2;row++)for(let col=0;col<2;col++)
+    dojoCell((row+col)%2?'tatamiB':'tatamiA',mx+col*mw/2,my+row*mh/2,mw/2,mh/2);
+  c.restore();
+  c.save();c.imageSmoothingEnabled=false;
+  // soft inner shadow along the deck edge and brass corner caps
+  c.fillStyle='#00000030';c.fillRect(x,y,w,4);c.fillRect(x,y,4,h);
+  for(const [px,py] of [[x+12,y+12],[x+w-12,y+12],[x+12,y+h-12],[x+w-12,y+h-12]]){
+    c.fillStyle='#2a201b';c.fillRect(px-6,py-6,12,12);
+    c.fillStyle='#b48c56';c.fillRect(px-4,py-4,8,8);
+    c.fillStyle='#f6d68b';c.fillRect(px-2,py-2,3,3);
   }
   c.restore();
 }
@@ -4296,40 +4282,35 @@ function drawDojoTrainingProps(){
   c.restore();
 }
 function drawDojoBuilding(){
-  c.save();c.imageSmoothingEnabled=false;
-  const x=1105,y=77,w=328,h=111;
-  // One coherent wooden facade with layered blue-gray tiled roof.
-  c.fillStyle='#2c292c';c.fillRect(x-5,y+21,w+10,92);
-  c.fillStyle='#a47a51';c.fillRect(x,y+29,w,82);
-  c.fillStyle='#d6b78a';c.fillRect(x+6,y+35,w-12,68);
-  for(let i=0;i<9;i++){
-    const px=x+6+i*39;
-    c.fillStyle='#4b332b';c.fillRect(px,y+29,6,82);
-    c.fillStyle='#bd9465';c.fillRect(px+1,y+29,2,82);
+  // Facade assembled from the dojo texture sheet (shoji walls, round windows,
+  // sliding door) under a layered blue-grey tiled roof.
+  const x=1105,y=77,w=328;
+  if(!atlasReady(dojoArchitecture))return;
+  c.save();
+  const wallTop=y+29,wallH=82;
+  c.fillStyle='#2c292c';c.fillRect(x-5,wallTop-2,w+10,wallH+4);
+  const parts=['plainWall','roundWindow','windowWall','door','windowWall','roundWindow','plainWall'];
+  const widths=parts.map(n=>DOJO_CELLS[n][2]*wallH/DOJO_CELLS[n][3]);
+  const k=w/widths.reduce((a,b)=>a+b,0);
+  c.imageSmoothingEnabled=true;
+  let px=x;
+  parts.forEach((n,i)=>{dojoCell(n,px,wallTop,widths[i]*k,wallH);px+=widths[i]*k});
+  c.imageSmoothingEnabled=false;
+  // stone foundation step
+  c.fillStyle='#3b3634';c.fillRect(x-6,wallTop+wallH,w+12,5);
+  c.fillStyle='#8b857b';c.fillRect(x-6,wallTop+wallH,w+12,2);
+  // roof: dark eave, tile rows, ridge
+  c.fillStyle='#182a3a';c.fillRect(x-16,y+15,w+32,9);
+  c.fillStyle='#273544';c.fillRect(x-10,y+5,w+20,13);
+  c.fillStyle='#536575';c.fillRect(x-13,y+2,w+26,6);
+  for(let i=0;i<23;i++){
+    const tx=x-12+i*15;
+    c.fillStyle=i%2?'#607485':'#455b6e';c.fillRect(tx,y+3,13,5);
+    c.fillStyle='#a1a7a2';c.fillRect(tx,y+3,11,1);
+    c.fillStyle='#1c2935';c.fillRect(tx+3,y+19,9,3);
   }
-  for(let i=0;i<7;i++){
-    const px=x+19+i*43;
-    c.fillStyle='#4d514c';c.fillRect(px,y+46,30,48);
-    c.fillStyle='#efe1bd';c.fillRect(px+2,y+48,26,44);
-    c.fillStyle='#ac9e81';c.fillRect(px+14,y+48,2,44);
-    c.fillRect(px+2,y+69,26,2);
-  }
-  // Entrance sits behind the master; the fighting area stays outdoors.
-  c.fillStyle='#2a2527';c.fillRect(x+133,y+43,62,68);
-  c.fillStyle='#7c543c';c.fillRect(x+139,y+47,50,64);
-  c.fillStyle='#d4ac72';c.fillRect(x+143,y+52,42,54);
-  c.fillStyle='#392c2a';c.fillRect(x+162,y+52,4,54);
-  c.fillStyle='#e5c68b';c.fillRect(x+158,y+76,3,3);c.fillRect(x+168,y+76,3,3);
-  c.fillStyle='#273544';c.fillRect(x-9,y+12,w+18,19);
-  c.fillStyle='#536575';c.fillRect(x-12,y+9,w+24,8);
-  c.fillStyle='#182a3a';c.fillRect(x-15,y+16,w+30,7);
-  for(let i=0;i<21;i++){
-    const px=x-8+i*16;
-    c.fillStyle=i%2?'#607485':'#455b6e';c.fillRect(px,y+9,14,5);
-    c.fillStyle='#a1a7a2';c.fillRect(px,y+9,12,1);
-    c.fillStyle='#1c2935';c.fillRect(px+3,y+21,10,3);
-  }
-  c.fillStyle='#bd8d59';c.fillRect(x+125,y+107,78,4);
+  c.fillStyle='#2a3a4a';c.fillRect(x+w/2-38,y-6,76,9);
+  c.fillStyle='#6d8296';c.fillRect(x+w/2-36,y-5,72,3);
   c.restore();
 }
 function drawWorldWater(view){
