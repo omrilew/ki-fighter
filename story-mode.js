@@ -190,7 +190,7 @@ function marker(n){
  return '';
 }
 // ---- Raditz sprite pack (KiRaditzManifest): 4 directions, feet at (32,88)
-const RADITZ_SCALE=.6;
+const RADITZ_SCALE=.63;
 function dir4(angle){
  const x=Math.cos(angle),y=Math.sin(angle);
  return Math.abs(x)>Math.abs(y)*1.15?(x<0?'left':'right'):(y<0?'up':'down');
@@ -252,7 +252,7 @@ function drawNpc(c,n){
   if(!sprite||!ready(art.npcs))return;
   const dir=!p?'down':Math.abs(p.x-n.x)>Math.abs(p.y-n.y)*1.3?(p.x<n.x?'left':'right'):(p.y<n.y?'up':'down');
   const frame=root.KFCampaignCast.resolveFrame(sprite,dir,talking===n?'talk':'idle',clock*1000);
-  const [sx,sy,w,h]=frame.rect,scale=.56;
+  const [sx,sy,w,h]=frame.rect,scale=.59;
   c.save();c.translate(n.x,n.y);c.imageSmoothingEnabled=false;
   c.fillStyle='#16291f90';c.beginPath();c.ellipse(0,3,8,3,0,0,Math.PI*2);c.fill();
   c.drawImage(art.npcs,sx,sy,w,h,-frame.feet[0]*scale,-frame.feet[1]*scale,w*scale,h*scale);c.restore();
