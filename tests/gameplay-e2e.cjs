@@ -23,7 +23,12 @@ window.__kiTest={
  measureMovement(multiplier){enemies=[];player.x=1250;player.y=290;player.vx=0;player.vy=0;player.hurt=0;player.beam=0;player.beamCharge=null;player.cd=0;held.clear();held.add('right');for(let i=0;i<30;i++)update(1/60);held.clear();return player.x-1250},
  forceSave(data){localStorage.setItem(journeyKey,JSON.stringify(data));loadJourney()},
  closeTalk(){closeStory()},
- render(){render()}
+ render(){render()},
+ master(){const m=dojoMaster;return {x:m.x,y:m.y}},
+ door(){return {x:dojoDoor.x,y:dojoDoor.y,indoor}},
+ enter(){enterDojo()},
+ leave(){leaveDojo()},
+ tick(n,keys=[]){held.clear();keys.forEach(k=>held.add(k));for(let i=0;i<n;i++)update(1/60);held.clear();return {x:player.x,y:player.y,indoor}}
 };
 `;
 async function run(name,opts){
@@ -116,7 +121,7 @@ async function run(name,opts){
    await dialog.getByRole('button',{name:'Close'}).click();
   });
   await check('Quest acceptance via real NPC interaction',async()=>{
-   await page.evaluate(()=>{const a=window.__kiTest;a.step('done');a.position(1255,197);a.interact()});
+   await page.evaluate(()=>{const a=window.__kiTest;a.step('done');a.enter();const m=a.master();a.position(m.x,m.y+24);a.interact()});
    assert.match(await page.locator('#kfstory-text').innerText(),/three disciples/i);
    await page.getByRole('button',{name:/Accept: Trial of Discipline/i}).click();
    const st=await page.evaluate(()=>window.__kiTest.state());
@@ -137,7 +142,7 @@ async function run(name,opts){
    assert.ok(!result.three.items.includes('cedar_token'),'No reward before master turn-in');
   });
   await check('Master reward is claimable exactly once',async()=>{
-   await page.evaluate(()=>{const a=window.__kiTest;a.position(1255,197);a.interact()});
+   await page.evaluate(()=>{const a=window.__kiTest;a.enter();const m=a.master();a.position(m.x,m.y+24);a.interact()});
    assert.match(await page.locator('#kfstory-text').innerText(),/Training weights/i);
    await page.getByRole('button',{name:/Claim training reward/i}).click();
    const first=await page.evaluate(()=>window.__kiTest.state());
@@ -169,8 +174,19 @@ async function run(name,opts){
    assert.equal(out.equipment.training,null);
    assert.equal(out.equipment.charm,null);
   });
+  await check('Walking through the dojo door enters the hall and back out',async()=>{
+   const out=await page.evaluate(()=>{
+    const a=window.__kiTest;a.clearEnemies();a.leave();a.tick(40);
+    const d=a.door();a.position(d.x,d.y+30);
+    const inside=a.tick(90,['up']);a.tick(40);
+    const outside=a.tick(160,['down']);
+    return {inside,outside};
+   });
+   assert.equal(out.inside.indoor,true,'walking up into the door enters the hall '+JSON.stringify(out));
+   assert.equal(out.outside.indoor,false,'walking down through the hall door leaves '+JSON.stringify(out));
+  });
   await check('Dojo screenshot and rendering without browser errors',async()=>{
-   await page.evaluate(()=>{const a=window.__kiTest;a.clearEnemies();a.position(1255,270);a.render()});
+   await page.evaluate(()=>{const a=window.__kiTest;a.clearEnemies();a.enter();a.tick(40);a.render()});
    await page.waitForTimeout(250);
    await page.screenshot({path:path.join(ARTIFACT,name+'-dojo.png')});
    assert.deepEqual(errors,[],'Browser errors: '+errors.join('; '));
