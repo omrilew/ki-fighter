@@ -624,7 +624,14 @@ function worldClearance(x,y){
     worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
 }
 function solidStructure(x,y){
-  return worldObjects.some(o=>o.solidW&&Math.abs(x-o.x)<o.solidW/2&&y>o.y-o.solidH&&y<o.y+2);
+  // building footprints with rounded corners, so you slide around them instead of catching on an edge
+  return worldObjects.some(o=>{
+    if(!o.solidW)return false;
+    const hw=o.solidW/2,top=o.y-o.solidH,r=Math.min(7,hw*.3);
+    if(Math.abs(x-o.x)>=hw||y<=top||y>=o.y+2)return false;
+    const cx=Math.abs(x-o.x)-(hw-r),cy=Math.max(top+r-y,y-(o.y+2-r));
+    return !(cx>0&&cy>0&&cx*cx+cy*cy>r*r);
+  });
 }
 // Detail counts were tuned for the 1460 px Cedar valley; keep the same density as the world grows.
 const WORLD_SCALE=VW/1460;
@@ -777,7 +784,7 @@ for(const lx of [1121,1407]){bg.fillStyle='#435147';bg.fillRect(lx-11,168,22,13)
 for(const x of [1123,1403])for(const y of [211,350,410]){bg.fillStyle='#284936';bg.beginPath();bg.arc(x,y,terrainBetween(9,15),0,Math.PI*2);bg.fill();bg.fillStyle='#64834b';bg.fillRect(x-5,y-5,7,4)}
 function solid(x,y){if(x<MX0+12||y<MY0+20||x>MW-12||y>MH-10)return true;if(indoor||inDojoRoom(x,y))return dojoRoomSolid(x,y);if(x>1100&&x<1438&&y>100&&y<197)return true;if(window.KiStory?.solid(x,y))return true;if(!(x>=0&&y>=0&&x<VW&&y<VH))return !!(window.KiWorld?.solid(x,y)||window.KiExplore?.solid(x,y));
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
-  if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly&&!indoor){o.x=lim(o.x+x,MX0+12,MW-12);o.y=lim(o.y+y,MY0+20,MH-10);return}const Wd=window.KiWorld,open=Wd&&!indoor&&!(o.x>=0&&o.y>=0&&o.x<VW&&o.y<VH);
+  if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>{if(t.broken)return false;const dx=(t.x-x)/7.5,dy=(t.y-y+.5)/4.5;return dx*dx+dy*dy<1})}function move(o,x,y){if(o===player&&o.fly&&!indoor){o.x=lim(o.x+x,MX0+12,MW-12);o.y=lim(o.y+y,MY0+20,MH-10);return}const Wd=window.KiWorld,open=Wd&&!indoor&&!(o.x>=0&&o.y>=0&&o.x<VW&&o.y<VH);
   // slopes: uphill slower, downhill a little faster
   if(open){const k=Wd.slopeFactor(o.x,o.y,x,y);x*=k;y*=k}
   // cliffs can be dropped from but not climbed (except at their ramp gaps)
