@@ -80,19 +80,25 @@ function stageAtLeast(stage){return Talk.stages.indexOf(state.stage)>=Talk.stage
 
 // ------------------------------------------------------------- painting
 function paintGround(bg){
- // Ravine: warm dry earth; ridge: cooler moss and stone. Soft gradients so
- // they melt into the painted grass like the rest of the map.
- const tint=(x0,x1,color)=>{
-  const g=bg.createLinearGradient(x0-60,0,x1,0);
-  g.addColorStop(0,color.slice(0,7)+'00');g.addColorStop(.12,color);g.addColorStop(.9,color);g.addColorStop(1,color.slice(0,7)+'00');
-  bg.fillStyle=g;bg.fillRect(x0-60,0,x1-x0+120,560);
- };
- tint(1960,2380,'#7a5a3cc8');
- tint(2380,2760,'#4c5a46a0');
+ // Ravine: warm dry earth; ridge: cooler moss and stone. Painted as many
+ // overlapping soft patches whose density falls off toward the region's
+ // edges, so regions melt into each other with no straight borders.
  let seed=91;
  const rnd=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
- for(let i=0;i<900;i++){
-  const x=1960+rnd()*420,y=rnd()*560;
+ const patches=(cx,half,colors,count)=>{
+  for(let i=0;i<count;i++){
+   // triangular distribution: dense in the middle, sparse at the edges
+   const x=cx+(rnd()-rnd())*half*1.25,y=40+rnd()*480,r=18+rnd()*58;
+   const col=colors[i%colors.length];
+   const g=bg.createRadialGradient(x,y,0,x,y,r);
+   g.addColorStop(0,col);g.addColorStop(1,col.slice(0,7)+'00');
+   bg.fillStyle=g;bg.fillRect(x-r,y-r,r*2,r*2);
+  }
+ };
+ patches(2170,240,['#8a6440a0','#6e4e32a0','#a07a4c80','#5c4430a0'],260);
+ patches(2570,220,['#5a6a4c80','#6b7458a0','#4a5a4480','#7d7a6060'],170);
+ for(let i=0;i<1400;i++){
+  const x=2170+(rnd()-rnd())*300,y=rnd()*560;
   bg.fillStyle=i%3?'#5a402a40':'#c49a6a30';
   bg.fillRect(x,y,.6+rnd()*1.8,.5+rnd());
  }
@@ -122,7 +128,7 @@ function paintGround(bg){
 function clear(x,y){
  if(x<STORY_START-20)return false;
  if(inCoast(x)&&y>shore(x)-30)return true;
- if(x>=1960&&x<2380&&((x*7+y*13)%10)<8)return true;          // ravine: sparse
+ if(x>=2000&&x<2340&&((x*7+y*13)%10)<6)return true;          // ravine: sparser trees
  if(Math.hypot(x-pod.x,(y-pod.y)*1.4)<90)return true;
  if(dummies.some(d=>Math.hypot(x-d.x,y-d.y)<45))return true;
  if([...npcs,...places,...pickups,...camps].some(o=>Math.hypot(x-o.x,y-o.y)<42))return true;

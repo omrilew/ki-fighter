@@ -558,7 +558,7 @@
 <script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=4"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
+function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
 const mentor={x:157,y:251,world:'mentor'};
 const shrine={x:928,y:274,world:'shrine',w:45,h:54,solidW:29,solidH:18};
 const dojoMaster={x:1255,y:197,world:'dojo-master',w:18,h:30,solidW:0,solidH:0};
@@ -589,14 +589,16 @@ const worldObjects=[
 ];
 function worldClearance(x,y){
   if(window.KiStory?.clear(x,y))return true;
-  return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
+  return (x>920&&x<1165&&Math.abs(y-276)<55)||(x>1040&&x<1450&&y>135&&y<455)||(x<280&&y>122&&y<397)||Math.abs(y-273)<23||
     encounters.some(e=>hyp(x-e.x,y-e.y)<34)||
     worldObjects.some(o=>Math.abs(x-o.x)<o.w/2+10&&y>o.y-o.h-8&&y<o.y+15);
 }
 function solidStructure(x,y){
   return worldObjects.some(o=>o.solidW&&Math.abs(x-o.x)<o.solidW/2&&y>o.y-o.solidH&&y<o.y+2);
 }
-const trees=[],rocks=[];for(let i=0;i<184;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(worldClearance(x,y)||Math.abs(x-355)<64&&Math.abs(y-280)<87||Math.abs(x-355)<13||Math.abs(y-280)<13||hyp((x-530)*.75,(y-340)*1.3)<80)continue;trees.push({x,y,scale:rnd(.84,1.25),variant:i%4===0?1:0})}for(let i=0;i<44;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(!worldClearance(x,y))rocks.push({x,y})}const pond={x:528,y:345,rx:75,ry:48};
+// Detail counts were tuned for the 1460 px Cedar valley; keep the same density as the world grows.
+const WORLD_SCALE=MW/1460;
+const trees=[],rocks=[];for(let i=0;i<184*WORLD_SCALE;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(worldClearance(x,y)||Math.abs(x-355)<64&&Math.abs(y-280)<87||Math.abs(x-355)<13||Math.abs(y-280)<13||hyp((x-530)*.75,(y-340)*1.3)<80)continue;trees.push({x,y,scale:rnd(.84,1.25),variant:i%4===0?1:0})}for(let i=0;i<44*WORLD_SCALE;i++){let x=rnd(15,MW-15),y=rnd(20,MH-15);if(!worldClearance(x,y))rocks.push({x,y})}const pond={x:528,y:345,rx:75,ry:48};
 const mapScale=2.5;
 const map=document.createElement('canvas');
 map.width=MW*mapScale;
@@ -617,7 +619,7 @@ function terrainRandom(){
   return terrainSeed/4294967296;
 }
 const terrainBetween=(a,b)=>a+(b-a)*terrainRandom();
-for(let i=0;i<105;i++){
+for(let i=0;i<105*WORLD_SCALE;i++){
   const x=terrainBetween(0,MW),y=terrainBetween(0,MH),r=terrainBetween(15,90);
   const tuft=bg.createRadialGradient(x,y,0,x,y,r);
   tuft.addColorStop(0,i%3===0?'#8ea25370':i%3===1?'#183d3e80':'#b5a76b38');
@@ -625,7 +627,7 @@ for(let i=0;i<105;i++){
   bg.fillStyle=tuft;
   bg.fillRect(x-r,y-r,r*2,r*2);
 }
-for(let i=0;i<2100;i++){
+for(let i=0;i<2100*WORLD_SCALE;i++){
   const x=terrainBetween(0,MW),y=terrainBetween(0,MH),h=terrainBetween(1,4);
   bg.strokeStyle=i%3===0?'#b9bf7855':'#142f2d4d';
   bg.lineWidth=terrainBetween(.22,.62);
@@ -634,7 +636,7 @@ for(let i=0;i<2100;i++){
   bg.quadraticCurveTo(x+.2,y-h*.7,x+terrainBetween(-1.7,1.7),y-h);
   bg.stroke();
 }
-for(let i=0;i<3500;i++){
+for(let i=0;i<3500*WORLD_SCALE;i++){
   const x=terrainBetween(0,MW),y=terrainBetween(0,MH);
   const size=terrainBetween(.5,2);
   fill(x,y,size,terrainBetween(.5,1.45),i%3===0?'#c2ad7935':i%2===0?'#17382e4b':'#80905132',bg);
@@ -1112,6 +1114,27 @@ const strikes={
   roundhouse:{frame:fighterFrames.kick,range:35,arc:1.58,impact:.40},
 };
 const strikeCombos=[['jab','cross','hook'],['cross','hook','sidekick'],['roundhouse','sidekick']];
+// Soft lock-on: turn an attack toward the best nearby enemy so strikes and
+// blasts don't fly off in the last movement direction. Enemies inside the
+// cone around the current aim win; very close ones count from any side.
+function autoAim(p,range,cone){
+  let best=null,score=Infinity;
+  const aim=Math.atan2(p.fy,p.fx);
+  for(const e of enemies){
+    if(e.hp<=0||e.kind==='dummy'&&range>60)continue;
+    const dx=e.x-p.x,dy=e.y-p.y,d=hyp(dx,dy);
+    if(d>range)continue;
+    const off=Math.abs(Math.atan2(Math.sin(Math.atan2(dy,dx)-aim),Math.cos(Math.atan2(dy,dx)-aim)));
+    if(off>cone&&d>26)continue;
+    const s=d*(1+off*.8);
+    if(s<score){score=s;best={dx:dx/(d||1),dy:dy/(d||1)}}
+  }
+  if(!best)return false;
+  p.fx=best.dx;p.fy=best.dy;
+  p.faceAngle=Math.atan2(best.dy,best.dx);
+  if(Math.abs(best.dx)>.16)p.facing=Math.sign(best.dx);
+  return true;
+}
 function punch(){
   const p=player;
   if(p.hurt>0||p.cd>0||p.beam||p.beamCharge!==null)return;
@@ -1126,6 +1149,7 @@ function punch(){
   p.attackDuration=finisher?.24:p.strike==='sidekick'?.19:.16;
   p.attack=p.attackDuration;
   p.attackHit=false;
+  autoAim(p,58,1.7);
   p.attackX=p.fx;
   p.attackY=p.fy;
 }
@@ -1152,6 +1176,7 @@ function fire(){
   if(p.beam||p.beamCharge!==null)return;
   spendKi(p,2);
   window.KiAudio?.sfx('kiBlast');
+  autoAim(p,kiBlast.range,.55);
   p.blastPose=.15;
   p.blastAngle=Math.atan2(p.fy,p.fx);
   const direction=castDirection(p);
@@ -2793,7 +2818,7 @@ const forestProps=[
   [631,50,45,10,9], [683,60,85,12,17], [745,50,40,10,8], [797,100,50,20,10],
 ];
 const scenery=rocks.map((rock,i)=>({...rock,variant:i%5===0?7:3,scale:terrainBetween(.7,1.1)}));
-for(let i=0;i<105;i++){
+for(let i=0;i<105*WORLD_SCALE;i++){
   const x=terrainBetween(18,MW-18),y=terrainBetween(18,MH-18);
   const inPond=((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1.06;
   if(inPond||worldClearance(x,y)||Math.abs(y-275)<18||Math.abs(x-352)<15)continue;
@@ -4335,6 +4360,25 @@ minimapTerrain.height=minimapCanvas.height;
 const minimapGround=minimapTerrain.getContext('2d');
 const mapRatio=minimapCanvas.width/MW;
 minimapGround.drawImage(map,0,0,minimapTerrain.width,minimapTerrain.height);
+// The painted map is wider than phones allow for one GPU texture (4096 px),
+// which made every frame fall back to slow drawing. Cut it into 1024 px
+// tiles, draw only the visible ones, and free the full-size canvas.
+const mapTiles=[];
+for(let sx=0;sx<map.width;sx+=1024){
+  const tile=document.createElement('canvas');
+  tile.width=Math.min(1024,map.width-sx);tile.height=map.height;
+  tile.getContext('2d').drawImage(map,-sx,0);
+  mapTiles.push({sx,tile});
+}
+map.width=map.height=1;
+function drawMapView(viewX,viewY){
+  const left=viewX*mapScale,top=viewY*mapScale,width=W*mapScale,height=H*mapScale,k=W/width;
+  for(const {sx,tile} of mapTiles){
+    const a=Math.max(left,sx),b=Math.min(left+width,sx+tile.width);
+    if(b<=a)continue;
+    c.drawImage(tile,a-sx,top,b-a,height,(a-left)*k,0,(b-a)*k,H);
+  }
+}
 minimapGround.scale(mapRatio,mapRatio);
 for(const tree of trees){
   minimapGround.fillStyle='#21362b';
@@ -4426,7 +4470,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
