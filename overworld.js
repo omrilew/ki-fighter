@@ -134,8 +134,18 @@ const isRoad=b=>b==='road';
 // rugged, terraced cliffs. The same functions drive drawing and physics, so a
 // cliff you can see is a cliff you cannot walk up; gaps in it are ramps.
 const LEVELS=5;
+const FACE=8;                                    // cliff face height in 2 px cells (16 world px)
+// rock colours per region: foot shadow, dark, mid, light, sunlit rim
+const ROCK={
+ grass:[[58,54,50],[86,80,72],[112,104,92],[140,130,114],[176,166,146]],
+ rock:[[54,52,52],[82,80,80],[108,106,104],[136,134,130],[176,174,168]],
+ snow:[[70,80,96],[104,116,134],[140,152,170],[178,190,206],[226,234,242]],
+ waste:[[74,36,24],[110,56,36],[142,78,50],[176,104,68],[214,140,96]],
+ desert:[[96,62,36],[140,94,56],[176,126,78],[206,158,104],[236,198,140]],
+};
+ROCK.pinewood=ROCK.grass;ROCK.forest=ROCK.grass;ROCK.meadow=ROCK.grass;ROCK.blossom=ROCK.grass;
 function heightAt(x,y){
- const base=fbm(x/760+300,y/760+300,4);
+ const base=fbm(x/820+300,y/820+300,3);                            // 3 octaves: long, clean terrace edges
  const ridge=1-Math.abs(fbm(x/1500+90,y/1500+40,3)*2-1);          // long ridgelines
  return base*.75+ridge*.25;
 }
@@ -216,12 +226,51 @@ const SCENERY_MIX={
  pinewood:[['spruce',.24],['fir',.2],['poplar',.04],['fern',.12],['mossboulder',.04],['menhir',.012],['stump',.03],['mushrooms',.03],['bush',.04]],
  meadow:[['cherry',.04],['cherry2',.03],['birch',.04],['poplar',.02],['flowers',.16],['sunflowers',.05],['tuft',.14],['bush',.05],['boulder',.01],['menhir',.006]],
  blossom:[['cherry',.14],['cherry2',.12],['willow',.03],['flowers',.12],['tuft',.08],['mossboulder',.02]],
- waste:[['mesa',.05],['rocks',.15],['deadtree',.04],['deadtree2',.03],['hoodoo',.025],['shrub',.08],['log',.05]],
- rock:[['mesa',.07],['rocks',.28],['boulder',.06],['fir',.08],['menhir',.015],['crystal',.008]],
+ waste:[['boulder',.025],['rocks',.15],['deadtree',.04],['deadtree2',.03],['shrub',.08],['log',.05]],
+ rock:[['rocks',.28],['boulder',.06],['fir',.08],['menhir',.015],['crystal',.008]],
  snow:[['snowfir',.36],['icerock',.08],['rocks',.1],['crystal',.015]],
- desert:[['cactus',.07],['hoodoo',.03],['sandstone',.03],['mesa',.02],['rocks',.08],['shrub',.1],['tuft',.04]],
+ desert:[['cactus',.07],['hoodoo',.012],['sandstone',.04],['rocks',.08],['shrub',.1],['tuft',.04]],
  beach:[['rocks',.07],['boulder',.01]],
 };
+// Cliff faces, pixel-crisp at 1 world px: horizontal rock strata that wave a
+// little, darker toward the foot, a sunlit rim at the top with the grass edge
+// hanging over it, and the odd short crack. Reads as a ledge, not columns.
+const hash=(a,b)=>{let h=Math.imul(a|0,374761393)+Math.imul(b|0,668265263);h=Math.imul(h^h>>>13,1274126177);return ((h^h>>>16)>>>0)/4294967296};
+function drawFaces(g,faces,sides,x0,y0,lv){
+ const col=c=>`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+ for(let k=0;k<faces.length;k+=4){
+  const i=faces[k],j=faces[k+1],d=faces[k+2],pal=ROCK[faces[k+3]]||ROCK.grass;
+  for(let sy=0;sy<2;sy++)for(let sx=0;sx<2;sx++){
+   const lx=i*2+sx,ly=j*2+sy,wx=x0+lx,wy=y0+ly;
+   const foot=d*2-sy;                                     // world px down to the foot
+   let t;
+   if(foot<=2)t=0;                                         // shadowed base
+   else if(d===FACE&&sy===0)t=4;                           // sunlit rim along the lip
+   else{
+    const band=Math.floor((wy+2.2*Math.sin(wx/17)+1.2*Math.sin(wx/6.3))/3);
+    t=band%3===0?1:band%3===1?2:3;
+    if(foot<=5)t=Math.max(1,t-1);                          // darker near the foot
+    if(hash(wx>>1,band)<.05)t=0;                           // short cracks inside a layer
+   }
+   g.fillStyle=col(pal[t]);g.fillRect(lx,ly,1,1);
+  }
+  // crisp shadow on the ground just below the foot
+  if(d===1){g.fillStyle='#0c140c55';g.fillRect(i*2,j*2+2,2,2);g.fillStyle='#0c140c2a';g.fillRect(i*2,j*2+4,2,2)}
+  // grass edge of the terrace top hanging over the lip
+  if(d===FACE){
+   g.fillStyle='#1f3a24';g.fillRect(i*2,j*2-1,2,1);
+   if(hash(x0+i*2,y0+j*2)<.3){g.fillStyle='#2c5232';g.fillRect(i*2+(hash(i,j)<.5?0:1),j*2,1,2)}   // grass tuft hanging over
+  }
+ }
+}
+function drawSides(g,sides,lv){
+ for(let k=0;k<sides.length;k+=4){
+  const i=sides[k],j=sides[k+1],dir=sides[k+2],pal=ROCK[sides[k+3]]||ROCK.grass;
+  // a thin rock edge on the side that drops, its shadow just beyond it
+  g.fillStyle=`rgb(${pal[1].join(',')})`;g.fillRect(i*2+(dir>0?1:0),j*2,1,2);
+  g.fillStyle='#0c140c33';g.fillRect(i*2+(dir>0?2:-1),j*2,1,2);
+ }
+}
 function pick(list,roll){if(!list)return null;let acc=0;for(const [k,p] of list){acc+=p;if(roll<acc)return k}return null}
 function paintChunk(cx,cy){
  const x0=cx*CHUNK,y0=cy*CHUNK,N=CHUNK/2;               // sample every 2 world px
@@ -229,6 +278,8 @@ function paintChunk(cx,cy){
  const sctx=small.getContext('2d');
  const img=sctx.createImageData(N,N);
  const biomeGrid=new Array(N*N);
+ const faces=[];                                   // cliff cells: i, j, cells to the foot, biome
+ const sides=[];                                   // terrace side edges: i, j, which side drops, biome
  // heights on the same 2 px grid, with a margin, so relief lookups are array reads
  const M=16,NN=N+2*M,HG=new Float32Array(NN*NN);
  for(let j=0;j<NN;j++)for(let i=0;i<NN;i++)HG[j*NN+i]=heightAt(x0+(i-M)*2+1,y0+(j-M)*2+1);
@@ -265,23 +316,15 @@ function paintChunk(cx,cy){
    const h=hAt(i,j),hx=hAt(i+3,j)-h,hy=hAt(i,j+3)-h;
    const lit=Math.max(-.22,Math.min(.22,(-hx*.6-hy*.8)*26));
    r*=1+lit;g*=1+lit;bl*=1+lit*.8;
-   // terraced cliffs: the south face of a higher terrace is a rock wall (3/4 view)
-   const L=lv(i,j),FACE=11;                                                  // face height in 2 px cells
+   // terraced cliffs: the south face of a higher terrace is a low rock wall (3/4 view).
+   // Here only a base colour goes in; the face itself is drawn crisp below.
+   const L=lv(i,j);
    if(L>lv(i,j+FACE)&&cliffy(x,y,s.biome)){
-    let d=1;while(d<FACE&&lv(i,j+d)>=L)d++;                                  // distance down to the cliff foot
-    const t=Math.min(1,d/FACE);                                              // 0 at the foot, 1 at the lip
-    if(t>.9&&lv(i,j-2)===L){                                                 // grassy overhang on the lip
-     r*=.78;g*=.78;bl*=.78;
-    }else{
-     const rock=s.biome==='snow'?[136,146,160]:s.biome==='waste'||s.biome==='desert'?[148,84,54]:s.biome==='meadow'||s.biome==='blossom'?[128,112,92]:[100,96,90];
-     const strata=(Math.floor(x/3+Math.sin(y/5)*1.5)%4===0?.78:1)*(Math.floor((y+x*.15)/7)%2?1:.93);
-     const shade=(.62+.5*t)*strata*(fine>.75?1.1:1);
-     r=rock[0]*shade;g=rock[1]*shade;bl=rock[2]*shade;
-     if(t>.78&&t<=.9){r+=26;g+=24;bl+=20}                                    // sunlit ledge below the lip
-    }
-   }else if(L<lv(i,j-3)&&cliffy(x,y-6,s.biome)){r*=.62;g*=.62;bl*=.68}       // shadow at the cliff foot
-   else if(L<lv(i,j-6)&&cliffy(x,y-12,s.biome)){r*=.8;g*=.8;bl*=.84}
-   else if((L>lv(i+3,j)||L>lv(i-3,j))&&cliffy(x,y,s.biome)){r*=.78;g*=.78;bl*=.8}   // terrace side edges
+    let d=1;while(d<FACE&&lv(i,j+d)>=L)d++;                                  // cells down to the cliff foot
+    const pal=ROCK[s.biome]||ROCK.grass;
+    r=pal[2][0];g=pal[2][1];bl=pal[2][2];
+    faces.push(i,j,d,s.biome);
+   }else if((L>lv(i+1,j)||L>lv(i-1,j))&&cliffy(x,y,s.biome))sides.push(i,j,L>lv(i+1,j)?1:-1,s.biome);   // terrace side edge
   }
   const o=(j*N+i)*4;img.data[o]=r;img.data[o+1]=g;img.data[o+2]=bl;img.data[o+3]=255;
  }
@@ -290,6 +333,7 @@ function paintChunk(cx,cy){
  const g=canvas.getContext('2d');
  g.imageSmoothingEnabled=true;g.drawImage(small,0,0,canvas.width,canvas.height);
  g.scale(SCALE,SCALE);
+ drawFaces(g,faces,sides,x0,y0,lv);drawSides(g,sides,lv);
  const rnd=mulberry(cx*7919+cy*104729+17);
  // grass blades and specks on land, wave glints on water
  for(let n=0;n<420;n++){
@@ -325,7 +369,7 @@ function paintChunk(cx,cy){
   if(!kind)continue;
   if(kind==='mesa'&&s.e<.12)continue;
   if(RESERVED.some(([rx,ry,rr])=>Math.hypot(x-rx,y-ry)<rr))continue;
-  if(levelAt(x,y)>levelAt(x,y+26)&&cliffy(x,y,bio))continue;
+  if(levelAt(x,y)>levelAt(x,y+FACE*2+6)&&cliffy(x,y,bio))continue;
   objects.push({x,y,kind,scale:.85+rnd()*.4,layout:Math.floor(rnd()*5),flip:rnd()<.5,snow:bio==='snow'});
  }
  return {canvas,objects};
