@@ -2752,10 +2752,10 @@ function drawEnemyPose(image,frame,o){
   c.restore();
 }
 const enemyActions=new Image();
-enemyActions.src='assets/enemy-actions.webp';
+enemyActions.src='assets/enemy-actions-clean.png?v=1';   // hard-alpha copy (scripts/clean-enemy-actions.py)
 const enemyActionRows={bandit:0,thug:1,ninja:2,soldier:3,brute:4};
 // Regional palette variants (scripts/build-enemy-variants.py): same frames, recoloured.
-const enemyVariants=new Image();enemyVariants.src='assets/enemy-variants.png?v=2';
+const enemyVariants=new Image();enemyVariants.src='assets/enemy-variants.png?v=3';
 const enemyVariantRows={'dune-raider':0,'rock-brute':1,'ravine-stalker':2,'ridge-sentry':3,'sand-reaver':4,'frost-guard':5,'wood-shade':6,'waste-ogre':7,'reef-pirate':8};
 const enemyIdleClip=[[0,0],[.33,1],[.66,2],[1,0]];
 const enemyWalkClip=[[0,3],[.2,4],[.4,5],[.6,6],[.8,7],[1,3]];
