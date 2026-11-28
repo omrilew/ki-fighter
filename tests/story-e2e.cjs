@@ -68,12 +68,23 @@ const url = process.env.TEST_URL || 'http://127.0.0.1:8765/';
     await talk(['fight']);
     await page.waitForFunction(() => KiGame.enemies().some(e => e.id === 'raditz' && e.boss));
     assert.equal((await state()).stage, 'fight');
-    await page.evaluate(() => { const e = KiGame.enemies().find(e => e.id === 'raditz'); e.hp = 1; Object.assign(KiGame.player, {x: e.x - 15, y: e.y, fx: 1, fy: 0, faceAngle: 0}); });
-    for (let i = 0; i < 12 && await page.evaluate(() => KiGame.enemies().some(e => e.id === 'raditz')); i++) {
-      await page.evaluate(() => { const e = KiGame.enemies().find(e => e.id === 'raditz'); if (e) Object.assign(KiGame.player, {x: e.x - 15, y: e.y, hp: KiGame.player.max}); });
+    // wear him down: below 28% the Special Beam Cannon cutscene takes over
+    await page.evaluate(() => { const e = KiGame.enemies().find(e => e.id === 'raditz'); e.hp = Math.round(e.max * .3); });
+    for (let i = 0; i < 20 && await page.evaluate(() => KiGame.enemies().some(e => e.id === 'raditz')); i++) {
+      await page.evaluate(() => { const e = KiGame.enemies().find(e => e.id === 'raditz'); if (e) Object.assign(KiGame.player, {x: e.x - 15, y: e.y, fx: 1, fy: 0, faceAngle: 0, hp: KiGame.player.max}); });
       await page.keyboard.press('j');
       await page.waitForTimeout(220);
     }
+    await page.waitForFunction(() => /SPECIAL BEAM CANNON/.test(document.querySelector('#kfnotice').textContent), null, {timeout: 6000});
+    await page.waitForFunction(() => window.KiStory.stage === 'victory', null, {timeout: 8000});
+    // epilogue lines, then the chapter is complete
+    for (let i = 0; i < 8; i++) {
+      const list = await choices();
+      const next = list.find(t => t === 'Next' || t === 'Continue');
+      if (!next) break;
+      await page.locator('#kfstory-choices button', {hasText: next}).first().click();
+    }
+    await page.waitForFunction(() => /CHAPTER ONE COMPLETE/.test(document.querySelector('#kfnotice').textContent));
     const end = await state();
     assert.equal(end.stage, 'victory');
     assert.ok(end.level >= 3, 'boss experience applied');
