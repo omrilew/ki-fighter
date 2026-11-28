@@ -555,7 +555,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="overworld.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=5"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="overworld.js?v=3"></script><script src="explore.js?v=1"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=5"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=window.KiWorld?.W||2760,MH=window.KiWorld?.H||560,VW=2760,VH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(192+(r.width-650)*.07,192,240));H=lim(Math.round(W*r.height/r.width),108,MH);const density=Math.min(2,window.devicePixelRatio||1);/* >2x costs fill rate, no visible gain for pixel art */cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -745,7 +745,7 @@ bg.fillStyle='#8d512f';bg.fillRect(1257,125,3,24);
 for(const lx of [1136,1388]){bg.fillStyle='#412e2c';bg.fillRect(lx,139,5,23);bg.fillStyle='#e4a855';bg.fillRect(lx-5,145,15,12);bg.fillStyle='#ffe6a6';bg.fillRect(lx-2,147,9,7)}
 for(const lx of [1121,1407]){bg.fillStyle='#435147';bg.fillRect(lx-11,168,22,13);bg.fillStyle='#dfc18c';bg.fillRect(lx-6,173,12,13);bg.fillStyle='#394b51';bg.fillRect(lx-10,169,20,4);bg.fillStyle='#f7db99';bg.fillRect(lx-3,175,6,7)}
 for(const x of [1123,1403])for(const y of [211,350,410]){bg.fillStyle='#284936';bg.beginPath();bg.arc(x,y,terrainBetween(9,15),0,Math.PI*2);bg.fill();bg.fillStyle='#64834b';bg.fillRect(x-5,y-5,7,4)}
-function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(window.KiStory?.solid(x,y))return true;if(!(x<VW&&y<VH))return !!window.KiWorld?.solid(x,y);
+function solid(x,y){if(x<12||y<20||x>MW-12||y>MH-10)return true;if(window.KiStory?.solid(x,y))return true;if(!(x<VW&&y<VH))return !!(window.KiWorld?.solid(x,y)||window.KiExplore?.solid(x,y));
   // Keep the shrine-to-dojo corridor walkable even when scenery was seeded nearby.
   if(x>920&&x<1165&&Math.abs(y-276)<39)return false;if(solidStructure(x,y)||((x-pond.x)/pond.rx)**2+((y-pond.y)/pond.ry)**2<1)return true;return trees.some(t=>!t.broken&&Math.abs(t.x-x)<8&&Math.abs(t.y-y)<6)}function move(o,x,y){if(o===player&&o.fly){o.x=lim(o.x+x,12,MW-12);o.y=lim(o.y+y,20,MH-10);return}if(!solid(o.x+x,o.y))o.x+=x;if(!solid(o.x,o.y+y))o.y+=y}function burst(x,y,color,n=9){for(let i=0;i<n;i++)fx.push({x,y,vx:rnd(-65,65),vy:rnd(-72,25),time:rnd(.22,.55),color})}function notice(s){msg=s;messageTimer=1.5}
 function start(){summaryCharacter.hidden=true;resetScenery();resetStick();stopKi();setPowers(false);player={x:154,y:279,hp:100,max:100,healDelay:0,kiDelay:0,rechargeVisual:0,blastPose:0,hurt:0,facing:1,faceAngle:Math.PI/2,stride:0,gait:0,ki:100,mki:100,level:1,xp:0,str:1,kistat:1,dex:1,points:0,vx:0,vy:0,beam:0,beamCharge:null,beamAge:0,fx:0,fy:1,walking:false,attack:0,cd:0,combo:0,link:0,inv:0,dash:0,dashCD:0,fly:false,surge:false,surgeFlare:0,hyper:0,hyperReady:false,hyperWave:0,charge:0};enemies=[];fallen=[];balls=[];enemyShots=[];fx=[];kills=0;mode='play';modal.style.display='none';held.clear();resetParty();loadJourney();spawnJourneyEnemies();notice('CEDAR VILLAGE');window.KiAudio?.music('village')}
@@ -798,7 +798,11 @@ const itemCatalog=Object.freeze({
  cedar_token:{name:'Cedar Token',slot:null,speed:1,xp:1},
  capsule_band:{name:'Capsule Band',slot:'training',speed:.9,xp:1.2},
  weighted_cape:{name:'Weighted Cape',slot:'training',speed:.75,xp:1.45},
- saiyan_scouter:{name:'Saiyan Scouter',slot:'charm',speed:1.05,xp:1.15}
+ saiyan_scouter:{name:'Saiyan Scouter',slot:'charm',speed:1.05,xp:1.15},
+ turtle_shell:{name:'Turtle Shell',slot:'training',speed:.7,xp:1.6},
+ summit_band:{name:'Summit Band',slot:'charm',speed:1,xp:1.2},
+ sage_beads:{name:'Sage Beads',slot:'charm',speed:1.08,xp:1.08},
+ dragon_gi:{name:'Dragon Gi',slot:'charm',speed:1.12,xp:1.25}
 });
 let inventory=new Set(),equipment={training:null,charm:null};
 function itemEffects(){
@@ -857,7 +861,7 @@ function saveJourney(){
   try{
     localStorage.setItem(journeyKey,JSON.stringify({
       version:3,step:journeyStep,cleared:[...clearedCamps],items:[...inventory],equipment:{...equipment},discipline,activeFighter:fighterIndex,party:(captureParty(),partyStats),
-      stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]])),story:window.KiStory?.save()
+      stats:Object.fromEntries(persistentStats.map(key=>[key,player[key]])),story:window.KiStory?.save(),explore:window.KiExplore?.save()
     }));
   }catch{}
 }
@@ -865,11 +869,11 @@ function loadJourney(){
   journeyStep='meet';
   discipline='balanced';
   clearedCamps=new Set();inventory=new Set();equipment={training:null,charm:null};
-  window.KiStory?.load(null);
+  window.KiStory?.load(null);window.KiExplore?.load(null);
   try{
     const data=JSON.parse(localStorage.getItem(journeyKey));
     if(!data)return;
-    window.KiStory?.load(data.story);
+    window.KiStory?.load(data.story);window.KiExplore?.load(data.explore);
     if(Array.isArray(data.items))inventory=new Set(data.items.filter(id=>Object.hasOwn(itemCatalog,id)));
     for(const slot of ['training','charm']){const id=data.equipment?.[slot];if(inventory.has(id)&&itemCatalog[id]?.slot===slot)equipment[slot]=id}
     if(Object.hasOwn(disciplines,data.discipline))discipline=data.discipline;
@@ -1018,6 +1022,7 @@ function nearbyLandmark(){
 function interact(){
   if(mode!=='play')return;
   if(window.KiStory?.interact())return;
+  if(window.KiExplore?.interact())return;
   const target=nearbyLandmark();
   if(!target)return;
   if(target===dojoGate){showStory('Cedar Dojo Gate','The path continues east into Cedar Dojo. Walk through the gate to reach the training court.');return;}
@@ -2511,9 +2516,9 @@ for(const enemy of enemies){
   if(mode!=='play')break;
   if(enemy.hp>0&&enemy.kind!=='dummy')advanceEnemy(enemy,p,dt);
 }
-window.KiStory?.update(dt);
+window.KiStory?.update(dt);window.KiExplore?.update(dt);
 const defeated=enemies.filter(e=>e.hp<=0);
-for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(Math.round(enemyExperience[e.kind]*(e.xpScale||1)));updateJourneyDefeat(e);window.KiStory?.onDefeat(e);
+for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(Math.round(enemyExperience[e.kind]*(e.xpScale||1)));updateJourneyDefeat(e);window.KiStory?.onDefeat(e);window.KiExplore?.onDefeat(e);
  if(e.id==='ridge')collectItem('wind_charm');
  if(e.id==='watch')collectItem('scholar_charm');
  if(e.id==='trial-three')collectItem('iron_weights');if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(Math.round(4*(q.power||1)),q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
@@ -2700,8 +2705,8 @@ const enemyActions=new Image();
 enemyActions.src='assets/enemy-actions.webp';
 const enemyActionRows={bandit:0,thug:1,ninja:2,soldier:3,brute:4};
 // Regional palette variants (scripts/build-enemy-variants.py): same frames, recoloured.
-const enemyVariants=new Image();enemyVariants.src='assets/enemy-variants.png?v=1';
-const enemyVariantRows={'dune-raider':0,'rock-brute':1,'ravine-stalker':2,'ridge-sentry':3};
+const enemyVariants=new Image();enemyVariants.src='assets/enemy-variants.png?v=2';
+const enemyVariantRows={'dune-raider':0,'rock-brute':1,'ravine-stalker':2,'ridge-sentry':3,'sand-reaver':4,'frost-guard':5,'wood-shade':6,'waste-ogre':7,'reef-pirate':8};
 const enemyIdleClip=[[0,0],[.33,1],[.66,2],[1,0]];
 const enemyWalkClip=[[0,3],[.2,4],[.4,5],[.6,6],[.8,7],[1,3]];
 const enemyAttackClip=[[0,0],[.23,8],[.38,9],[.54,10],[.7,11],[.86,12],[1,0]];
@@ -4446,6 +4451,13 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
     const labels=[['Cedar Valley',900,300],['Kame Coast',1720,380],...(window.KiWorld?.places||[]).map(p=>[p.name,p.x,p.y]),
       ['Red Wasteland',5500,2100],['Sunscar Desert',7500,4500],['Northern Peaks',7700,1200],['Deepwood',1500,2600],['Southern Sea',3300,5000]];
     for(const [label,x,y] of labels){const [lx,ly]=P(x,y);ink.strokeText(label,lx,ly);ink.fillText(label,lx,ly)}
+    for(const site of window.KiExplore?.sites()||[]){
+      const [sx,sy]=P(site.x,site.y);
+      ink.fillStyle='#2a211b';ink.fillRect(sx-4,sy-4,8,8);ink.fillStyle=site.seen?'#8fd3a0':'#ffda7e';ink.fillRect(sx-2.5,sy-2.5,5,5);
+      ink.font='bold 7px system-ui';ink.fillStyle='#fff0cf';ink.strokeText(site.name,sx,sy-7);ink.fillText(site.name,sx,sy-7);
+    }
+    const db=window.KiExplore?.balls();
+    if(db){ink.font='bold 9px system-ui';ink.textAlign='left';ink.fillStyle='#ffb347';const t='Dragon Balls '+db.found+'/7';ink.strokeText(t,8,ch-10);ink.fillText(t,8,ch-10);ink.textAlign='center'}
   }
   const [px,py]=P(player.x,player.y);
   ink.translate(px,py);ink.rotate(player.faceAngle);
@@ -4454,7 +4466,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   ink.stroke();ink.fill();
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],window.KiWorld?.objects(x,y,W,H)||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;drawMapView(x,y);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],window.KiWorld?.objects(x,y,W,H)||[],window.KiExplore?.objects(x,y,W,H)||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');
@@ -4470,7 +4482,7 @@ function renderHUD(){
   const surgeControl=root.querySelector('[data-a="surge"]');if(surgeControl){surgeControl.disabled=!player?.surge;surgeControl.textContent=player?.surge?'Power down':'Surge locked'}
   const required=xpRequired(player?.level??1),xp=player?.xp??0;
   hud['xp-meter'].style.transform=`scaleX(${xp/required})`;
-  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:window.KiStory?.region(player?.x??0,player?.y??0)||window.KiWorld?.region(player?.x??0,player?.y??0)||(player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village'),ko:`${kills} KO`,notice:msg};
+  const labels={xp:`${xp} / ${required} XP`,lv:`${fighters[fighterIndex].name} · LV ${player?.level??1}`,ki:`${Math.floor(player?.ki??100)}/${player?.mki??100} Ki${player?.surge?' · SSJ':player?.hyper>0?' · HYPER '+Math.floor(player.hyper*100)+'%':''}`,region:window.KiStory?.region(player?.x??0,player?.y??0)||window.KiExplore?.region(player?.x??0,player?.y??0)||window.KiWorld?.region(player?.x??0,player?.y??0)||(player?.x>1060?'Cedar Dojo':player?.x>843?'Stone Shrine':player?.x>325?'Cedar Forest':'Cedar Village'),ko:`${kills} KO`,notice:msg};
   for(const [key,value] of Object.entries(labels)){
     if(hud[key].textContent!==value)hud[key].textContent=value;
   }
@@ -4485,7 +4497,7 @@ function renderHUD(){
   const instruction=player?journeyObjective():'';
   if(objective.textContent!==instruction)objective.textContent=instruction;
   objective.hidden=!player||mode==='title';
-  interactButton.hidden=mode!=='play'||!(nearbyLandmark()||window.KiStory?.nearby());
+  interactButton.hidden=mode!=='play'||!(nearbyLandmark()||window.KiStory?.nearby()||window.KiExplore?.nearby());
   hud.notice.hidden=messageTimer<=0;
   const points=player?.points??0;
   pointBadge.hidden=points===0;

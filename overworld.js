@@ -149,6 +149,9 @@ function music(x,y){
 }
 
 // ------------------------------------------------------------ chunk painting
+// Spots kept free of trees and rocks (landmarks, Dragon Balls); see explore.js.
+const RESERVED=[];
+function reserve(x,y,r){RESERVED.push([x,y,r]);chunks.clear()}
 const chunks=new Map();     // key -> {canvas, objects, solids}
 const queue=[];
 const MAX_CHUNKS=48;
@@ -215,6 +218,7 @@ function paintChunk(cx,cy){
   else if(bio==='beach')kind=roll<.08?'rocks':null;
   if(!kind)continue;
   if(kind==='mesa'&&s.e<.12)continue;
+  if(RESERVED.some(([rx,ry,rr])=>Math.hypot(x-rx,y-ry)<rr))continue;
   objects.push({x,y,kind,scale:.85+rnd()*.4,layout:Math.floor(rnd()*5),flip:rnd()<.5,snow:bio==='snow'});
  }
  return {canvas,objects};
@@ -335,6 +339,6 @@ function mapImage(valley,vw,vh){
  return mapCanvas;
 }
 
-root.KiWorld={places:PLACES,W,H,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
+root.KiWorld={reserve,places:PLACES,W,H,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
  stats:()=>({chunks:chunks.size,queued:queue.length})};
 })(typeof window!=='undefined'?window:globalThis);
