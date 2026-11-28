@@ -16,10 +16,11 @@
  */
 (function(root){
 'use strict';
-const W=9600,H=6400;                 // world size
-const VW=2760,VH=560;                // hand-painted Cedar valley
+const W=9600,H=6400;                 // world extends to x<W, y<H ...
+const X0=-2000,Y0=-1800;             // ... from x>=X0, y>=Y0: land wraps the valley on every side
+const VW=2760,VH=560;                // hand-painted Cedar valley at 0..VW x 0..VH
 const CHUNK=256,SCALE=2.5;           // chunk size (world px) and paint scale
-const inValley=(x,y)=>x<VW&&y<VH;
+const inValley=(x,y)=>x>=0&&y>=0&&x<VW&&y<VH;
 
 // ------------------------------------------------------------ noise
 function mulberry(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -45,8 +46,13 @@ const LAND=[
  [850,4350,460,380],      // western isle
  [6000,5950,260,200],     // reef isle
  [9000,3300,300,500],     // far-east cape
+ [1300,-650,2700,1150],   // Misty Pines: forested uplands north of the valley
+ [-950,700,1250,1750],    // Blossom Hills: rolling meadows west of the valley
+ [3400,-900,900,600],     // northern headland
 ];
 const CARVE=[
+ [-300,-1100,520,340],    // Mirror Lake in the north-west
+ [2300,-1250,260,180],    // Pine Tarn
  [1720,1000,300,620],     // Kame Bay: opens below Kame Coast
  [4300,2650,420,300],     // Crystal Lake
  [6350,3950,260,520],     // Serpent Strait between highlands and desert
@@ -58,7 +64,7 @@ function elevation(x,y){
  e+=(fbm(x/900,y/900,4)-.5)*.32;
  // keep the valley and its neighbourhood solid ground, except the coast's sea
  const bay=x>1490&&x<1950;
- if(x<VW+120&&y<VH+120&&!bay)e=Math.max(e,.25);
+ if(x>-160&&y>-160&&x<VW+120&&y<VH+120&&!bay)e=Math.max(e,.25);
  if(bay&&y<VH+260)e=Math.min(e,-.12-.1*Math.min(1,(y-VH+40)/200));   // Kame Coast's sea opens into Kame Bay
  return e;
 }
@@ -91,6 +97,9 @@ const BIOMES={
  beach:{base:[217,192,138],alt:[196,172,120]},
  grass:{base:[79,106,56],alt:[58,88,52]},
  forest:{base:[44,74,46],alt:[36,62,42]},
+ pinewood:{base:[40,66,52],alt:[33,56,47]},
+ meadow:{base:[96,124,60],alt:[78,108,52]},
+ blossom:{base:[102,122,66],alt:[86,110,60]},
  waste:{base:[156,104,66],alt:[126,82,54]},
  desert:{base:[216,182,120],alt:[198,160,100]},
  rock:{base:[112,108,98],alt:[90,88,82]},
@@ -108,6 +117,8 @@ function sample(x,y){
  const wx=x+(fbm(x/1300+11,y/1300+3,3)-.5)*1500,wy=y+(fbm(x/1300+71,y/1300+29,3)-.5)*1500;
  if(wx>6400&&wy<3100&&e>.16)return {biome:e>.4&&n>.45?'snow':'rock',e};
  if(wx>6100&&wy>3300)return {biome:'desert',e};
+ if(wy<-150&&wx<5200)return {biome:n>.4?'pinewood':'grass',e};
+ if(wx<-120&&wy<3200)return {biome:n>.66?'forest':n>.5?'blossom':'meadow',e};
  if(wx>4500&&wx<6700&&wy>600&&wy<3700)return {biome:n>.63?'rock':'waste',e};
  return {biome:n>.56?'forest':'grass',e};
 }
@@ -123,6 +134,8 @@ const PLACES=[
  {name:'Western Isle',x:850,y:4350,r:560,music:'coast'},
  {name:'Reef Isle',x:6000,y:5950,r:320,music:'coast'},
  {name:'Serpent Strait',x:6350,y:3950,r:600,music:'coast'},
+ {name:'Mirror Lake',x:-300,y:-1100,r:600,music:'coast'},
+ {name:'Pine Tarn',x:2300,y:-1250,r:320,music:'coast'},
 ];
 function region(x,y){
  if(inValley(x,y))return null;
@@ -130,13 +143,15 @@ function region(x,y){
  let {biome}=sample(x,y);
  if(isRoad(biome))biome=sample(x+24,y+24).biome==='road'?sample(x-30,y+30).biome:sample(x+24,y+24).biome;
  if(isRoad(biome))return 'Highway';
- if(isWater(biome))return y>4700?'Southern Sea':x<900?'Western Sea':'Open Sea';
+ if(isWater(biome))return y>4700?'Southern Sea':y<-200?'Northern Sea':x<900?'Western Sea':'Open Sea';
+ if(biome==='pinewood')return 'Misty Pines';
+ if(biome==='meadow'||biome==='blossom')return 'Blossom Hills';
  if(biome==='snow'||biome==='rock'&&x>6400)return 'Northern Peaks';
  if(biome==='desert')return 'Sunscar Desert';
  if(biome==='waste'||biome==='rock')return 'Red Wasteland';
  if(biome==='forest')return 'Deepwood';
  if(biome==='beach')return 'Coastline';
- return y<1800?'Cedar Plains':'Southern Plains';
+ return y<-150?'Misty Pines':x<-120?'Blossom Hills':y<1800?'Cedar Plains':'Southern Plains';
 }
 function music(x,y){
  if(inValley(x,y))return null;
@@ -244,11 +259,12 @@ function visibleChunks(vx,vy,w,h,margin){
  const out=[];
  const c0=Math.floor((vx-margin)/CHUNK),c1=Math.floor((vx+w+margin)/CHUNK);
  const r0=Math.floor((vy-margin)/CHUNK),r1=Math.floor((vy+h+margin)/CHUNK);
- for(let cy=Math.max(0,r0);cy<=Math.min(Math.ceil(H/CHUNK)-1,r1);cy++)
-  for(let cx=Math.max(0,c0);cx<=Math.min(Math.ceil(W/CHUNK)-1,c1);cx++)out.push([cx,cy]);
+ for(let cy=Math.max(Math.floor(Y0/CHUNK),r0);cy<=Math.min(Math.ceil(H/CHUNK)-1,r1);cy++)
+  for(let cx=Math.max(Math.floor(X0/CHUNK),c0);cx<=Math.min(Math.ceil(W/CHUNK)-1,c1);cx++)out.push([cx,cy]);
  return out;
 }
-function allValley(cx,cy){return (cx+1)*CHUNK<=VW&&(cy+1)*CHUNK<=VH}
+// chunks fully covered by the painted valley (its outer row and column are faded, so they still need ground)
+function allValley(cx,cy){return cx>=1&&cy>=1&&(cx+1)*CHUNK<=VW&&(cy+1)*CHUNK<=VH}
 function drawGround(c,vx,vy,w,h){
  // the ring just outside the view is painted ahead of time, one chunk per frame
  for(const [cx,cy] of visibleChunks(vx,vy,w,h,CHUNK))if(!allValley(cx,cy)&&!chunks.has(key(cx,cy))){
@@ -326,19 +342,19 @@ function solid(x,y){
 let mapCanvas=null;
 function mapImage(valley,vw,vh){
  if(mapCanvas)return mapCanvas;
- const MW=720,MH=480,k=W/MW;
+ const MW=720,k=(W-X0)/MW,MH=Math.round((H-Y0)/k);
  mapCanvas=document.createElement('canvas');mapCanvas.width=MW;mapCanvas.height=MH;
  const g=mapCanvas.getContext('2d');
  const img=g.createImageData(MW,MH);
  for(let j=0;j<MH;j++)for(let i=0;i<MW;i++){
-  const b=BIOMES[sample((i+.5)*k,(j+.5)*k).biome].base,o=(j*MW+i)*4;
+  const b=BIOMES[sample(X0+(i+.5)*k,Y0+(j+.5)*k).biome].base,o=(j*MW+i)*4;
   img.data[o]=b[0];img.data[o+1]=b[1];img.data[o+2]=b[2];img.data[o+3]=255;
  }
  g.putImageData(img,0,0);
- if(valley)g.drawImage(valley,0,0,vw||valley.width,vh||valley.height,0,0,VW/k,VH/k);
+ if(valley)g.drawImage(valley,0,0,vw||valley.width,vh||valley.height,-X0/k,-Y0/k,VW/k,VH/k);
  return mapCanvas;
 }
 
-root.KiWorld={reserve,places:PLACES,W,H,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
+root.KiWorld={reserve,places:PLACES,W,H,X0,Y0,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
  stats:()=>({chunks:chunks.size,queued:queue.length})};
 })(typeof window!=='undefined'?window:globalThis);

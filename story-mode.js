@@ -75,7 +75,7 @@ const storyState=()=>({stage:state.stage,quests:state.quests});
 const G=()=>root.KiGame;
 
 const VALLEY_H=560;   // story regions are the east end of the Cedar valley strip
-function regionAt(x,y=0){return y<VALLEY_H?REGIONS.find(r=>x>=r.from&&x<r.to)||null:null}
+function regionAt(x,y=0){return y>=0&&y<VALLEY_H?REGIONS.find(r=>x>=r.from&&x<r.to)||null:null}
 function inStory(){const p=G()?.player;return !!p&&p.x>STORY_START}
 function stageAtLeast(stage){return Talk.stages.indexOf(state.stage)>=Talk.stages.indexOf(stage)}
 
@@ -127,7 +127,7 @@ function paintGround(bg){
 
 // keep trees away from the story spots, the sea and most of the ravine
 function clear(x,y){
- if(y>=VALLEY_H)return false;
+ if(y>=VALLEY_H||y<0)return false;
  if(x<STORY_START-20)return false;
  if(inCoast(x)&&y>shore(x)-30)return true;
  if(x>=2000&&x<2340&&((x*7+y*13)%10)<6)return true;          // ravine: sparser trees
@@ -140,7 +140,7 @@ function clear(x,y){
 }
 
 function solid(x,y){
- if(y>=VALLEY_H)return false;
+ if(y>=VALLEY_H||y<0)return false;
  if(x<STORY_START)return false;
  if(inCoast(x)&&y>shore(x)-2)return true;
  for(const b of [...buildings,pod])if(Math.abs(x-b.x)<b.solidW/2&&y>b.y-b.solidH&&y<b.y+2)return true;
