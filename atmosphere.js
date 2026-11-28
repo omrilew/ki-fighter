@@ -14,12 +14,12 @@ const parts=[];
 let last=0,current=null,mix=0;   // mix fades particles in and out when the region changes
 
 const KINDS={
- leaves:{count:22,colors:['#9fbf4a','#c8a63c','#7fa53c','#d98c3a'],size:[1.4,2.2],fall:[10,18],drift:[6,14],spin:true},
- petals:{count:34,colors:['#f6c4d4','#f0a6bf','#ffe0ea','#e88aa8'],size:[1.2,1.8],fall:[7,13],drift:[8,16],spin:true},
+ leaves:{count:22,colors:['#9fbf4a','#c8a63c','#7fa53c','#d98c3a'],size:[.8,1.3],fall:[10,18],drift:[6,14],spin:true},
+ petals:{count:34,colors:['#f6c4d4','#f0a6bf','#ffe0ea','#e88aa8'],size:[.8,1.2],fall:[7,13],drift:[8,16],spin:true},
  snow:{count:60,colors:['#ffffff','#eef6ff','#dbe8f5'],size:[.8,1.6],fall:[12,24],drift:[-4,6]},
  sand:{count:46,colors:['#e8c89a','#d9b27a','#f2dcb4'],size:[.6,1.1],fall:[-2,3],drift:[40,70],streak:true},
  fireflies:{count:16,colors:['#fff6a0','#d8ff8a'],size:[.9,1.3],fall:[-3,3],drift:[-4,4],glow:true},
- spray:{count:20,colors:['#ffffff','#dff4f6'],size:[.6,1],fall:[-8,4],drift:[10,20],fade:true}
+ spray:{count:9,colors:['#eaf8fa','#cfe9ee'],size:[.4,.7],fall:[-8,4],drift:[10,20],fade:true}
 };
 const r=(a,b)=>a+Math.random()*(b-a);
 function spawn(p,k,vx,vy,w,h,anywhere){
@@ -62,7 +62,8 @@ function draw(c,vx,vy,w,h,kind,options={}){
  if(kind!==current){mix=Math.max(0,mix-dt*1.5);if(mix===0){current=kind;parts.length=0}}
  else mix=Math.min(1,mix+dt*.8);
  if(current){
-  const K=KINDS[current],want=Math.min(MAX,K.count);
+  const K=KINDS[current],want=Math.min(MAX,root.KiQuality?.low?Math.ceil(K.count/3):K.count);
+  if(parts.length>want)parts.length=want;
   while(parts.length<want){const p={};spawn(p,current,vx,vy,w,h,true);parts.push(p)}
   for(const p of parts){
    p.age+=dt;
@@ -71,7 +72,7 @@ function draw(c,vx,vy,w,h,kind,options={}){
    if(p.age>p.life||p.x<vx-40||p.x>vx+w+40||p.y>vy+h+20||p.y<vy-30)spawn(p,current,vx,vy,w,h,false);
    let a=mix*Math.min(1,p.age*2,(p.life-p.age)*1.5);
    if(K.glow)a*=.4+.6*Math.max(0,Math.sin(t*2.6+p.ph*3));
-   if(K.fade)a*=.7;
+   if(K.fade)a*=.45;
    if(a<=.02)continue;
    c.globalAlpha=a;c.fillStyle=p.c;
    if(K.glow){c.globalAlpha=a*.35;c.beginPath();c.arc(p.x,p.y,p.s*2.6,0,Math.PI*2);c.fill();c.globalAlpha=a;c.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)}
