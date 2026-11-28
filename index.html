@@ -555,7 +555,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=3"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=4"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -894,7 +894,7 @@ function loadJourney(){
   }catch{}
   syncLevelResources(player,true);
 }
-const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158,raditz:520,dummy:24};
+const worldEnemyHealth={bandit:27,thug:59,ninja:32,soldier:29,brute:158,raditz:220,dummy:24};
 function spawnJourneyEnemies(){
   const guardianOpen=journeyStep==='guardian',dojoOpen=journeyStep==='trial';
   enemies=encounters.filter(e=>(e.id!=='guardian'||guardianOpen)&&(!e.id.startsWith('trial-')||dojoOpen)&&!clearedCamps.has(e.id)).map((e,i)=>({
@@ -907,7 +907,9 @@ function spawnJourneyEnemies(){
 // Story mode adds its own enemies (camps, training dummies, Raditz).
 function spawnStoryEnemy(e){
   if(enemies.some(o=>o.id===e.id))return;
-  enemies.push({...e,homeX:e.x,homeY:e.y,hp:worldEnemyHealth[e.kind],max:worldEnemyHealth[e.kind],
+  // Story camps carry a level: +35% health, +25% damage and +30% XP per level.
+  const lv=e.level||1,hp=Math.round(worldEnemyHealth[e.kind]*(1+.35*(lv-1)));
+  enemies.push({...e,homeX:e.x,homeY:e.y,hp,max:hp,power:1+.25*(lv-1),xpScale:1+.3*(lv-1),
     flank:enemies.length%2?-1:1,boss:!!e.boss,fx:-1,fy:0,faceAngle:Math.PI,walking:false,
     stride:0,gait:0,hurt:0,flash:0,cd:.6,phase:enemies.length,engaged:false,returning:false,alertUntil:0});
 }
@@ -2384,10 +2386,10 @@ function advanceEnemy(e,p,dt){
     attack.time+=dt;
     if(e.kind==='raditz'&&!attack.ranged&&attack.time>attack.windup&&attack.time<attack.windup+.16)move(e,attack.x*190*dt,attack.y*190*dt);
     if(elapsed<attack.windup&&attack.time>=attack.windup){
-      if(ranged){enemyShots.push({x:e.x+attack.x*10,y:e.y-22+attack.y*4,dx:attack.x,dy:attack.y,time:2});if(e.kind==='raditz')window.KiAudio?.sfx('kiBlast')}
+      if(ranged){enemyShots.push({x:e.x+attack.x*10,y:e.y-22+attack.y*4,dx:attack.x,dy:attack.y,time:2,power:e.kind==='raditz'?2.4:e.power||1});if(e.kind==='raditz')window.KiAudio?.sfx('kiBlast')}
       else{
         const edge=Math.cos(e.boss?1.03:.86);
-        const damage=e.boss?9:4;
+        const damage=Math.round((e.boss?9:4)*(e.power||1));
         sceneryStrike(e.x,e.y,attack.x,attack.y,reach,edge,e.boss?30:11);
         if(!p.fly&&!p.inv&&insideStrike(dx,dy,attack.x,attack.y,reach,edge)){
           damagePlayer(damage,dx,dy);
@@ -2483,10 +2485,10 @@ for(const enemy of enemies){
 }
 window.KiStory?.update(dt);
 const defeated=enemies.filter(e=>e.hp<=0);
-for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(enemyExperience[e.kind]);updateJourneyDefeat(e);window.KiStory?.onDefeat(e);
+for(let e of defeated){fallen.push({...e,walking:false,attack:null,koTime:.29});kills++;grantExperience(Math.round(enemyExperience[e.kind]*(e.xpScale||1)));updateJourneyDefeat(e);window.KiStory?.onDefeat(e);
  if(e.id==='ridge')collectItem('wind_charm');
  if(e.id==='watch')collectItem('scholar_charm');
- if(e.id==='trial-three')collectItem('iron_weights');if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(4,q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
+ if(e.id==='trial-three')collectItem('iron_weights');if(!e.defeatedByMelee)burst(e.x,e.y-16,'#ffe588',15)}enemies=enemies.filter(e=>e.hp>0);for(let q of enemyShots){q.x+=q.dx*90*dt;q.y+=q.dy*90*dt;q.time-=dt;if(q.time>0&&sceneryProjectile(q,9)){q.time=0;continue}if(hyp(q.x-p.x,q.y-p.y+12)<12&&!p.inv){damagePlayer(Math.round(4*(q.power||1)),q.dx,q.dy);q.time=0;kiPulse(p.x,p.y-12,8,true);if(p.hp<=0)end(false)}}enemyShots=enemyShots.filter(q=>q.time>0);applyLevelUps(p);if(defeated.some(e=>e.id))saveJourney()}
 const characterDialog=root.querySelector('#kfcharacter');
 const characterButton=root.querySelector('#kfcharacter-open');
 const summaryCharacter=root.querySelector('#kfcharacter-summary');
@@ -2669,14 +2671,18 @@ function drawEnemyPose(image,frame,o){
 const enemyActions=new Image();
 enemyActions.src='assets/enemy-actions.webp';
 const enemyActionRows={bandit:0,thug:1,ninja:2,soldier:3,brute:4};
+// Regional palette variants (scripts/build-enemy-variants.py): same frames, recoloured.
+const enemyVariants=new Image();enemyVariants.src='assets/enemy-variants.png?v=1';
+const enemyVariantRows={'dune-raider':0,'rock-brute':1,'ravine-stalker':2,'ridge-sentry':3};
 const enemyIdleClip=[[0,0],[.33,1],[.66,2],[1,0]];
 const enemyWalkClip=[[0,3],[.2,4],[.4,5],[.6,6],[.8,7],[1,3]];
 const enemyAttackClip=[[0,0],[.23,8],[.38,9],[.54,10],[.7,11],[.86,12],[1,0]];
 const ninjaAttackClip=[[0,0],[.23,8],[.38,9],[.54,10],[.72,9],[1,0]];
 function drawEnemyAction(o){
-  const row=enemyActionRows[o.kind];
+  const variant=o.variant in enemyVariantRows&&atlasReady(enemyVariants);
+  const row=variant?enemyVariantRows[o.variant]:enemyActionRows[o.kind];
   const size=o.boss?65:52;
-  const draw=frame=>drawActionCell(enemyActions,row,frame,-size/2,-size*.875,size,size);
+  const draw=frame=>drawActionCell(variant?enemyVariants:enemyActions,row,frame,-size/2,-size*.875,size,size);
   if(o.koTime){
     draw(o.koTime>.225?13:14);
   }else if(o.hurt){
@@ -2692,6 +2698,13 @@ function drawEnemyAction(o){
   }else{
     paintFramePair(framesAt(enemyIdleClip,((storyClock+o.phase)*.85)%1),draw);
   }
+}
+// "Lv 3" tag above leveled enemies; red when they out-level the player.
+function drawEnemyLevel(o){
+  const y=o.y-(o.boss?56:46),tough=o.level>(player?.level||1);
+  c.save();c.font='bold 6px system-ui';c.textAlign='center';c.lineWidth=2.2;c.lineJoin='round';
+  c.strokeStyle='#1c1418';c.fillStyle=tough?'#ff9a86':'#e8edf5';
+  c.strokeText('Lv '+o.level,o.x,y);c.fillText('Lv '+o.level,o.x,y);c.restore();
 }
 function drawTrainingDummy(o){
   // Wooden training dummy: post, straw body, crossbar arms, rope bands.
@@ -4413,7 +4426,7 @@ function drawNavigationMap(ink,expanded,viewX,viewY){
   }
   ink.restore();
 }
-function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
+function render(){const recharging=player&&held.has('charge')&&!player.beam&&player.beamCharge===null;c.setTransform(cv.width/W,0,0,cv.height/H,0,0);c.imageSmoothingEnabled=false;let px=player?player.x:350,py=player?player.y:280,x=packedSnap(lim(px-W/2,0,MW-W),'x'),y=packedSnap(lim(py-H/2,0,MH-H),'y');c.save();if(shake&&settings.screenShake){const strength=Math.min(1,shake/.14);c.translate(Math.sin(now*95)*strength*1.5,Math.cos(now*73)*strength*.75)}c.imageSmoothingEnabled=true;c.drawImage(map,x*mapScale,y*mapScale,W*mapScale,H*mapScale,0,0,W,H);c.imageSmoothingEnabled=false;c.translate(-x,-y);drawWorldWater(x);drawDojoCourtyard();drawDojoBuilding();drawDojoTrainingProps();const northBeam=player?.beam&&player.fy<=(fighterIndex===0?-.5:-.924);if(northBeam)drawOnBeamLayer(()=>renderBeam(player));const northCharge=!player?.beam&&player?.beamCharge!=null&&player.fy<=(fighterIndex===0?-.5:-.924);if(northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const enemy of enemies)drawEnemyWarning(enemy);let objects=trees.concat(scenery).map(t=>({...t,prop:true})).concat(worldObjects,mentor,window.KiStory?.objects()||[],enemies.concat(fallen).map(e=>({...e,enemy:true})));if(player)objects.push({...player,hero:true});objects.sort((a,b)=>a.y-b.y);for(let o of objects){if(o.x<x-48||o.x>x+W+48||o.y<y-62||o.y>y+H+80)continue;if(o.storyDraw){o.storyDraw(c);continue}if(o.world)drawWorldObject(o);else if(o.prop)drawForestProp(o);else{if(o.enemy)enemyArt(o);else{if(o.hero&&fighterIndex===0){drawPackedHero(o);continue}const referencePose=storyPose(o,recharging);if((o.rechargeVisual>.015||o.surge||held.has('charge'))&&(!referencePose||storyMotionReady())&&!detailedSsjIdle(o,referencePose))energyAura(o);character(o,o.surge?1:0,referencePose)}if(o.enemy&&!o.koTime&&o.level&&o.kind!=='dummy')drawEnemyLevel(o);if(o.enemy&&!o.koTime&&o.hp<o.max){const barY=o.y-(o.boss?51:41);fill(o.x-15,barY,30,3,'#1b2340');fill(o.x-14,barY+1,28*o.hp/o.max,1,'#ff7971')}}}for(const q of enemyShots)renderKiShot(q,true);if(player?.hyperWave)drawHyperWave(player);if(player?.beam&&!northBeam)drawOnBeamLayer(()=>renderBeam(player));else if(player?.beamCharge!=null&&!northCharge)drawOnBeamLayer(()=>renderBeamCharge(player));for(const b of balls)renderKiShot(b);for(const f of fx){if(f.beamTrace)drawOnBeamLayer(()=>renderBeamTrace(f));else if(f.pulse)renderKiPulse(f);else if(f.debris)renderSceneryDebris(f);else fill(f.x,f.y,3,3,f.color)}c.restore();drawMinimap(x,y);renderHUD()}
 const hud=Object.fromEntries(['hp-meter','ki-meter','hyper-meter','xp-meter','lv','ki','xp','region','ko','notice'].map(key=>[key,root.querySelector('#kf'+key)]));
 function renderHUD(){
   root.classList.toggle('is-title',mode==='title'||mode==='title-options'||mode==='end');

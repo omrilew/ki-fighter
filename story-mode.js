@@ -61,6 +61,8 @@ const camps=[
  {id:'ridge-north',x:2600,y:180,kinds:['soldier','ninja','thug'],level:4},
 ];
 const RAIDER_REGION='ravine';
+// regional looks for camp enemies (assets/enemy-variants.png)
+const VARIANT={bandit:'dune-raider',thug:'rock-brute',ninja:'ravine-stalker',soldier:'ridge-sentry'};
 const raditzHome={x:2668,y:270};
 const shore=x=>440+Math.sin(x/53)*9+Math.sin(x/19)*3;
 const inCoast=x=>x>=1480&&x<1960;
@@ -399,7 +401,7 @@ function pickUp(o){
 // ------------------------------------------------------------- combat hooks
 function startFight(){
  const g=G();
- g.spawnEnemy({id:'raditz',kind:'raditz',x:raditzHome.x,y:raditzHome.y,radius:150,boss:true});
+ g.spawnEnemy({id:'raditz',kind:'raditz',level:6,x:raditzHome.x,y:raditzHome.y,radius:150,boss:true});
  root.KiAudio?.music('battle');
  g.notice('RADITZ ATTACKS!');
 }
@@ -532,7 +534,7 @@ function update(dt){
  const live=new Set(g.enemies().map(e=>e.id));
  const want=[];
  dummies.forEach((d,i)=>want.push({id:'dummy-'+i,kind:'dummy',x:d.x,y:d.y,radius:1,storyCamp:'training'}));
- for(const camp of camps)camp.kinds.forEach((kind,i)=>want.push({id:camp.id+'-'+i,kind,x:camp.x+(i-1)*22,y:camp.y+(i%2)*14,radius:70,storyCamp:camp.id}));
+ for(const camp of camps)camp.kinds.forEach((kind,i)=>want.push({id:camp.id+'-'+i,kind,variant:VARIANT[kind],level:camp.level,x:camp.x+(i-1)*22,y:camp.y+(i%2)*14,radius:70,storyCamp:camp.id}));
  for(const w of want){
   if(live.has(w.id)||(respawn[w.id]||0)>clock)continue;
   if(Math.abs(p.x-w.x)>420)continue;
