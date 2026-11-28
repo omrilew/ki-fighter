@@ -88,7 +88,14 @@ const CAMPS=[
  [3800,3250,[['soldier','ridge-sentry'],['ninja','wood-shade']],6],
 ];
 
-const state={seen:new Set(),balls:new Set(),wish:false};
+const state={seen:new Set(),balls:new Set(),wish:false,bosses:new Set()};
+// Region bosses guard four landmarks: big, tough, one-time fights with a unique reward.
+const BOSSES=[
+ {id:'boss-warlord',name:'Red Cliff Warlord',site:'red-ruins',kind:'brute',variant:'waste-ogre',level:9,hpScale:1.4,xp:420,item:'warlord_band',dy:110},
+ {id:'boss-frost',name:'Frost Titan',site:'peak-tower',kind:'soldier',variant:'frost-guard',level:11,hpScale:4.5,xp:520,item:'frost_core',dy:95},
+ {id:'boss-sand',name:'Sand King',site:'oasis',kind:'bandit',variant:'sand-reaver',level:12,hpScale:5.5,xp:600,item:'sand_crown',dy:-90},
+ {id:'boss-pirate',name:'Captain Barnacle',site:'reef',kind:'thug',variant:'reef-pirate',level:10,hpScale:2.8,xp:480,item:'pirate_compass',at:[6000,5950]},
+];
 const camps=[];
 let clock=0,placed=false;
 
@@ -162,7 +169,22 @@ function drawPool(c,x,y){
  c.fillStyle='#d8f4ee';for(let i=0;i<5;i++){const t=clock*.6+i*1.3;c.fillRect(-30+((i*23+t*6)%56),-6+i*3,6,1)}
  c.restore();
 }
+// palms use the pixel-art scenery atlas when it is loaded (scripts/build-scenery-atlas.py)
+const sceneryArt=img('assets/scenery-atlas.png?v=1');
 function drawPalm(c,x,y,flip){
+ const m=root.KiSceneryAtlas?.sprites?.palm,px=root.KiSceneryAtlas?.px||4;
+ if(m&&ready(sceneryArt)){
+  const [sx,sy,sw,sh]=m.rect,w=sw/px,h=sh/px;
+  c.save();c.translate(x,y);c.imageSmoothingEnabled=false;
+  c.fillStyle='#0d160f44';c.beginPath();c.ellipse(0,0,10,3,0,0,Math.PI*2);c.fill();
+  const wind=root.KiWorld?.windAt?root.KiWorld.windAt(x,y)*1.2:0;c.transform(1,0,wind,1,0,0);
+  if(flip)c.scale(-1,1);
+  c.drawImage(sceneryArt,sx,sy,sw,sh,-m.foot[0]/px,-h+1,w,h);
+  c.restore();return;
+ }
+ drawPalmFallback(c,x,y,flip);
+}
+function drawPalmFallback(c,x,y,flip){
  c.save();c.translate(x,y);if(flip)c.scale(-1,1);
  c.fillStyle='#0d160f44';c.beginPath();c.ellipse(0,0,10,3,0,0,Math.PI*2);c.fill();
  c.fillStyle='#7a5532';for(let k=0;k<9;k++)c.fillRect(-2+Math.round(k*k*.06),-4-k*4,4,4);
@@ -301,6 +323,13 @@ function update(dt){
  place();clock+=dt;
  const g=G(),p=g?.player;if(!p||!g.isPlaying())return;
  const live=g.enemies();
+ for(const b of BOSSES){
+  if(state.bosses.has(b.id))continue;
+  if(!b.pos){const s=SITES.find(o=>o.id===b.site);const at=b.at||(s?[s.x,s.y+(b.dy||100)]:null);if(!at)continue;b.pos=findLand(at[0],at[1],30)}
+  const [bx,by]=b.pos,d=Math.hypot(p.x-bx,p.y-by),here=live.some(e=>e.id===b.id&&e.hp>0);
+  if(!here&&d<520&&d>140)g.spawnEnemy({id:b.id,kind:b.kind,variant:b.variant,level:b.level,hpScale:b.hpScale,x:bx,y:by,radius:150,boss:true,bossName:b.name,regionBoss:true});
+  else if(here&&d>1400)g.removeEnemy(b.id);
+ }
  for(const camp of camps){
   const d=Math.hypot(p.x-camp.x,p.y-camp.y);
   const ids=camp.members.map((_,i)=>camp.id+'-'+i);
@@ -315,6 +344,13 @@ function update(dt){
  }
 }
 function onDefeat(e){
+ if(e.regionBoss){
+  const b=BOSSES.find(o=>o.id===e.id);if(!b||state.bosses.has(b.id))return;
+  state.bosses.add(b.id);const g=G();
+  g.grantExperience(b.xp);g.collectItem(b.item);root.KiAudio?.sfx('levelUp');g.shake?.(.25);
+  g.notice(`${b.name.toUpperCase()} DEFEATED · +${b.xp} XP`);g.save();
+  return;
+ }
  if(!e.wild)return;
  const camp=camps.find(c=>e.id.startsWith(c.id+'-'));
  if(camp&&!G().enemies().some(o=>o.id!==e.id&&o.id.startsWith(camp.id+'-')&&o.hp>0))
@@ -325,14 +361,16 @@ function region(x,y){
  for(const s of SITES)if(Math.hypot(x-s.x,y-s.y)<s.radius)return s.name;
  return null;
 }
-function save(){return {seen:[...state.seen],balls:[...state.balls],wish:state.wish}}
+function save(){return {seen:[...state.seen],balls:[...state.balls],wish:state.wish,bosses:[...state.bosses]}}
 function load(d){
  state.seen=new Set(Array.isArray(d?.seen)?d.seen.filter(id=>SITES.some(s=>s.id===id)):[]);
  state.balls=new Set(Array.isArray(d?.balls)?d.balls.filter(i=>Number.isInteger(i)&&i>=0&&i<7):[]);
  state.wish=!!d?.wish;
+ state.bosses=new Set(Array.isArray(d?.bosses)?d.bosses.filter(id=>BOSSES.some(b=>b.id===id)):[]);
 }
 function sites(){place();return SITES.map(s=>({id:s.id,name:s.name,x:s.x,y:s.y,seen:state.seen.has(s.id)}))}
 function balls(){place();return {found:state.balls.size,left:BALLS.filter((_,i)=>!state.balls.has(i)).map(([x,y])=>({x,y}))}}
 
-root.KiExplore={objects,nearby,interact,update,onDefeat,solid,region,sites,balls,save,load};
+function placeBosses(){place();for(const b of BOSSES)if(!b.pos){const s=SITES.find(o=>o.id===b.site);const at=b.at||(s?[s.x,s.y+(b.dy||100)]:null);if(at)b.pos=findLand(at[0],at[1],30)}}
+root.KiExplore={bosses:()=>(placeBosses(),BOSSES).map(b=>({id:b.id,name:b.name,pos:b.pos,defeated:state.bosses.has(b.id)})),objects,nearby,interact,update,onDefeat,solid,region,sites,balls,save,load};
 })(typeof window!=='undefined'?window:globalThis);
