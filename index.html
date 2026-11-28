@@ -555,7 +555,7 @@
     <label><input id="kfsetting-audio" type="checkbox"> Music and sound</label>
   </section>
 </dialog>
-<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=2"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
+<script src="ki-audio.js?v=1"></script><script src="campaign-cast.js?v=detailed-npcs-1"></script><script src="campaign/dialogue.js?v=2"></script><script src="assets/campaign-cast/raditz/raditz-manifest.js?v=1"></script><script src="story-mode.js?v=3"></script><script src="assets/hero-animation/manifest.js?v=campaign-merge-1"></script><script src="ssj-unified-layout.js?v=unified-20261123"></script><script src="animation.js?v=172a878"></script><script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="pixel-aura.js?v=1da9d73"></script>
 <script>
 (()=>{'use strict';const root=document.getElementById('kfg'),cv=root.querySelector('canvas'),MW=2760,MH=560;let c=cv.getContext('2d');let W=240,H=160;const spr=new Image();spr.src='assets/fighter-motion.webp';const held=new Set(),btns=root.querySelectorAll('[data-a]'),modal=root.querySelector('#kfmodal'),title=root.querySelector('#kftitle'),desc=root.querySelector('#kfdesc');let player,enemies=[],fallen=[],balls=[],fx=[],enemyShots=[],kills=0,mode='title',last=0,now=0,storyClock=0,shake=0,msg='',messageTimer=0;const rnd=(a,b)=>a+Math.random()*(b-a),hyp=(x,y)=>Math.hypot(x,y),lim=(v,a,b)=>Math.max(a,Math.min(b,v)),fill=(x,y,w,h,col,g=c)=>{g.fillStyle=col;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
 function resize(){let r=root.getBoundingClientRect();if(r.width<10)return;W=Math.round(lim(240+(r.width-650)*.09,240,300));H=lim(Math.round(W*r.height/r.width),108,MH);const density=window.devicePixelRatio||1;cv.width=Math.max(W*2,Math.round(r.width*density));cv.height=Math.max(H*2,Math.round(r.height*density));c.imageSmoothingEnabled=false}resize();window.addEventListener('resize',resize);if(window.ResizeObserver)new ResizeObserver(resize).observe(root);
@@ -1076,7 +1076,14 @@ window.KiGame={
   dialog:storyDialog,
   closeDialog:closeStory,
   charging:()=>held.has('charge'),
-  isPlaying:()=>mode==='play'
+  isPlaying:()=>mode==='play',
+  // Story cutscenes: freeze input and gameplay, keep rendering.
+  cinematic(on){
+    if(on){resetStick();pressed.clear();held.clear();stopKi();resetBeam(player);setPowers(false);mode='cinematic'}
+    else if(mode==='cinematic')mode='play';
+  },
+  shake:s=>{shake=Math.max(shake,s)},
+  removeEnemy:id=>{enemies=enemies.filter(e=>e.id!==id)}
 };
 const enemyExperience={bandit:16,thug:28,ninja:22,soldier:20,brute:96,raditz:0,dummy:5};
 function xpRequired(level){return 55+(level-1)*35}
@@ -2434,7 +2441,7 @@ function damagePlayer(amount,dx=0,dy=0){
 function update(dt){now+=dt;
   if(stickPointer!==null&&performance.now()-stickLastEvent>8000)resetStick();
   if(mode!=='play'&&stickPointer!==null)resetStick();
-  partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(player?.hyperWave>0)player.hyperWave=Math.max(0,player.hyperWave-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode!=='play')return;storyClock+=dt;
+  partySwitchCooldown=Math.max(0,partySwitchCooldown-dt);if(player?.hyperWave>0)player.hyperWave=Math.max(0,player.hyperWave-dt);if(messageTimer>0)messageTimer-=dt;shake=Math.max(0,shake-dt);for(let f of fx){if(!f.pulse&&!f.beamTrace){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=125*dt;if(f.debris)f.rotation+=f.spin*dt}f.time-=dt}fx=fx.filter(f=>f.time>0);if(mode==='cinematic'){window.KiStory?.cinematic(dt);return}if(mode!=='play')return;storyClock+=dt;
 for(const enemy of fallen)enemy.koTime-=dt;
 fallen=fallen.filter(enemy=>enemy.koTime>0);
 for(const prop of breakableProps){

@@ -221,6 +221,10 @@ function drawRaditz(c,o){
 }
 
 function drawNpc(c,n){
+ if(scene&&n.actor==='piccolo'){
+  const k=Math.min(1,scene.t/.6),from={x:n.x,y:n.y},to=scene.piccolo;
+  n={...n,x:from.x+(to.x-from.x)*k,y:from.y+(to.y-from.y)*k};
+ }
  const p=G()?.player;
  if(n.actor==='raditz'){
   if(state.stage==='victory'){
@@ -295,6 +299,10 @@ function objects(){
  for(const n of npcs)list.push({x:n.x,y:n.y,storyDraw:c=>drawNpc(c,n)});
  for(const o of places)list.push({x:o.x,y:o.y,storyDraw:c=>drawPlace(c,o)});
  for(const o of pickups)if(Talk.questState(storyState(),'pod-scrap')==='active'&&!state.collected.has(o.id))list.push({x:o.x,y:o.y,storyDraw:c=>drawPickup(c,o)});
+ if(scene){
+  list.push({x:scene.raditz.x,y:scene.raditz.y-.5,storyDraw:drawSceneActors});
+  list.push({x:scene.raditz.x,y:scene.raditz.y+60,storyDraw:drawScene});   // after the actors, still inside the view
+ }
  return list;
 }
 
@@ -400,17 +408,98 @@ function spawn(){
  const g=G();
  if(state.stage==='fight'&&!raditzDown&&!g.enemies().some(e=>e.id==='raditz'))startFight();
 }
-function onDefeat(e){
- if(e.id==='raditz'){
-  raditzDown=true;
-  state.stage='victory';
-  state.raditzAt=[Math.round(e.x),Math.round(e.y)];
-  if(!state.rewards.has('raditz')){state.rewards.add('raditz');G().grantExperience(300);G().collectItem('saiyan_scouter')}
-  root.KiAudio?.sfx('levelUp');
-  G().notice('RADITZ DEFEATED · +300 XP · SAIYAN SCOUTER');
-  G().save();
-  return;
+function finishRaditz(x,y){
+ raditzDown=true;
+ state.stage='victory';
+ state.raditzAt=[Math.round(x),Math.round(y)];
+ if(!state.rewards.has('raditz')){state.rewards.add('raditz');G().grantExperience(300);G().collectItem('saiyan_scouter')}
+ root.KiAudio?.sfx('levelUp');
+ G().notice('RADITZ DEFEATED · +300 XP · SAIYAN SCOUTER');
+ G().save();
+}
+
+// ------------------------------------------------------------- finisher cutscene
+// When Raditz is worn down, Goku pins him and Piccolo fires the Special Beam
+// Cannon through them both (the approved Chapter One ending).
+let scene=null;
+const FINISH_AT=.28;
+const SCENE_END=4.2;
+function beginFinisher(e){
+ const g=G();
+ const side=e.x+110<2740?1:-1;            // Piccolo stands on this side
+ scene={t:0,side,raditz:{x:e.x,y:e.y},piccolo:{x:e.x+side*104,y:e.y},cues:new Set()};
+ g.removeEnemy('raditz');
+ // Goku pins him from behind: just behind Raditz (drawn first), facing Piccolo too
+ Object.assign(g.player,{x:e.x-side*8,y:e.y-1,vx:0,vy:0,fx:side,fy:0,faceAngle:side>0?0:Math.PI,cardinal:'right',walking:false,walkSettle:0,stride:0,attack:0,hurt:0});
+ g.cinematic(true);
+ root.KiAudio?.music(null);
+}
+function cinematic(dt){
+ if(!scene)return;
+ scene.t+=dt;
+ const t=scene.t,g=G();
+ const cue=(at,name,fn)=>{if(t>=at&&!scene.cues.has(name)){scene.cues.add(name);fn()}};
+ cue(0,'hold',()=>g.notice('GOKU: PICCOLO, NOW! I CAN’T HOLD HIM FOR LONG!'));
+ cue(.7,'charge',()=>{root.KiAudio?.sfx('charge');g.notice('RADITZ: LET GO OF ME, KAKAROT!')});
+ cue(1.6,'charge2',()=>root.KiAudio?.sfx('charge'));
+ cue(2.1,'call',()=>g.notice('PICCOLO: SPECIAL BEAM CANNON!'));
+ cue(2.4,'fire',()=>{root.KiAudio?.sfx('beam');g.shake(.35)});
+ cue(3.0,'hit',()=>g.shake(.2));
+ if(t>=SCENE_END){
+  const at=scene.raditz;
+  scene=null;
+  g.cinematic(false);
+  finishRaditz(at.x,at.y);
+  root.KiAudio?.music('ridge');
+  playLines('Standoff Ridge',[
+   'Goku held his brother in place, and Piccolo’s beam tore through them both.',
+   'Raditz: “You fool... my comrades will come for this planet. Two Saiyans, far stronger than me.”',
+   'Goku fell beside his brother. Far above the clouds, a voice called his name.',
+   'Chapter One complete. Chapter Two, “Rivals on Snake Way”, comes next. Until then the world is yours to explore.'
+  ],()=>{G().closeDialog();G().notice('CHAPTER ONE COMPLETE')});
  }
+}
+// Charge orb, spiral beam and flash, drawn in world space above everything.
+function drawScene(c){
+ if(!scene)return;
+ const t=scene.t,{side,raditz:r,piccolo:p}=scene;
+ const fx=p.x-side*5,fy=p.y-27;               // two fingers at the forehead / chest height of the target               // fingertips at the forehead
+ c.save();c.imageSmoothingEnabled=false;
+ if(t>.7&&t<2.45){
+  const k=Math.min(1,(t-.7)/1.5),rad=1+k*1.6+Math.sin(t*40)*.4;
+  c.fillStyle='#fff6b0';c.beginPath();c.arc(fx,fy,rad,0,Math.PI*2);c.fill();
+  c.strokeStyle='#ffd34d';c.lineWidth=.6;c.beginPath();c.arc(fx,fy,rad+1.2+Math.sin(t*25)*.5,0,Math.PI*2);c.stroke();
+  for(let i=0;i<6;i++){const a=t*9+i*1.05,d=3+((t*30+i*7)%6);c.fillStyle=i%2?'#ffe98a':'#ffffff';c.fillRect(Math.round(fx+Math.cos(a)*d),Math.round(fy+Math.sin(a)*d*.7),1,1)}
+ }
+ if(t>=2.4&&t<3.4){
+  const k=Math.min(1,(t-2.4)/.18),fade=t>3.1?1-(t-3.1)/.3:1;
+  const len=320*k,dir=-side,x0=dir>0?fx:fx-len;
+  c.globalAlpha=fade;
+  c.fillStyle='#ffe066';c.fillRect(x0,fy-1,len,3);
+  c.fillStyle='#fffbe0';c.fillRect(x0,fy,len,1);
+  for(let i=0;i<len;i+=2){
+   const ph=i*.22-t*30,y=Math.sin(ph)*3,front=Math.cos(ph)>0;
+   c.fillStyle=front?'#c78bff':'#7a3fb8';
+   c.fillRect(Math.round(fx+dir*i),Math.round(fy+y),1,1);
+  }
+  if(dir>0?fx+len>=r.x:fx-len<=r.x){
+   c.fillStyle='#ffffff';c.beginPath();c.arc(r.x,fy,2.5+Math.sin(t*50),0,Math.PI*2);c.fill();
+   c.strokeStyle='#ffe066';c.lineWidth=.7;c.beginPath();c.arc(r.x,fy,4+((t*60)%4),0,Math.PI*2);c.stroke();
+  }
+ }
+ if(t>=2.42&&t<2.82){c.globalAlpha=Math.max(0,.45-(t-2.42)*1.1);c.fillStyle='#ffffff';c.fillRect(r.x-500,r.y-400,1000,800)}
+ c.restore();
+}
+function drawSceneActors(c){
+ if(!scene)return;
+ const t=scene.t,{side,raditz:r}=scene;
+ const dir=side>0?'right':'left';
+ const frame=t<2.5?raditzFrame('restrained',dir,t):raditzFrame('knockdown',dir,0,Math.max(0,Math.min(.99,(t-2.6)/1.2)));
+ blitRaditz(c,frame,r.x,r.y,1,t>2.4&&t<2.8?1:0);
+}
+
+function onDefeat(e){
+ if(e.id==='raditz'){finishRaditz(e.x,e.y);return}
  if(e.storyCamp){
   respawn[e.id]=clock+(e.kind==='dummy'?6:28);
   if(e.storyCamp!=='training'&&regionAt(e.homeX)?.id===RAIDER_REGION){
@@ -435,6 +524,10 @@ function update(dt){
  const theme=state.stage==='fight'&&g.enemies().some(e=>e.id==='raditz')&&region?.id==='ridge'?'battle':region?region.music:'village';
  if(theme!==lastRegion){lastRegion=theme;root.KiAudio?.music(theme)}
  if(!g.isPlaying())return;
+ if(state.stage==='fight'&&!scene){
+  const boss=g.enemies().find(e=>e.id==='raditz');
+  if(boss&&boss.hp>0&&boss.hp<=boss.max*FINISH_AT&&near(boss,160)){beginFinisher(boss);return}
+ }
  // camps and training dummies come back after a while, only when nearby
  const live=new Set(g.enemies().map(e=>e.id));
  const want=[];
@@ -503,6 +596,6 @@ function load(data){
  for(const k of Object.keys(respawn))delete respawn[k];
 }
 
-root.KiStory={drawRaditz,paintGround,clear,solid,objects,nearby,interact,update,onDefeat,spawn,objective,targets,region,save,load,
+root.KiStory={cinematic,drawRaditz,paintGround,clear,solid,objects,nearby,interact,update,onDefeat,spawn,objective,targets,region,save,load,
  get stage(){return state.stage}, regions:REGIONS};
 })(typeof window!=='undefined'?window:globalThis);
