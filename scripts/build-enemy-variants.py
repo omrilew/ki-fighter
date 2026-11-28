@@ -22,7 +22,7 @@ VARIANTS = [
     ('rock-brute', 1, 140, 1.1, .95, (.45, .95)),      # thug -> only cool cloth (pants, straps): rust
     ('ravine-stalker', 2, -70, 1.0, 1.0, None),        # ninja -> crimson and violet
     ('ridge-sentry', 3, 175, 1.1, .95, None),          # soldier -> teal armour
-    ('sand-reaver', 0, 15, .38, 1.18, None),           # bandit -> bleached sand robes (Sunscar Desert)
+    ('sand-reaver', 0, 18, .62, 1.1, None),            # bandit -> bleached sand robes (Sunscar Desert)
     ('frost-guard', 3, 205, .5, 1.15, None),           # soldier -> icy grey-blue (Northern Peaks)
     ('wood-shade', 2, 200, .9, .85, None),             # ninja -> deep teal (Deepwood)
     ('waste-ogre', 4, 60, 1.05, .95, None),            # brute -> brass and rust (Red Wasteland)
