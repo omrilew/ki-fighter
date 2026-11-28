@@ -133,7 +133,7 @@ function drawBuilding(c,kind,x,y){
  c.restore();
 }
 function label(c,text,x,y){
- c.save();c.font='bold 8px system-ui';c.textAlign='center';c.lineWidth=2.7;c.lineJoin='round';
+ c.save();c.font='bold 5.2px Verdana,system-ui';c.textAlign='center';c.lineWidth=1.7;c.lineJoin='round';
  c.strokeStyle='#1c271f';c.fillStyle='#ffe5a7';c.strokeText(text,x,y);c.fillText(text,x,y);c.restore();
 }
 function mark(c,x,y){

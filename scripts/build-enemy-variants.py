@@ -12,7 +12,7 @@ import colorsys
 import numpy as np
 from PIL import Image
 
-SRC = 'assets/enemy-actions.webp'
+SRC = 'assets/enemy-actions-clean.png'
 OUT = 'assets/enemy-variants.png'
 CELL, COLS = 128, 15
 # name: (source row, hue shift in degrees, saturation scale, value scale,

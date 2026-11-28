@@ -117,6 +117,8 @@ function sample(x,y,f,near){
  if(e<.045)return {biome:'beach',e};
  const n=f?f[1]:fbm(x/700+40,y/700+40,3);
  if(nearRoad(x,y,near?near.segs:SEGS)<9)return {biome:'road',e};
+ // Kame Island: a sandy islet with a little grass around the house
+ {const dx=x-2150,dy=y-5250;if(dx*dx+dy*dy<300*300){const r=105+vnoise(x/38,y/38)*55;return {biome:dx*dx+(dy+20)*(dy+20)<r*r?'grass':'beach',e}}}
  // regions, with domain-warped borders so they meet in natural curves
  const wx=x+((f?f[2]:fbm(x/1300+11,y/1300+3,3))-.5)*1500,wy=y+((f?f[3]:fbm(x/1300+71,y/1300+29,3))-.5)*1500;
  if(wx>6400&&wy<3100&&e>.16)return {biome:e>.4&&n>.45?'snow':'rock',e};
@@ -229,37 +231,40 @@ const SCENERY_MIX={
  waste:[['boulder',.025],['rocks',.15],['deadtree',.04],['deadtree2',.03],['shrub',.08],['log',.05]],
  rock:[['rocks',.28],['boulder',.06],['fir',.08],['menhir',.015],['crystal',.008]],
  snow:[['snowfir',.36],['icerock',.08],['rocks',.1],['crystal',.015]],
- desert:[['cactus',.07],['hoodoo',.012],['sandstone',.04],['rocks',.08],['shrub',.1],['tuft',.04]],
+ desert:[['cactus',.07],['hoodoo',.012],['sandstone',.07],['shrub',.1],['tuft',.04]],
  beach:[['rocks',.07],['boulder',.01]],
 };
 // Cliff faces, pixel-crisp at 1 world px: horizontal rock strata that wave a
 // little, darker toward the foot, a sunlit rim at the top with the grass edge
 // hanging over it, and the odd short crack. Reads as a ledge, not columns.
 const hash=(a,b)=>{let h=Math.imul(a|0,374761393)+Math.imul(b|0,668265263);h=Math.imul(h^h>>>13,1274126177);return ((h^h>>>16)>>>0)/4294967296};
+const MOSSY=new Set(['grass','forest','pinewood','meadow','blossom']);
 function drawFaces(g,faces,sides,x0,y0,lv){
  const col=c=>`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+ const moss=['#2a4a26','#3b6430','#557f3c'];
  for(let k=0;k<faces.length;k+=4){
-  const i=faces[k],j=faces[k+1],d=faces[k+2],pal=ROCK[faces[k+3]]||ROCK.grass;
+  const i=faces[k],j=faces[k+1],d=faces[k+2],bio=faces[k+3],pal=ROCK[bio]||ROCK.grass;
   for(let sy=0;sy<2;sy++)for(let sx=0;sx<2;sx++){
    const lx=i*2+sx,ly=j*2+sy,wx=x0+lx,wy=y0+ly;
-   const foot=d*2-sy;                                     // world px down to the foot
-   let t;
-   if(foot<=2)t=0;                                         // shadowed base
-   else if(d===FACE&&sy===0)t=4;                           // sunlit rim along the lip
-   else{
-    const band=Math.floor((wy+2.2*Math.sin(wx/17)+1.2*Math.sin(wx/6.3))/3);
-    t=band%3===0?1:band%3===1?2:3;
-    if(foot<=5)t=Math.max(1,t-1);                          // darker near the foot
-    if(hash(wx>>1,band)<.05)t=0;                           // short cracks inside a layer
-   }
-   g.fillStyle=col(pal[t]);g.fillRect(lx,ly,1,1);
+   const foot=d*2-sy,up=Math.min(1,foot/(FACE*2));        // 0 at the foot, 1 at the lip
+   // mottled natural rock: two scales of noise, lighter toward the sunlit top
+   const n=vnoise(wx/3.1,wy/2.4)*.6+vnoise(wx/8.5+20,wy/6+9)*.4;
+   let t=foot<=2?0:Math.max(1,Math.min(3,Math.round(.7+up*1.7+(n-.5)*2.2)));
+   if(d===FACE&&sy===0&&vnoise(wx/4.5,y0)>.3)t=4;          // broken sunlit rim
+   if(foot>3&&hash(wx,Math.floor(wy/5))<.035)t=Math.max(0,t-2);   // short vertical cracks
+   let color=col(pal[t]);
+   if(MOSSY.has(bio)&&up>.5&&foot>3&&vnoise(wx/5.5+3,wy/4+7)>.6)color=moss[Math.min(2,Math.max(0,t-1))];
+   g.fillStyle=color;g.fillRect(lx,ly,1,1);
   }
-  // crisp shadow on the ground just below the foot
+  // soft shadow on the ground just below the foot
   if(d===1){g.fillStyle='#0c140c55';g.fillRect(i*2,j*2+2,2,2);g.fillStyle='#0c140c2a';g.fillRect(i*2,j*2+4,2,2)}
-  // grass edge of the terrace top hanging over the lip
+  // the terrace's grass edge: one continuous line, with irregular tufts and roots hanging over
   if(d===FACE){
-   g.fillStyle='#1f3a24';g.fillRect(i*2,j*2-1,2,1);
-   if(hash(x0+i*2,y0+j*2)<.3){g.fillStyle='#2c5232';g.fillRect(i*2+(hash(i,j)<.5?0:1),j*2,1,2)}   // grass tuft hanging over
+   g.fillStyle=MOSSY.has(bio)?'#1f3a24':`rgb(${pal[0].join(',')})`;g.fillRect(i*2,j*2-1,2,1);
+   for(let sx=0;sx<2;sx++){
+    const wx=x0+i*2+sx,h=hash(wx,7);
+    if(MOSSY.has(bio)&&h<.22){g.fillStyle=h<.08?'#4a7a3a':'#2c5232';g.fillRect(i*2+sx,j*2,1,1+Math.floor(h*14))}
+   }
   }
  }
 }
@@ -366,13 +371,24 @@ function paintChunk(cx,cy){
   // shore plants: reeds by lakes and the sea, palms on warm beaches
   if(s.e<.07&&(bio==='grass'||bio==='forest'||bio==='meadow'||bio==='pinewood')&&roll<.35)kind='reeds';
   if(bio==='beach'&&y>1400&&roll<.12)kind='palm';
+  if(bio==='beach'&&Math.hypot(x-2150,y-5250)<300&&roll<.3)kind=roll<.22?'palm':'rocks';
   if(!kind)continue;
   if(kind==='mesa'&&s.e<.12)continue;
   if(RESERVED.some(([rx,ry,rr])=>Math.hypot(x-rx,y-ry)<rr))continue;
   if(levelAt(x,y)>levelAt(x,y+FACE*2+6)&&cliffy(x,y,bio))continue;
   objects.push({x,y,kind,scale:.85+rnd()*.4,layout:Math.floor(rnd()*5),flip:rnd()<.5,snow:bio==='snow'});
  }
- return {canvas,objects};
+ // animated water: every 6 px cell of water, flagged when it touches the shore
+ const waves=[];
+ for(let j=1;j<N-1;j+=3)for(let i=1;i<N-1;i+=3){
+  const b=biomeGrid[j*N+i];if(!isWater(b))continue;
+  let shore=false;
+  for(const [di,dj] of [[3,0],[-3,0],[0,3],[0,-3]]){const ii=i+di,jj=j+dj;if(ii>=0&&jj>=0&&ii<N&&jj<N&&!isWater(biomeGrid[jj*N+ii])){shore=true;break}}
+  const jx=shore?(rnd()-.5)*2:(rnd()-.5)*6,jy=shore?(rnd()-.5)*2:(rnd()-.5)*6;   // scattered, never on a grid
+  if(!shore&&rnd()<.45)continue;                                                // open water: sparser
+  waves.push(i*2+1+jx,j*2+1+jy,shore?2:b==='shallow'?1:0,rnd()*6.283);
+ }
+ return {canvas,objects,waves};
 }
 function getChunk(cx,cy,force){
  const k=key(cx,cy);
@@ -413,6 +429,32 @@ function drawGround(c,vx,vy,w,h){
   if(allValley(cx,cy))continue;
   const ch=getChunk(cx,cy,true);
   c.drawImage(ch.canvas,cx*CHUNK-vx,cy*CHUNK-vy,CHUNK,CHUNK);
+  if(ch.waves?.length)drawWaves(c,ch.waves,cx*CHUNK-vx,cy*CHUNK-vy,vx,vy,w,h);
+ }
+ c.restore();
+}
+// Living water: glints twinkle on open sea, slow crests roll across it, and
+// foam breathes along every shoreline.
+function drawWaves(c,waves,ox,oy,vx,vy,w,h){
+ const t=performance.now()/1000;
+ c.save();c.imageSmoothingEnabled=false;
+ for(let k=0;k<waves.length;k+=4){
+  const x=ox+waves[k],y=oy+waves[k+1];
+  if(x<-6||y<-6||x>w+6||y>h+6)continue;
+  const kind=waves[k+2],ph=waves[k+3],wx=vx+x,wy=vy+y;
+  if(kind===2){
+   // shore foam: a soft band that swells and recedes
+   const a=.25+.3*Math.max(0,Math.sin(t*1.1+ph*.4+wx*.02));
+   c.fillStyle=`rgba(236,246,242,${a.toFixed(2)})`;c.fillRect(x-2,y-.5,4+Math.sin(t*1.7+ph)*1.2,1);
+   if(a>.45){c.fillStyle=`rgba(255,255,255,${(a-.3).toFixed(2)})`;c.fillRect(x-1,y-1.5,1.5,.8)}
+  }else{
+   // rolling crest: a light dash that drifts with the swell
+   const swell=Math.sin(t*.8+wx*.045+wy*.02+ph*.6);
+   if(swell>.7){c.fillStyle=`rgba(176,222,230,${((swell-.7)*.8).toFixed(2)})`;c.fillRect(x-1.5+swell*1.5,y,2.5+ph*.25,.6)}
+   // sun glint: brief sparkle
+   const g=Math.sin(t*2.3+ph*3.7);
+   if(g>.93){c.fillStyle=`rgba(255,255,255,${((g-.93)*12).toFixed(2)})`;c.fillRect(x,y-.5,1,1);c.fillRect(x-1,y,3,.5)}
+  }
  }
  c.restore();
 }
@@ -432,14 +474,34 @@ function sprite(c,name,flip=false){
  const [sx,sw,sh,w,h]=CELL[name];
  c.save();if(flip)c.scale(-1,1);c.drawImage(forest,sx,0,sw,sh,-w/2,-h+2,w,h);c.restore();
 }
+// a fighter standing behind tall scenery shows through it
+function hides(o,w,h){
+ if(h<28)return false;
+ const g=root.KiGame,list=g?.player?[g.player,...(g.enemies?.()||[])]:[];
+ for(const f of list){
+  if(f.hp<=0||f.y>=o.y||o.y-f.y>h*o.scale*.85||Math.abs(f.x-o.x)>w*o.scale*.42)continue;
+  if(f===g.player||Math.hypot(f.x-g.player.x,f.y-g.player.y)<110)return true;
+ }
+ return false;
+}
 function drawScenery(c,o){
  const m=SCN[o.kind];if(!m||!ready(sceneryArt))return;
  const [sx,sy,sw,sh]=m.rect,w=sw/SCN_PX,h=sh/SCN_PX;
- c.save();c.translate(Math.round(o.x),Math.round(o.y));c.scale(o.scale,o.scale);c.imageSmoothingEnabled=false;
+ c.save();
+ if(hides(o,w,h))c.globalAlpha=.45;c.translate(Math.round(o.x),Math.round(o.y));c.scale(o.scale,o.scale);c.imageSmoothingEnabled=false;
  if(m.solid||w>14)shadow(c,Math.min(w,m.solid*4+16));
+ const sway=SWAY[o.kind];
+ if(sway)c.transform(1,0,windAt(o.x,o.y)*sway,1,0,0);
  if(o.flip)c.scale(-1,1);
  c.drawImage(sceneryArt,sx,sy,sw,sh,-m.foot[0]/SCN_PX,-h+1,w,h);
  c.restore();
+}
+// wind: a slow gust field moving across the world; tall, leafy things bend most
+const SWAY={birch:1,birch2:1,cherry:.8,cherry2:.8,maple:.7,maple2:.7,poplar:1.1,willow:1.3,palm:1.2,fir:.45,snowfir:.4,spruce:.45,reeds:2.2,sunflowers:1.6,fern:1.4,oak:.6,pine:.45,bush:.9,tuft:1.6,flowers:1.8};
+function windAt(x,y){
+ const t=performance.now()/1000;
+ const gust=.5+.5*Math.sin(t*.35+x*.0016-y*.0011);                    // gusts sweep across the land
+ return (Math.sin(t*1.6+x*.031+y*.017)*.6+Math.sin(t*2.7+x*.07)*.25)*.035*(.35+gust);
 }
 function drawObject(c,o){
  if(SCN[o.kind])return drawScenery(c,o);
@@ -458,7 +520,8 @@ function drawObject(c,o){
    c.restore();
   }
  }else{
-  if(o.kind==='oak'||o.kind==='pine')shadow(c,CELL[o.kind][3]);
+  if(o.kind==='oak'||o.kind==='pine'){shadow(c,CELL[o.kind][3]);if(hides(o,CELL[o.kind][3],CELL[o.kind][4]))c.globalAlpha=.45}
+  if(SWAY[o.kind])c.transform(1,0,windAt(o.x,o.y)*SWAY[o.kind],1,0,0);
   sprite(c,o.kind,o.flip);
  }
  c.restore();
@@ -513,6 +576,6 @@ function mapImage(valley,vw,vh){
  return mapCanvas;
 }
 
-root.KiWorld={climbBlocked,slopeFactor,heightAt,levelAt,reserve,places:PLACES,W,H,X0,Y0,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
+root.KiWorld={windAt,climbBlocked,slopeFactor,heightAt,levelAt,reserve,places:PLACES,W,H,X0,Y0,VW,VH,CHUNK,sample,drawGround,objects,solid,water,region,music,mapImage,inValley,
  stats:()=>({chunks:chunks.size,queued:queue.length})};
 })(typeof window!=='undefined'?window:globalThis);
