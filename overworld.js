@@ -19,7 +19,7 @@
 const W=9600,H=6400;                 // world extends to x<W, y<H ...
 const X0=-2000,Y0=-1800;             // ... from x>=X0, y>=Y0: land wraps the valley on every side
 const VW=2760,VH=560;                // hand-painted Cedar valley at 0..VW x 0..VH
-const CHUNK=256,SCALE=2.5;           // chunk size (world px) and paint scale
+const CHUNK=256,SCALE=2;             // chunk size (world px) and paint scale: 1 canvas px = 1 ground texel
 const inValley=(x,y)=>x>=0&&y>=0&&x<VW&&y<VH;
 
 // ------------------------------------------------------------ noise
@@ -239,6 +239,45 @@ const SCENERY_MIX={
 // hanging over it, and the odd short crack. Reads as a ledge, not columns.
 const hash=(a,b)=>{let h=Math.imul(a|0,374761393)+Math.imul(b|0,668265263);h=Math.imul(h^h>>>13,1274126177);return ((h^h>>>16)>>>0)/4294967296};
 const MOSSY=new Set(['grass','forest','pinewood','meadow','blossom']);
+// ---- pixel-art ground textures (scripts/build-ground-textures.py)
+// Each canvas pixel is one ground texel (2 per world px). The cell colour (region colour,
+// hillshade, roads, foam) is multiplied by the tile's detail (texel / tile mean), and
+// borders between ground types are dithered pixel by pixel instead of blurred.
+const groundArt=new Image();groundArt.src='assets/ground-textures.png?v=2';
+let groundData=null;
+groundArt.onload=()=>{chunks.clear();queue.length=0};          // repaint with textures once loaded
+function groundTextures(){
+ if(groundData)return groundData;
+ const meta=root.KiGroundTextures;if(!meta||!ready(groundArt)||typeof document==='undefined')return null;
+ const T=meta.size,cv=document.createElement('canvas');cv.width=T*meta.order.length;cv.height=T;
+ const g=cv.getContext('2d');g.drawImage(groundArt,0,0);
+ let px;try{px=g.getImageData(0,0,cv.width,cv.height).data}catch{return null}
+ const index={},mean=[];
+ meta.order.forEach((name,k)=>{
+  index[name]=k;let r=0,gg=0,b=0;
+  for(let y=0;y<T;y++)for(let x=0;x<T;x++){const o=(y*cv.width+k*T+x)*4;r+=px[o];gg+=px[o+1];b+=px[o+2]}
+  const n=T*T;mean.push([r/n,gg/n,b/n]);
+ });
+ const jitter=new Int8Array(4096);for(let i=0;i<4096;i++){const h=Math.sin(i*12.9898)*43758.5453,f=h-Math.floor(h);jitter[i]=f<.18?-1:f>.82?1:0}
+ return groundData={px,W:cv.width,T,index,mean,jitter};
+}
+function paintTextured(g,cell,biomeGrid,N,x0,y0,tex){
+ const S=CHUNK*SCALE,out=g.createImageData(S,S),o8=out.data,{px,W,T,index,mean,jitter}=tex;
+ const tid=new Int16Array(N*N);
+ for(let k=0;k<N*N;k++){const b=biomeGrid[k];tid[k]=index[b]??index.grass}
+ const ox=((x0*2)%T+T)%T,oy=((y0*2)%T+T)%T;
+ for(let Y=0;Y<S;Y++){
+  const cj0=Y>>2,v=(oy+Y)%T,row=v*W;
+  for(let X=0;X<S;X++){
+   // dither borders: some pixels take a neighbouring cell, so edges become ragged pixel lines
+   const h=(X*7+Y*13+((X*Y)>>3))&4095,dx=jitter[h],dy=jitter[(h*31+7)&4095];
+   let ci=(X>>2)+dx,cj=cj0+dy;if(ci<0)ci=0;else if(ci>=N)ci=N-1;if(cj<0)cj=0;else if(cj>=N)cj=N-1;
+   const c=cj*N+ci,c4=c*4,t=tid[c],m=mean[t],u=(ox+X)%T,to=(row+t*T+u)*4,o=(Y*S+X)*4;
+   o8[o]=cell[c4]*px[to]/m[0];o8[o+1]=cell[c4+1]*px[to+1]/m[1];o8[o+2]=cell[c4+2]*px[to+2]/m[2];o8[o+3]=255;
+  }
+ }
+ g.putImageData(out,0,0);
+}
 function drawFaces(g,faces,sides,x0,y0,lv){
  const col=c=>`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
  const moss=['#2a4a26','#3b6430','#557f3c'];
@@ -334,15 +373,16 @@ function paintChunk(cx,cy){
   }
   const o=(j*N+i)*4;img.data[o]=r;img.data[o+1]=g;img.data[o+2]=bl;img.data[o+3]=255;
  }
- sctx.putImageData(img,0,0);
  const canvas=document.createElement('canvas');canvas.width=canvas.height=CHUNK*SCALE;
  const g=canvas.getContext('2d');
- g.imageSmoothingEnabled=true;g.drawImage(small,0,0,canvas.width,canvas.height);
+ const textured=groundTextures();
+ if(textured)paintTextured(g,img.data,biomeGrid,N,x0,y0,textured);
+ else{sctx.putImageData(img,0,0);g.imageSmoothingEnabled=true;g.drawImage(small,0,0,canvas.width,canvas.height)}
  g.scale(SCALE,SCALE);
  drawFaces(g,faces,sides,x0,y0,lv);drawSides(g,sides,lv);
  const rnd=mulberry(cx*7919+cy*104729+17);
- // grass blades and specks on land, wave glints on water
- for(let n=0;n<420;n++){
+ // grass blades and specks on land, wave glints on water (fallback look; textures carry this detail)
+ for(let n=0;n<(textured?0:420);n++){
   const i=Math.floor(rnd()*N),j=Math.floor(rnd()*N),bio=biomeGrid[j*N+i];
   const x=i*2+rnd()*2,y=j*2+rnd()*2;
   if(isWater(bio)){
@@ -425,7 +465,7 @@ function drawGround(c,vx,vy,w,h){
   if(!inside&&!queue.includes(key(cx,cy)))queue.push(key(cx,cy));
  }
  pump();
- c.save();c.imageSmoothingEnabled=true;
+ c.save();c.imageSmoothingEnabled=!groundData;   // textured ground: crisp texels
  for(const [cx,cy] of visibleChunks(vx,vy,w,h,0)){
   if(allValley(cx,cy))continue;
   const ch=getChunk(cx,cy,true);
@@ -451,10 +491,10 @@ function drawWaves(c,waves,ox,oy,vx,vy,w,h){
   }else{
    // rolling crest: a light dash that drifts with the swell
    const swell=Math.sin(t*.8+wx*.045+wy*.02+ph*.6);
-   if(swell>.7){c.fillStyle=`rgba(176,222,230,${((swell-.7)*.8).toFixed(2)})`;c.fillRect(x-1.5+swell*1.5,y,2.5+ph*.25,.6)}
+   if(swell>.78){c.fillStyle=`rgba(160,208,222,${((swell-.78)*.9).toFixed(2)})`;c.fillRect(x-1+swell,y,1.5+ph*.15,.5)}
    // sun glint: brief sparkle
    const g=Math.sin(t*2.3+ph*3.7);
-   if(g>.93){c.fillStyle=`rgba(255,255,255,${((g-.93)*12).toFixed(2)})`;c.fillRect(x,y-.5,1,1);c.fillRect(x-1,y,3,.5)}
+   if(g>.975){c.fillStyle=`rgba(255,255,255,${((g-.975)*28).toFixed(2)})`;c.fillRect(x,y-.5,.5,1);c.fillRect(x-.75,y-.25,2,.5)}
   }
  }
  c.restore();
